@@ -19,7 +19,7 @@ from simularium_models_util.actin import (
     ActinTestData,
 )
 from simularium_models_util.visualization import ActinVisualization
-from simularium_models_util import RepeatedTimer
+from simularium_models_util import RepeatedTimer, ReaddyUtil
 
 
 def report_hardware_usage():
@@ -47,12 +47,17 @@ def main():
     )
     args = parser.parse_args()
     parameters = pandas.read_excel(
-        args.params_path, sheet_name="actin", usecols=[0, int(args.data_column)]
+        args.params_path,
+        sheet_name="actin",
+        usecols=[0, int(args.data_column)],
+        dtype=object,
     )
     parameters.set_index("name", inplace=True)
     parameters.transpose()
     run_name = list(parameters)[0]
     parameters = parameters[run_name]
+    # read in box size
+    parameters["box_size"] = ReaddyUtil.get_box_size(parameters["box_size"])
     if not os.path.exists("outputs/"):
         os.mkdir("outputs/")
     parameters["name"] = "outputs/" + args.model_name + "_" + str(run_name)
@@ -60,48 +65,55 @@ def main():
     actin_simulation.add_obstacles()
     actin_simulation.add_random_monomers()
     if "orthogonal_seed" in parameters and parameters["orthogonal_seed"]:
-        print("ortho")
-        fibers = [
+        print("Starting with orthogonal seed")
+        fiber_data = [
             FiberData(
-                2,
+                28,
                 [
-                    np.array([-70, 0, 20]),
-                    np.array([10, 60, 20]),
+                    np.array([-75, 0, 0]),
+                    np.array([75, 0, 0]),
                 ],
                 "Actin-Polymer",
-            ),
-            FiberData(
-                3,
-                [
-                    np.array([0, 20, -70]),
-                    np.array([60, 20, 10]),
-                ],
-                "Actin-Polymer",
-            ),
+            )
         ]
-        actin_simulation.add_monomers_from_data(
-            # ActinGenerator.get_monomers(ActinTestData.linear_actin_fiber(), 0)
-            ActinGenerator.get_monomers(fibers, 0)
-        )
+        monomers = ActinGenerator.get_monomers(fiber_data, use_uuids=False)
+        monomers = ActinGenerator.setup_fixed_monomers(monomers, parameters)
+        actin_simulation.add_monomers_from_data(monomers)
     if "branched_seed" in parameters and parameters["branched_seed"]:
-        print("branched")
+        print("Starting with branched seed")
         actin_simulation.add_monomers_from_data(
-            ActinGenerator.get_monomers(ActinTestData.simple_branched_actin_fiber(), 0)
+            ActinGenerator.get_monomers(
+                ActinTestData.simple_branched_actin_fiber(), use_uuids=False
+            )
         )
     rt = RepeatedTimer(300, report_hardware_usage)  # every 5 min
     try:
         actin_simulation.simulation.run(
-            int(parameters["total_steps"]), parameters["timestep"]
+            int(parameters["total_steps"]), parameters["internal_timestep"]
         )
         try:
-            # plots = ActinVisualization.generate_plots(
-            #     parameters["name"] + ".h5", parameters["box_size"], 10
-            # )
+            plots = None
+            if parameters["plot_polymerization"]:
+                plots = ActinVisualization.generate_polymerization_plots(
+                    parameters["name"] + ".h5",
+                    parameters["box_size"],
+                    10,
+                    parameters["periodic_boundary"],
+                    plots,
+                )
+            if parameters["plot_bend_twist"]:
+                plots = ActinVisualization.generate_bend_twist_plots(
+                    parameters["name"] + ".h5",
+                    parameters["box_size"],
+                    10,
+                    parameters["periodic_boundary"],
+                    plots,
+                )
             ActinVisualization.visualize_actin(
                 parameters["name"] + ".h5",
                 parameters["box_size"],
                 parameters["total_steps"],
-                # plots,
+                plots,
             )
         except Exception as e:
             print("Failed viz!!!!!!!!!!\n" + str(type(e)) + " " + str(e))
