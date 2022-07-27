@@ -10,7 +10,7 @@ from simulariumio import (
     ScatterPlotData,
     DisplayData,
     DISPLAY_TYPE,
-    # JsonWriter,
+    BinaryWriter,
 )
 from simulariumio.filters import MultiplyTimeFilter
 from simulariumio.orientations import OrientationData, NeighborData
@@ -419,7 +419,7 @@ class ActinVisualization:
         actin_radius = 2.0 + extra_radius
         arp23_radius = 2.0 + extra_radius
         cap_radius = 3.0 + extra_radius
-        # obstacle_radius = 35.0
+        obstacle_radius = 35.0
         bucket_url = "https://aics-simularium-data.s3.us-east-2.amazonaws.com"
         test_geo = f"{bucket_url}/geometry/gizmo_small.obj"
         actin_geometry_url = test_geo  # f"{bucket_url}/geometry/actin.pdb"
@@ -429,7 +429,6 @@ class ActinVisualization:
         display_data = {
             "arp2": DisplayData(
                 name="arp2",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=arp23_radius,
                 display_type=display_type,
                 url=arp2_geometry_url,
@@ -437,7 +436,6 @@ class ActinVisualization:
             ),
             "arp2#branched": DisplayData(
                 name="arp2#branched",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=arp23_radius,
                 display_type=display_type,
                 url=arp2_geometry_url,
@@ -445,7 +443,6 @@ class ActinVisualization:
             ),
             "arp2#free": DisplayData(
                 name="arp2#free",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=arp23_radius,
                 display_type=display_type,
                 url=arp2_geometry_url,
@@ -453,7 +450,6 @@ class ActinVisualization:
             ),
             "arp3": DisplayData(
                 name="arp3",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=arp23_radius,
                 display_type=display_type,
                 url=arp3_geometry_url,
@@ -461,7 +457,6 @@ class ActinVisualization:
             ),
             "arp3#new": DisplayData(
                 name="arp3",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=arp23_radius,
                 display_type=display_type,
                 url=arp3_geometry_url,
@@ -469,7 +464,6 @@ class ActinVisualization:
             ),
             "arp3#ATP": DisplayData(
                 name="arp3#ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=arp23_radius,
                 display_type=display_type,
                 url=arp3_geometry_url,
@@ -477,7 +471,6 @@ class ActinVisualization:
             ),
             "arp3#new_ATP": DisplayData(
                 name="arp3#ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=arp23_radius,
                 display_type=display_type,
                 url=arp3_geometry_url,
@@ -503,7 +496,6 @@ class ActinVisualization:
             ),
             "actin#free": DisplayData(
                 name="actin#free",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -511,7 +503,6 @@ class ActinVisualization:
             ),
             "actin#free_ATP": DisplayData(
                 name="actin#free_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -519,7 +510,6 @@ class ActinVisualization:
             ),
             "actin#new": DisplayData(
                 name="actin",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -527,7 +517,6 @@ class ActinVisualization:
             ),
             "actin#new_ATP": DisplayData(
                 name="actin#ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -535,7 +524,6 @@ class ActinVisualization:
             ),
             "actin#1": DisplayData(
                 name="actin",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -543,7 +531,6 @@ class ActinVisualization:
             ),
             "actin#2": DisplayData(
                 name="actin",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -551,7 +538,6 @@ class ActinVisualization:
             ),
             "actin#3": DisplayData(
                 name="actin",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -559,7 +545,6 @@ class ActinVisualization:
             ),
             "actin#ATP_1": DisplayData(
                 name="actin#ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -567,7 +552,6 @@ class ActinVisualization:
             ),
             "actin#ATP_2": DisplayData(
                 name="actin#ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -575,7 +559,6 @@ class ActinVisualization:
             ),
             "actin#ATP_3": DisplayData(
                 name="actin#ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -583,7 +566,6 @@ class ActinVisualization:
             ),
             "actin#mid_1": DisplayData(
                 name="actin#mid",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -591,7 +573,6 @@ class ActinVisualization:
             ),
             "actin#mid_2": DisplayData(
                 name="actin#mid",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -599,7 +580,6 @@ class ActinVisualization:
             ),
             "actin#mid_3": DisplayData(
                 name="actin#mid",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -607,7 +587,6 @@ class ActinVisualization:
             ),
             "actin#mid_ATP_1": DisplayData(
                 name="actin#mid_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -615,7 +594,6 @@ class ActinVisualization:
             ),
             "actin#mid_ATP_2": DisplayData(
                 name="actin#mid_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -623,7 +601,6 @@ class ActinVisualization:
             ),
             "actin#mid_ATP_3": DisplayData(
                 name="actin#mid_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -631,7 +608,6 @@ class ActinVisualization:
             ),
             "actin#pointed_1": DisplayData(
                 name="actin#pointed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -639,7 +615,6 @@ class ActinVisualization:
             ),
             "actin#pointed_2": DisplayData(
                 name="actin#pointed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -647,7 +622,6 @@ class ActinVisualization:
             ),
             "actin#pointed_3": DisplayData(
                 name="actin#pointed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -655,7 +629,6 @@ class ActinVisualization:
             ),
             "actin#pointed_ATP_1": DisplayData(
                 name="actin#pointed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -663,7 +636,6 @@ class ActinVisualization:
             ),
             "actin#pointed_ATP_2": DisplayData(
                 name="actin#pointed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -671,7 +643,6 @@ class ActinVisualization:
             ),
             "actin#pointed_ATP_3": DisplayData(
                 name="actin#pointed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -679,7 +650,6 @@ class ActinVisualization:
             ),
             "actin#barbed_1": DisplayData(
                 name="actin#barbed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -687,7 +657,6 @@ class ActinVisualization:
             ),
             "actin#barbed_2": DisplayData(
                 name="actin#barbed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -695,7 +664,6 @@ class ActinVisualization:
             ),
             "actin#barbed_3": DisplayData(
                 name="actin#barbed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -703,7 +671,6 @@ class ActinVisualization:
             ),
             "actin#barbed_ATP_1": DisplayData(
                 name="actin#barbed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -711,7 +678,6 @@ class ActinVisualization:
             ),
             "actin#barbed_ATP_2": DisplayData(
                 name="actin#barbed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -719,151 +685,174 @@ class ActinVisualization:
             ),
             "actin#barbed_ATP_3": DisplayData(
                 name="actin#barbed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffdc73",
             ),
             "actin#fixed_1": DisplayData(
                 name="actin#fixed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#bf9b30",
             ),
             "actin#fixed_2": DisplayData(
                 name="actin#fixed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#bf9b30",
             ),
             "actin#fixed_3": DisplayData(
                 name="actin#fixed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#bf9b30",
             ),
             "actin#fixed_ATP_1": DisplayData(
                 name="actin#fixed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffbf00",
             ),
             "actin#fixed_ATP_2": DisplayData(
                 name="actin#fixed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffbf00",
             ),
             "actin#fixed_ATP_3": DisplayData(
                 name="actin#fixed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffbf00",
             ),
             "actin#mid_fixed_1": DisplayData(
                 name="actin#mid_fixed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#bf9b30",
             ),
             "actin#mid_fixed_2": DisplayData(
                 name="actin#mid_fixed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#bf9b30",
             ),
             "actin#mid_fixed_3": DisplayData(
                 name="actin#mid_fixed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#bf9b30",
             ),
             "actin#mid_fixed_ATP_1": DisplayData(
                 name="actin#mid_fixed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffbf00",
             ),
             "actin#mid_fixed_ATP_2": DisplayData(
                 name="actin#mid_fixed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffbf00",
             ),
             "actin#mid_fixed_ATP_3": DisplayData(
                 name="actin#mid_fixed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffbf00",
             ),
             "actin#pointed_fixed_1": DisplayData(
                 name="actin#pointed_fixed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#a67c00",
             ),
             "actin#pointed_fixed_2": DisplayData(
                 name="actin#pointed_fixed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#a67c00",
             ),
             "actin#pointed_fixed_3": DisplayData(
                 name="actin#pointed_fixed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#a67c00",
             ),
             "actin#pointed_fixed_ATP_1": DisplayData(
                 name="actin#pointed_fixed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#a67c00",
             ),
             "actin#pointed_fixed_ATP_2": DisplayData(
                 name="actin#pointed_fixed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#a67c00",
             ),
             "actin#pointed_fixed_ATP_3": DisplayData(
                 name="actin#pointed_fixed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#a67c00",
             ),
             "actin#fixed_barbed_1": DisplayData(
                 name="actin#fixed_barbed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffdc73",
             ),
             "actin#fixed_barbed_2": DisplayData(
                 name="actin#fixed_barbed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffdc73",
             ),
             "actin#fixed_barbed_3": DisplayData(
                 name="actin#fixed_barbed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffdc73",
             ),
             "actin#fixed_barbed_ATP_1": DisplayData(
                 name="actin#fixed_barbed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffdc73",
             ),
             "actin#fixed_barbed_ATP_2": DisplayData(
                 name="actin#fixed_barbed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
+                display_type=display_type,
+                url=actin_geometry_url,
                 color="#ffdc73",
             ),
             "actin#fixed_barbed_ATP_3": DisplayData(
                 name="actin#fixed_barbed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -871,7 +860,6 @@ class ActinVisualization:
             ),
             "actin#branch_1": DisplayData(
                 name="actin#branch",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -879,7 +867,6 @@ class ActinVisualization:
             ),
             "actin#branch_ATP_1": DisplayData(
                 name="actin#branch_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -887,7 +874,6 @@ class ActinVisualization:
             ),
             "actin#branch_barbed_1": DisplayData(
                 name="actin#branch_barbed",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -895,7 +881,6 @@ class ActinVisualization:
             ),
             "actin#branch_barbed_ATP_1": DisplayData(
                 name="actin#branch_barbed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
                 radius=actin_radius,
                 display_type=display_type,
                 url=actin_geometry_url,
@@ -914,7 +899,7 @@ class ActinVisualization:
             timestep=TIMESTEP * total_steps * 1e-3,
             path_to_readdy_h5=path_to_readdy_h5,
             meta_data=MetaData(
-                box_size=box_size,
+                box_size=np.array(3 *[box_size]),
             ),
             display_data=display_data,
             zero_orientations=[
@@ -1056,5 +1041,4 @@ class ActinVisualization:
                 ),
             ]
         )
-        ReaddyConverter.write_external_JSON(filtered_data, path_to_readdy_h5)
-        # JsonWriter.save(filtered_data, path_to_readdy_h5)
+        BinaryWriter.save(filtered_data, path_to_readdy_h5)
