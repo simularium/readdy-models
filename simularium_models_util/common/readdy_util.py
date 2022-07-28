@@ -1305,6 +1305,7 @@ class ReaddyUtil:
             [last_particle_id] if last_particle_id is not None else [],
             exact_match=exact_match,
         )
+        
         if n_id is None:
             return result
         result.append(n_id)
@@ -1312,7 +1313,8 @@ class ReaddyUtil:
         if chain_length == 1:
             return result
 
-        next_neighbor_index = (next_neighbor_index + 1) % len(neighbor_types)
+        if next_neighbor_index is not None:
+            next_neighbor_index = (next_neighbor_index + 1) % len(neighbor_types)
 
         return ReaddyUtil.analyze_frame_get_chain_of_types(
             n_id,

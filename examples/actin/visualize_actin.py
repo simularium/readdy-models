@@ -3,6 +3,7 @@
 
 import os
 import argparse
+import numpy as np
 
 from simularium_models_util.visualization import ActinVisualization
 
@@ -31,21 +32,22 @@ def main():
     )
     args = parser.parse_args()
     dir_path = args.dir_path
+    box_size = np.array(3 * [float(args.box_size)])
     for file in os.listdir(dir_path):
         if file.endswith(".h5"):
             file_path = os.path.join(dir_path, file)
             print(f"visualize {file_path}")
             if args.plot_bend_twist:
                 plots = ActinVisualization.generate_bend_twist_plots(
-                    file_path, float(args.box_size), 10, args.periodic_boundary
+                    file_path, box_size, 10, args.periodic_boundary
                 )
             else:
                 plots = ActinVisualization.generate_polymerization_plots(
-                    file_path, float(args.box_size), 10, args.periodic_boundary
+                    file_path, box_size, 10, args.periodic_boundary
                 )
             ActinVisualization.visualize_actin(
                 file_path,
-                float(args.box_size),
+                box_size,
                 float(args.total_steps),
                 plots,
             )

@@ -10,7 +10,7 @@ from simulariumio import (
     ScatterPlotData,
     DisplayData,
     DISPLAY_TYPE,
-    # JsonWriter,
+    BinaryWriter,
 )
 from simulariumio.filters import MultiplyTimeFilter
 from ..actin import ActinAnalyzer, ACTIN_REACTIONS
@@ -341,7 +341,32 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_bond_length_plot(monomer_data, box_size, periodic_boundary, times):
+    def get_twist_per_monomer_plot(monomer_data, box_size, periodic_boundary, times):
+        """
+        Add a plot of twist vs position of the monomer in filament
+        """
+        return ScatterPlotData(
+            title="Twist per monomer",
+            xaxis_title="Position in filament",
+            yaxis_title="Twist (rotations)",
+            xtrace=ActinAnalyzer.analyze_position_in_filament(
+                monomer_data, box_size, periodic_boundary
+            ),
+            ytraces={
+                "Total twist (degrees)": ActinAnalyzer.analyze_total_twist(
+                    monomer_data, box_size, periodic_boundary, remove_bend=False
+                ),
+                "Total twist excluding bend (degrees)": (
+                    ActinAnalyzer.analyze_total_twist(
+                        monomer_data, box_size, periodic_boundary, remove_bend=True
+                    )
+                ),
+            },
+            render_mode="lines",
+        )
+
+    @staticmethod
+    def get_total_bond_length_plot(monomer_data, box_size, periodic_boundary, times):
         """
         Add a plot of bond lengths (lat and long) vs end displacement
         (normalize bond lengths relative to theoretical lengths, plot average ± std)
@@ -375,6 +400,32 @@ class ActinVisualization:
         )
 
     @staticmethod
+    def get_bond_length_per_monomer_plot(monomer_data, box_size, periodic_boundary, times):
+        """
+        Add a plot of bond lengths (lat and long) vs position of monomer in filament
+        normalize bond lengths relative to theoretical lengths
+        """
+        lateral_bond_lengths = ActinAnalyzer.analyze_lateral_bond_lengths(
+            monomer_data, box_size, periodic_boundary
+        )
+        longitudinal_bond_lengths = ActinAnalyzer.analyze_longitudinal_bond_lengths(
+            monomer_data, box_size, periodic_boundary
+        )
+        return ScatterPlotData(
+            title="Bond lengths",
+            xaxis_title="Pointed end displacement (nm)",
+            yaxis_title="Normalized bond length",
+            xtrace=ActinAnalyzer.analyze_position_in_filament(
+                monomer_data, box_size, periodic_boundary
+            ),
+            ytraces={
+                "Lateral": mean_lat,
+                "Longitudinal": mean_long,
+            },
+            render_mode="lines",
+        )
+
+    @staticmethod
     def generate_bend_twist_plots(
         path_to_readdy_h5, box_size, stride=1, periodic_boundary=True, plots=None
     ):
@@ -402,7 +453,7 @@ class ActinVisualization:
             ActinVisualization.get_total_twist_plot(
                 monomer_data, box_size, periodic_boundary, times
             ),
-            ActinVisualization.get_bond_length_plot(
+            ActinVisualization.get_total_bond_length_plot(
                 monomer_data, box_size, periodic_boundary, times
             ),
         ]
@@ -855,5 +906,4 @@ class ActinVisualization:
                 ),
             ]
         )
-        ReaddyConverter.write_external_JSON(filtered_data, path_to_readdy_h5)
-        # JsonWriter.save(filtered_data, path_to_readdy_h5)
+        BinaryWriter.save(filtered_data, path_to_readdy_h5)
