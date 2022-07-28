@@ -320,47 +320,54 @@ class ActinVisualization:
         """
         Add a plot of total twist vs end displacement
         """
+        total_twist_raw, total_twist_remove_bend_raw, _ = ActinAnalyzer.analyze_total_twist(
+            monomer_data, box_size, periodic_boundary
+        )
+        total_twist = []
+        total_twist_remove_bend = []
+        for t in range(len(total_twist_raw)):
+            twist = 0
+            for m in total_twist_raw[t]:
+                twist += m
+            twist_no_bend = 0
+            for m in total_twist_remove_bend_raw[t]:
+                twist_no_bend += m
+            total_twist.append(twist)
+            total_twist_remove_bend.append(twist_no_bend)
         return ScatterPlotData(
             title="Twist along filament",
-            xaxis_title="Pointed end displacement (nm)",
+            xaxis_title="Time (us)",
             yaxis_title="Twist (rotations)",
-            xtrace=ActinAnalyzer.analyze_pointed_end_displacement(
-                monomer_data, box_size, periodic_boundary
-            ),
+            xtrace=times,
             ytraces={
-                "Total twist (degrees)": ActinAnalyzer.analyze_total_twist(
-                    monomer_data, box_size, periodic_boundary, remove_bend=False
-                ),
-                "Total twist excluding bend (degrees)": (
-                    ActinAnalyzer.analyze_total_twist(
-                        monomer_data, box_size, periodic_boundary, remove_bend=True
-                    )
-                ),
+                "Total twist (degrees)": np.array(total_twist),
+                "Total twist excluding bend (degrees)": np.array(total_twist_remove_bend),
             },
             render_mode="lines",
         )
 
     @staticmethod
-    def get_twist_per_monomer_plot(monomer_data, box_size, periodic_boundary, times):
+    def get_twist_per_monomer_plot(monomer_data, box_size, periodic_boundary):
         """
         Add a plot of twist vs position of the monomer in filament
         """
+        total_twist, total_twist_remove_bend, filament_positions = ActinAnalyzer.analyze_total_twist(
+            monomer_data, box_size, periodic_boundary
+        )
+        mid_time = int(len(total_twist) / 2.)
+        end_time = len(total_twist) - 1
         return ScatterPlotData(
             title="Twist per monomer",
             xaxis_title="Position in filament",
             yaxis_title="Twist (rotations)",
-            xtrace=ActinAnalyzer.analyze_position_in_filament(
-                monomer_data, box_size, periodic_boundary
-            ),
+            xtrace=filament_positions[0],
             ytraces={
-                "Total twist (degrees)": ActinAnalyzer.analyze_total_twist(
-                    monomer_data, box_size, periodic_boundary, remove_bend=False
-                ),
-                "Total twist excluding bend (degrees)": (
-                    ActinAnalyzer.analyze_total_twist(
-                        monomer_data, box_size, periodic_boundary, remove_bend=True
-                    )
-                ),
+                "Total twist (degrees) Start": total_twist[0],
+                "Total twist (degrees) Mid": total_twist[mid_time],
+                "Total twist (degrees) End": total_twist[end_time],
+                "Total twist excluding bend (degrees) Start": total_twist_remove_bend[0],
+                "Total twist excluding bend (degrees) Mid": total_twist_remove_bend[mid_time],
+                "Total twist excluding bend (degrees) End": total_twist_remove_bend[end_time],
             },
             render_mode="lines",
         )
@@ -371,23 +378,18 @@ class ActinVisualization:
         Add a plot of bond lengths (lat and long) vs end displacement
         (normalize bond lengths relative to theoretical lengths, plot average ± std)
         """
-        lateral_bond_lengths = ActinAnalyzer.analyze_lateral_bond_lengths(
+        lateral_bond_lengths, longitudinal_bond_lengths, _ = ActinAnalyzer.analyze_bond_lengths(
             monomer_data, box_size, periodic_boundary
         )
         mean_lat = ActinAnalyzer.analyze_average_for_series(lateral_bond_lengths)
         stddev_lat = ActinAnalyzer.analyze_stddev_for_series(lateral_bond_lengths)
-        longitudinal_bond_lengths = ActinAnalyzer.analyze_longitudinal_bond_lengths(
-            monomer_data, box_size, periodic_boundary
-        )
         mean_long = ActinAnalyzer.analyze_average_for_series(longitudinal_bond_lengths)
         stddev_long = ActinAnalyzer.analyze_stddev_for_series(longitudinal_bond_lengths)
         return ScatterPlotData(
             title="Bond lengths",
-            xaxis_title="Pointed end displacement (nm)",
+            xaxis_title="Time (us)",
             yaxis_title="Normalized bond length",
-            xtrace=ActinAnalyzer.analyze_pointed_end_displacement(
-                monomer_data, box_size, periodic_boundary
-            ),
+            xtrace=times,
             ytraces={
                 "Lateral mean": mean_lat,
                 "Lateral mean - std ": mean_lat - stddev_lat,
@@ -400,27 +402,28 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_bond_length_per_monomer_plot(monomer_data, box_size, periodic_boundary, times):
+    def get_bond_length_per_monomer_plot(monomer_data, box_size, periodic_boundary):
         """
         Add a plot of bond lengths (lat and long) vs position of monomer in filament
         normalize bond lengths relative to theoretical lengths
         """
-        lateral_bond_lengths = ActinAnalyzer.analyze_lateral_bond_lengths(
+        lateral_bond_lengths, longitudinal_bond_lengths, filament_positions = ActinAnalyzer.analyze_bond_lengths(
             monomer_data, box_size, periodic_boundary
         )
-        longitudinal_bond_lengths = ActinAnalyzer.analyze_longitudinal_bond_lengths(
-            monomer_data, box_size, periodic_boundary
-        )
+        mid_time = int(len(lateral_bond_lengths) / 2.)
+        end_time = len(lateral_bond_lengths) - 1
         return ScatterPlotData(
             title="Bond lengths",
             xaxis_title="Pointed end displacement (nm)",
             yaxis_title="Normalized bond length",
-            xtrace=ActinAnalyzer.analyze_position_in_filament(
-                monomer_data, box_size, periodic_boundary
-            ),
+            xtrace=filament_positions[0],
             ytraces={
-                "Lateral": mean_lat,
-                "Longitudinal": mean_long,
+                "Lateral Start": lateral_bond_lengths[0],
+                "Lateral Mid": lateral_bond_lengths[mid_time],
+                "Lateral End": lateral_bond_lengths[end_time],
+                "Longitudinal Start": longitudinal_bond_lengths[0],
+                "Longitudinal Mid": longitudinal_bond_lengths[mid_time],
+                "Longitudinal End": longitudinal_bond_lengths[end_time],
             },
             render_mode="lines",
         )
@@ -453,8 +456,14 @@ class ActinVisualization:
             ActinVisualization.get_total_twist_plot(
                 monomer_data, box_size, periodic_boundary, times
             ),
+            ActinVisualization.get_twist_per_monomer_plot(
+                monomer_data, box_size, periodic_boundary
+            ),
             ActinVisualization.get_total_bond_length_plot(
                 monomer_data, box_size, periodic_boundary, times
+            ),
+            ActinVisualization.get_bond_length_per_monomer_plot(
+                monomer_data, box_size, periodic_boundary
             ),
         ]
         return plots

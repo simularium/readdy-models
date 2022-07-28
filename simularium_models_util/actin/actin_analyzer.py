@@ -873,15 +873,16 @@ class ActinAnalyzer:
 
     @staticmethod
     def analyze_total_twist(
-        monomer_data, box_size, periodic_boundary, remove_bend=True
+        monomer_data, box_size, periodic_boundary
     ):
         """
         Get the total twist from monomer normal to monomer normal
         along the first mother filament in degrees
         """
-        result = []
+        total_twist = []
+        total_twist_no_bend = []
+        filament_positions = []
         for t in range(len(monomer_data)):
-            skip = False
             filament = ActinAnalyzer._frame_mother_filaments(
                 monomer_data[t]
             )[0]
@@ -895,90 +896,73 @@ class ActinAnalyzer:
                     monomer_data[t], actin_ids, box_size, periodic_boundary
                 )
                 if ReaddyUtil.vector_is_invalid(axis_pos):
-                    print(
-                        "Something is wrong with actin structure at "
-                        f"monomer {filament[index]}, skipping twist calculation"
+                    raise Exception(
+                        "Failed twist calculation: something is wrong with "
+                        f"actin structure at monomer {filament[index]}"
                     )
-                    skip = True
-                    break
                 if periodic_boundary:
                     axis_pos = ReaddyUtil.get_non_periodic_boundary_position(
                         position, axis_pos, box_size
                     )
                 axis_positions.append(axis_pos)
                 normals.append(ReaddyUtil.normalize(position - axis_pos))
-            if skip:
-                result.append(0.0)
-                continue
-            total_angle = 0
+            total_twist.append([])
+            total_twist_no_bend.append([])
+            filament_positions.append([])
             for index in range(len(normals) - 2):
-                if remove_bend:
-                    tangent = axis_positions[index + 2] - axis_positions[index]
-                    normal1 = ReaddyUtil.get_perpendicular_components_of_vector(
-                        normals[index], tangent
-                    )
-                    normal2 = ReaddyUtil.get_perpendicular_components_of_vector(
-                        normals[index + 2], tangent
-                    )
-                    total_angle += ReaddyUtil.get_angle_between_vectors(
-                        normal1, normal2, in_degrees=True
-                    )
-                else:
-                    total_angle += ReaddyUtil.get_angle_between_vectors(
-                        normals[index], normals[index + 2], in_degrees=True
-                    )
-            result.append(total_angle / 360.0)
-        return np.array(result)
+                tangent = axis_positions[index + 2] - axis_positions[index]
+                normal1 = ReaddyUtil.get_perpendicular_components_of_vector(
+                    normals[index], tangent
+                )
+                normal2 = ReaddyUtil.get_perpendicular_components_of_vector(
+                    normals[index + 2], tangent
+                )
+                total_angle_no_bend = ReaddyUtil.get_angle_between_vectors(
+                    normal1, normal2, in_degrees=True
+                )
+                total_angle = ReaddyUtil.get_angle_between_vectors(
+                    normals[index], normals[index + 2], in_degrees=True
+                )
+                total_twist[t].append(total_angle / (2 * 360.0))
+                total_twist_no_bend[t].append(total_angle_no_bend / (2 * 360.0))
+                filament_positions[t].append(index)
+        return np.array(total_twist), np.array(total_twist_no_bend), np.array(filament_positions)
 
     @staticmethod
-    def analyze_lateral_bond_lengths(monomer_data, box_size, periodic_boundary):
+    def analyze_bond_lengths(monomer_data, box_size, periodic_boundary):
         """
         Get the distance between bonds along the first mother filament,
         normalized to the ideal distance,
-        trace the explicit lateral bonds
+        trace the explicit lateral and longitudinal bonds
         """
-        lengths = []
+        lengths_lat = []
+        lengths_long = []
         filament_positions = []
-        ideal_length = np.linalg.norm(
+        ideal_length_lat = np.linalg.norm(
             ActinStructure.mother_positions[1] - ActinStructure.mother_positions[0]
         )
-        for t in range(len(monomer_data)):
-            lengths.append([])
-            filament = ActinAnalyzer._frame_mother_filaments(
-                monomer_data[t]
-            )[0]
-            for index in range(len(filament) - 1):
-                pos = monomer_data[t]["particles"][filament[index]]["position"]
-                pos_lat = monomer_data[t]["particles"][filament[index + 1]]["position"]
-                if periodic_boundary:
-                    pos_lat = ReaddyUtil.get_non_periodic_boundary_position(
-                        pos, pos_lat, box_size
-                    )
-                lengths[t].append(np.linalg.norm(pos_lat - pos) / ideal_length)
-        return np.array(lengths)
-
-    @staticmethod
-    def analyze_longitudinal_bond_lengths(monomer_data, box_size, periodic_boundary):
-        """
-        Get the distance between bonds along the first mother filament,
-        normalized to the ideal distance,
-        trace the implicit longitudinal bonds
-        """
-        result = []
-        ideal_length = np.linalg.norm(
+        ideal_length_long = np.linalg.norm(
             ActinStructure.mother_positions[2] - ActinStructure.mother_positions[0]
         )
         for t in range(len(monomer_data)):
-            result.append([])
+            lengths_lat.append([])
+            lengths_long.append([])
+            filament_positions.append([])
             filament = ActinAnalyzer._frame_mother_filaments(
                 monomer_data[t]
             )[0]
             for index in range(len(filament) - 2):
                 pos = monomer_data[t]["particles"][filament[index]]["position"]
+                pos_lat = monomer_data[t]["particles"][filament[index + 1]]["position"]
                 pos_long = monomer_data[t]["particles"][filament[index + 2]]["position"]
                 if periodic_boundary:
+                    pos_lat = ReaddyUtil.get_non_periodic_boundary_position(
+                        pos, pos_lat, box_size
+                    )
                     pos_long = ReaddyUtil.get_non_periodic_boundary_position(
                         pos, pos_long, box_size
                     )
-                result[t].append(np.linalg.norm(pos_long - pos) / ideal_length)
-        return np.array(result)
+                lengths_lat[t].append(np.linalg.norm(pos_lat - pos) / ideal_length_lat)
+                lengths_long[t].append(np.linalg.norm(pos_long - pos) / ideal_length_long)
+                filament_positions[t].append(index)
+        return np.array(lengths_lat), np.array(lengths_long), np.array(filament_positions)
