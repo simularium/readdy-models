@@ -64,6 +64,29 @@ def main():
     actin_simulation = ActinSimulation(parameters, True, False)
     actin_simulation.add_obstacles()
     actin_simulation.add_random_monomers()
+    
+    fiber_data = [
+        FiberData(
+            28,
+            [
+                np.array([-75, 0, 0]),
+                np.array([75, 0, 0]),
+            ],
+            "Actin-Polymer",
+        ),
+        FiberData(
+            30,
+            [
+                np.array([-75, 0, 10]),
+                np.array([75, 75, 10]),
+            ],
+            "Actin-Polymer",
+        )
+    ]
+    monomers = ActinGenerator.get_monomers(fiber_data, use_uuids=False)
+    monomers = ActinGenerator.setup_fixed_monomers(monomers, parameters)
+    actin_simulation.add_monomers_from_data(monomers)
+        
     if "orthogonal_seed" in parameters and parameters["orthogonal_seed"]:
         print("Starting with orthogonal seed")
         fiber_data = [
