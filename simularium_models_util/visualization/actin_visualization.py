@@ -624,6 +624,7 @@ class ActinVisualization:
         arp3_geometry_url = f"{bucket_url}/geometry/arp3.pdb"
         actin_display_type = DISPLAY_TYPE.PDB
         actin_geometry_url = f"{bucket_url}/geometry/actin.pdb"
+        actin_branch_geometry_url= f"{bucket_url}/geometry/actin#branch.pdb"
         arp_display_type = DISPLAY_TYPE.PDB
         colors = {
             "arp2" : "#74d4e3",
@@ -1073,28 +1074,28 @@ class ActinVisualization:
                 name="actin#branch",
                 radius=actin_radius,
                 display_type=actin_display_type,
-                url=actin_geometry_url,
+                url=actin_branch_geometry_url,
                 color=colors["actin"],
             ),
             "actin#branch_ATP_1": DisplayData(
                 name="actin#branch_ATP",
                 radius=actin_radius,
                 display_type=actin_display_type,
-                url=actin_geometry_url,
+                url=actin_branch_geometry_url,
                 color=colors["actin#ATP"],
             ),
             "actin#branch_barbed_1": DisplayData(
                 name="actin#branch_barbed",
                 radius=actin_radius,
                 display_type=actin_display_type,
-                url=actin_geometry_url,
+                url=actin_branch_geometry_url,
                 color=colors["actin#barbed"],
             ),
             "actin#branch_barbed_ATP_1": DisplayData(
                 name="actin#branch_barbed_ATP",
                 radius=actin_radius,
                 display_type=actin_display_type,
-                url=actin_geometry_url,
+                url=actin_branch_geometry_url,
                 color=colors["actin#barbed"],
             ),
             "obstacle": DisplayData(
