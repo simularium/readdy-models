@@ -8,6 +8,27 @@ import numpy as np
 from simularium_models_util.visualization import ActinVisualization
 
 
+COLORS = [
+    "#fee34d",
+    "#f7b232",
+    "#bf5736",
+    "#94a7fc",
+    "#ce8ec9",
+    "#58606c",
+    "#0ba345",
+    "#9267cb",
+    "#81dbe6",
+    "#bd7800",
+    "#bbbb99",
+    "#5b79f0",
+    "#89a500",
+    "#da8692",
+    "#418463",
+    "#9f516c",
+    "#00aabf",
+]
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Parses an actin hdf5 (*.h5) trajectory file produced\
@@ -48,6 +69,14 @@ def main():
         help="save all the trajectories in the directory as one simularium file?",
         dest='save_in_one_file', default=False, action='store_true'
     )
+    parser.add_argument(
+        "--color_by_run",
+        help=(
+            "if save_in_one_file, color the agents by the run? "
+            "otherwise use default colors"
+        ),
+        dest='color_by_run', default=False, action='store_true'
+    )
     """
     z offset
     actin name suffix - color
@@ -56,6 +85,7 @@ def main():
     dir_path = args.dir_path
     box_size = np.array(3 * [float(args.box_size)])
     trajectory_datas = []
+    color_index = 0
     for file in os.listdir(dir_path):
         if not file.endswith(".h5"):
             continue
@@ -85,6 +115,7 @@ def main():
                     "mid" : "",
                     "ATP" : "",
                 },
+                COLORS[color_index] if args.color_by_run else "",
                 plots,
             )
         )
@@ -93,11 +124,14 @@ def main():
                 [trajectory_datas[len(trajectory_datas) - 1]],
                 file_path
             )
+        color_index += 1
+        if color_index >= len(COLORS):
+            color_index = 0
     if args.save_in_one_file:
         print("Saving in one file")
         ActinVisualization.save_actin(
             trajectory_datas,
-            os.path.join(dir_path, "combination")
+            os.path.join(dir_path, f"{args.experiment_name}_combination")
         )
 
 

@@ -891,6 +891,7 @@ class ActinVisualization:
         save_in_one_file: bool,
         file_prefix: str = "",
         flags_to_change: Dict[str, str] = None,
+        color: str = "",
         plots: List[Dict[str, Any]] = None
     ) -> TrajectoryData:
         """
@@ -919,6 +920,8 @@ class ActinVisualization:
                     base_type = base_type[:base_type.index('#')]
                 new_display_name = suffix + "#" + base_type + state
                 display_data[agent_type].name = new_display_name
+                if len(color) > 0:
+                    display_data[agent_type].color = color
         # convert
         data = ReaddyData(
             # assume 1e3 recorded steps
