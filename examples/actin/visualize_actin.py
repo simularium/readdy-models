@@ -79,6 +79,12 @@ def main():
                 float(args.total_steps),
                 args.save_in_one_file,
                 args.experiment_name,
+                {
+                    "pointed" : "P",
+                    "barbed" : "B",
+                    "mid" : "",
+                    "ATP" : "",
+                },
                 plots,
             )
         )

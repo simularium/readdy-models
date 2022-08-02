@@ -890,6 +890,7 @@ class ActinVisualization:
         total_steps: int,  
         save_in_one_file: bool,
         file_prefix: str = "",
+        flags_to_change: Dict[str, str] = None,
         plots: List[Dict[str, Any]] = None
     ) -> TrajectoryData:
         """
@@ -900,14 +901,24 @@ class ActinVisualization:
             suffix = os.path.basename(path_to_readdy_h5)
             suffix = suffix[suffix.index(file_prefix) + len(file_prefix):]
             suffix = os.path.splitext(suffix)[0]
+            suffix = suffix.replace("_", " ")
+            suffix = suffix.strip()
             display_data = copy.deepcopy(DISPLAY_DATA)
             for agent_type in display_data:
                 base_type = display_data[agent_type].name
                 state = ""
                 if "#" in base_type:
                     state = base_type[base_type.index('#') + 1:]
+                    if flags_to_change is not None:
+                        for flag in flags_to_change:
+                            state = state.replace(flag, flags_to_change[flag])
+                    state = state.replace("_", " ")
+                    state = state.strip()
+                    if len(state) > 0:
+                        state = ":" + state
                     base_type = base_type[:base_type.index('#')]
-                display_data[agent_type].name = base_type + suffix + "#" + state
+                new_display_name = suffix + "#" + base_type + state
+                display_data[agent_type].name = new_display_name
         # convert
         data = ReaddyData(
             # assume 1e3 recorded steps
