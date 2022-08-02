@@ -24,6 +24,11 @@ def main():
         "total_steps", help="total number of iterations during model run"
     )
     parser.add_argument(
+        "experiment_name", 
+        help="prefix of file names to exclude if saving in one file",
+        default="",
+    )
+    parser.add_argument(
         "--periodic_boundary", 
         help="is there a periodic boundary condition?",
         dest='periodic_boundary', default=False, action='store_true'
@@ -43,6 +48,10 @@ def main():
         help="save all the trajectories in the directory as one simularium file?",
         dest='save_in_one_file', default=False, action='store_true'
     )
+    """
+    z offset
+    actin name suffix - color
+    """
     args = parser.parse_args()
     dir_path = args.dir_path
     box_size = np.array(3 * [float(args.box_size)])
@@ -68,6 +77,8 @@ def main():
                 file_path,
                 box_size,
                 float(args.total_steps),
+                args.save_in_one_file,
+                args.experiment_name,
                 plots,
             )
         )

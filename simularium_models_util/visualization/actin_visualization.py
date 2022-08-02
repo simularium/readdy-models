@@ -3,6 +3,8 @@
 
 import numpy as np
 from typing import Dict, List, Any
+import os
+import copy
 
 from simulariumio.readdy import ReaddyConverter, ReaddyData
 from simulariumio import (
@@ -15,6 +17,7 @@ from simulariumio import (
     TrajectoryData,
 )
 from simulariumio.filters import MultiplyTimeFilter
+
 from ..actin import ActinAnalyzer, ACTIN_REACTIONS
 from ..common import ReaddyUtil
 
@@ -881,10 +884,30 @@ class ActinVisualization:
         return plots
 
     @staticmethod
-    def visualize_actin(path_to_readdy_h5, box_size, total_steps, plots=None) -> TrajectoryData:
+    def visualize_actin(
+        path_to_readdy_h5: str, 
+        box_size: np.ndarray, 
+        total_steps: int,  
+        save_in_one_file: bool,
+        file_prefix: str = "",
+        plots: List[Dict[str, Any]] = None
+    ) -> TrajectoryData:
         """
         visualize an actin trajectory in Simularium
         """
+        # rename agents with trajectory suffix if saving in one file
+        if save_in_one_file:
+            suffix = os.path.basename(path_to_readdy_h5)
+            suffix = suffix[suffix.index(file_prefix) + len(file_prefix):]
+            suffix = os.path.splitext(suffix)[0]
+            display_data = copy.deepcopy(DISPLAY_DATA)
+            for agent_type in display_data:
+                base_type = display_data[agent_type].name
+                state = ""
+                if "#" in base_type:
+                    state = base_type[base_type.index('#') + 1:]
+                    base_type = base_type[:base_type.index('#')]
+                display_data[agent_type].name = base_type + suffix + "#" + state
         # convert
         data = ReaddyData(
             # assume 1e3 recorded steps
@@ -893,7 +916,7 @@ class ActinVisualization:
             meta_data=MetaData(
                 box_size=box_size,
             ),
-            display_data=DISPLAY_DATA,
+            display_data=display_data,
             time_units=UnitData("µs"),
             spatial_units=UnitData("nm"),
             plots=[],
@@ -920,17 +943,17 @@ class ActinVisualization:
 
     @staticmethod
     def save_actin(
-        trajectory_datas: List[TrajectoryData], 
+        trajectory_datas: List[TrajectoryData],
         output_path:str, 
         plots: List[Dict[str, Any]] = None
     ):
         """
         save a simularium file with actin trajector(ies)
         """
-        trajectory_data = trajectory_datas[0]
+        traj_data = trajectory_datas[0]
         for index in range(1, len(trajectory_datas)):
-            agent_data = trajectory_data.agent_data.make_copy_with_appended_agents(trajectory_datas[index].agent_data)
-            trajectory_data.agent_data = agent_data
+            agent_data = traj_data.agent_data.make_copy_with_appended_agents(trajectory_datas[index].agent_data)
+            traj_data.agent_data = agent_data
         if plots is not None:
-            trajectory_data.plots = plots
-        BinaryWriter.save(trajectory_data, output_path)
+            traj_data.plots = plots
+        BinaryWriter.save(traj_data, output_path)
