@@ -1221,6 +1221,8 @@ class MicrotubulesUtil:
                     + ") can't attach"
                 )
             return recipe
+        prev_tubulin = [None]*2
+        next_tubulin = [None]*2
         for i in range(2):
             crosslinked = (
                 MicrotubulesUtil.get_neighboring_tubulin(
@@ -1234,19 +1236,19 @@ class MicrotubulesUtil:
                 )
             else:
                 ReaddyUtil.set_flags(topology, recipe, tubulins[i], [], ["bent"])
-            prev_tubulin = MicrotubulesUtil.get_neighboring_tubulin(
+            prev_tubulin[i] = MicrotubulesUtil.get_neighboring_tubulin(
                 topology, tubulins[i], [-1, 0]
             )
-            if prev_tubulin is not None:
+            if prev_tubulin[i] is not None:
                 MicrotubulesUtil.check_remove_tubulin_sites(
-                    topology, recipe, prev_tubulin, False, tubulins[i], crosslinked
+                    topology, recipe, prev_tubulin[i], False, tubulins[i], crosslinked
                 )
-            next_tubulin = MicrotubulesUtil.get_neighboring_tubulin(
+            next_tubulin[i] = MicrotubulesUtil.get_neighboring_tubulin(
                 topology, tubulins[i], [1, 0]
             )
-            if next_tubulin is not None:
+            if next_tubulin[i] is not None:
                 MicrotubulesUtil.check_remove_tubulin_sites(
-                    topology, recipe, next_tubulin, False, tubulins[i], crosslinked
+                    topology, recipe, next_tubulin[i], False, tubulins[i], crosslinked
                 )
         removed, message = ReaddyUtil.try_remove_edge(
             topology, recipe, attaching_sites[0], attaching_sites[1]
@@ -1254,7 +1256,14 @@ class MicrotubulesUtil:
         if not removed:
             raise Exception(message + "\n" + ReaddyUtil.topology_to_string(topology))
         recipe.add_edge(tubulins[0], tubulins[1])
+        for i in range(2):
+            if prev_tubulin[i] is not None:
+                recipe.add_edge(tubulins[i], prev_tubulin[i])
+            if next_tubulin[i] is not None:
+                recipe.add_edge(tubulins[i], next_tubulin[i])
+        import ipdb; ipdb.set_trace()
         recipe.change_topology_type("Microtubule")
+        MicrotubulesUtil.check_tubulin_neighbors(topology)
         return recipe
 
     @staticmethod
@@ -2469,3 +2478,14 @@ class MicrotubulesUtil:
             reaction_function=ReaddyUtil.reaction_function_reset_state,
             rate_function=ReaddyUtil.rate_function_infinity,
         )
+
+    @staticmethod
+    def check_tubulin_neighbors(topology):
+        """
+        Checks if a non-free tubulin does not have neighbors
+        """
+        for v in topology.graph.get_vertices():
+            if len(v) < 1:
+                pt = topology.particle_type_of_vertex(v)
+                pid = topology.particle_id_of_vertex(v)
+                raise Exception(f"Particle {pid} of type {pt} has no neighbor")

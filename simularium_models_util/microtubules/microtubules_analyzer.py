@@ -9,7 +9,7 @@ from .microtubules_util import MicrotubulesUtil
 
 class MicrotubulesAnalyzer:
     @staticmethod
-    def get_protofilaments(frame_particle_data):
+    def get_protofilaments(frame_particle_data, debug_flag = False):
         """
         get a list of the number of monomers in the closed part
         of each protofilament at the time index
@@ -29,6 +29,8 @@ class MicrotubulesAnalyzer:
 
             if plus_end_neighbor_id is None or minus_end_neighbor_id is not None:
                 continue
+            if debug_flag:
+                import ipdb; ipdb.set_trace()
             protofilament = [particle_id]
             while plus_end_neighbor_id is not None:
                 protofilament.append(plus_end_neighbor_id)
@@ -79,9 +81,14 @@ class MicrotubulesAnalyzer:
         )
 
         for neighbor_id in tubulin_neighbor_ids:
+            neighbor_type = frame_particle_data["particles"][neighbor_id]["type_name"]
             [neighbor_x, neighbor_y] = MicrotubulesUtil.get_polymer_indices(
-                frame_particle_data["particles"][neighbor_id]["type_name"]
+                neighbor_type
             )
+            if ("A" in particle["type_name"] and "A" in neighbor_type 
+                or 
+                "B" in particle["type_name"] and "B" in neighbor_type):
+                continue
             if (
                 neighbor_x == plus_end_suffixes[0]
                 and neighbor_y == plus_end_suffixes[1]
@@ -103,20 +110,12 @@ class MicrotubulesAnalyzer:
         Get a list of the number of monomers in each mother filament
         in each frame of the trajectory
         """
-        max_len = -1
         result = []
         for t in range(len(monomer_data)):
             print(f"processing time step {t}")
-            protofilaments = MicrotubulesAnalyzer.get_protofilaments(monomer_data[t])
+            protofilaments = MicrotubulesAnalyzer.get_protofilaments(monomer_data[t], t>=7)
             result.append([])
             for filament in protofilaments:
                 result[t].append(len(filament))
-            if len(result[t]) > max_len:
-                max_len = len(result[t])
-
-        result = [
-            lengths_at_time + [None] * (max_len - len(lengths_at_time))
-            for lengths_at_time in result
-        ]
-        result = np.transpose(np.array(result))
+   
         return result

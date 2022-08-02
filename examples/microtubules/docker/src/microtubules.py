@@ -55,7 +55,10 @@ def main():
         )
         try:
             plots = MicrotubulesVisualization.generate_plots(
-                parameters["name"] + ".h5", parameters["box_size"], 10
+                parameters["name"] + ".h5",
+                parameters["box_size"],
+                stride=1,
+                save_pickle_file=True,
             )
             viz_stepsize = max(int(parameters["total_steps"] / 1000.0), 1)
             scaled_time_step_us = parameters["timestep"] * 1e-3 * viz_stepsize

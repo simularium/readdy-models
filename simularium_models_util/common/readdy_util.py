@@ -1029,10 +1029,10 @@ class ReaddyUtil:
         result = []
         for top in topology_records[time_index]:
             for e1, e2 in top.edges:
-                if e1 <= e2:
-                    ix1 = top.particles[e1]
-                    ix2 = top.particles[e2]
-                    result.append((ix1, ix2))
+                # if e1 <= e2:
+                ix1 = top.particles[e1]
+                ix2 = top.particles[e2]
+                result.append((ix1, ix2))
         return result
 
     @staticmethod
@@ -1312,7 +1312,8 @@ class ReaddyUtil:
         if chain_length == 1:
             return result
 
-        next_neighbor_index = (next_neighbor_index + 1) % len(neighbor_types)
+        if next_neighbor_index is not None:
+            next_neighbor_index = (next_neighbor_index + 1) % len(neighbor_types)
 
         return ReaddyUtil.analyze_frame_get_chain_of_types(
             n_id,

@@ -43,9 +43,15 @@ class MicrotubulesVisualization:
         protofilament_list = MicrotubulesAnalyzer.analyze_protofilament_lengths(
             monomer_data
         )
+        max_len = max([len(filament) for filament in protofilament_list])
+        reshaped_protofilaments = [
+            filament + [0]*(max_len - len(filament))
+             for filament in protofilament_list
+        ]
+        reshaped_protofilaments = np.transpose(np.array(reshaped_protofilaments))
         protofilaments = {}
-        for count, protofilament in enumerate(protofilament_list):
-            protofilaments["Filament " + str(count + 1)] = protofilament
+        for count, protofilament in enumerate(reshaped_protofilaments):
+            protofilaments["Filament " + str(count + 1)] = np.array(protofilament)
 
         return ScatterPlotData(
             title="Length of protofilaments",
@@ -61,13 +67,9 @@ class MicrotubulesVisualization:
         """
         Add a plot of average microtubule length
         """
-        protofilament_list = np.array(
-            MicrotubulesAnalyzer.analyze_protofilament_lengths(monomer_data),
-            dtype=float,
-        )
-        mean_lengths = np.nanmean(protofilament_list, axis=0)
-        mean_lengths[np.isnan(mean_lengths)] = 0
+        protofilament_list = MicrotubulesAnalyzer.analyze_protofilament_lengths(monomer_data)
 
+        mean_lengths = np.array([np.nanmean(protofilament) for protofilament in protofilament_list])
         return ScatterPlotData(
             title="Average microtubule length",
             xaxis_title="Time (µs)",
@@ -135,12 +137,13 @@ class MicrotubulesVisualization:
         for each total attach reaction
         """
         reaction_events = {}
+        tmp = None
         for total_rxn_name in MICROTUBULES_REACTIONS["Lateral Attach"]:
             reaction_counts = ReaddyUtil.analyze_reaction_count_over_time(
                 reactions, total_rxn_name
             )
             if reaction_counts is not None:
-                if "Total Attach" not in reaction_events:
+                if tmp is None:
                     tmp = reaction_counts
                 else:
                     tmp += reaction_counts
@@ -262,21 +265,21 @@ class MicrotubulesVisualization:
         display_data = dict(display_data, **dimer_display_data)
         # types to ignore
         ignore_types = [
-            "site#out",
-            "site#1",
-            "site#1_GTP",
-            "site#1_GDP",
-            "site#1_detach",
-            "site#2",
-            "site#2_GTP",
-            "site#2_GDP",
-            "site#2_detach",
-            "site#3",
-            "site#4",
-            "site#4_GTP",
-            "site#4_GDP",
-            "site#new",
-            "site#remove",
+            # "site#out",
+            # "site#1",
+            # "site#1_GTP",
+            # "site#1_GDP",
+            # "site#1_detach",
+            # "site#2",
+            # "site#2_GTP",
+            # "site#2_GDP",
+            # "site#2_detach",
+            # "site#3",
+            # "site#4",
+            # "site#4_GTP",
+            # "site#4_GDP",
+            # "site#new",
+            # "site#remove",
             "tubulinA#free",
             "tubulinB#free",
         ]
