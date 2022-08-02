@@ -77,10 +77,6 @@ def main():
         ),
         dest='color_by_run', default=False, action='store_true'
     )
-    """
-    z offset
-    actin name suffix - color
-    """
     args = parser.parse_args()
     dir_path = args.dir_path
     box_size = np.array(3 * [float(args.box_size)])

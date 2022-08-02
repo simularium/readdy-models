@@ -922,6 +922,8 @@ class ActinVisualization:
                 display_data[agent_type].name = new_display_name
                 if len(color) > 0:
                     display_data[agent_type].color = color
+        else:
+            display_data = DISPLAY_DATA
         # convert
         data = ReaddyData(
             # assume 1e3 recorded steps
