@@ -624,7 +624,7 @@ class ActinVisualization:
         arp3_geometry_url = f"{bucket_url}/geometry/arp3.pdb"
         actin_display_type = DISPLAY_TYPE.PDB
         actin_geometry_url = f"{bucket_url}/geometry/actin.pdb"
-        actin_branch_geometry_url= f"{bucket_url}/geometry/actin#branch.pdb"
+        actin_branch_geometry_url= f"{bucket_url}/geometry/actin_branch.pdb"
         arp_display_type = DISPLAY_TYPE.PDB
         colors = {
             "arp2" : "#74d4e3",

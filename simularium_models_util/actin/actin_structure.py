@@ -42,7 +42,7 @@ class ActinStructure:
     )
     daughter_positions = np.array(
         [
-            [29.821, 33.088, 23.356],  # H actin#branch pdb
+            [29.821, 33.088, 23.356],  # H - actin_branch pdb
             [30.476, 36.034, 26.528],
             [30.897, 38.584, 23.014],
         ]
