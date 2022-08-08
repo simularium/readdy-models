@@ -8,6 +8,7 @@ import copy
 
 from simulariumio.readdy import ReaddyConverter, ReaddyData
 from simulariumio import (
+    AgentData,
     MetaData,
     UnitData,
     ScatterPlotData,
@@ -15,9 +16,9 @@ from simulariumio import (
     DISPLAY_TYPE,
     BinaryWriter,
     TrajectoryData,
+    DimensionData,
 )
-from simulariumio.filters import MultiplyTimeFilter
-
+from simulariumio.filters import MultiplyTimeFilter, AddAgentsFilter
 from ..actin import ActinAnalyzer, ACTIN_REACTIONS
 from ..common import ReaddyUtil
 
@@ -469,6 +470,27 @@ class ActinVisualization:
     """
 
     @staticmethod
+    def shape_readdy_data_for_analysis(
+        h5_file_path, stride=1, reactions=False,
+    ):
+        """
+        Load a file from ReaDDy 
+        and shape monomer and reactions data from it
+        """
+        (
+            monomer_data,
+            reactions,
+            times,
+            _,
+        ) = ReaddyUtil.monomer_data_and_reactions_from_file(
+            h5_file_path=h5_file_path,
+            stride=stride,
+            timestep=0.1,
+            reaction_names=ACTIN_REACTIONS if reactions else None,
+        )
+        return monomer_data, times, reactions
+
+    @staticmethod
     def get_bound_monomers_plot(monomer_data, times):
         """
         Add a plot of percent actin in filaments
@@ -687,7 +709,7 @@ class ActinVisualization:
 
     @staticmethod
     def generate_polymerization_plots(
-        path_to_readdy_h5, box_size, stride=1, periodic_boundary=True, plots=None
+        monomer_data, times, reactions, box_size, periodic_boundary=True, plots=None
     ):
         """
         Use an ActinAnalyzer to generate plots of observables
@@ -698,17 +720,6 @@ class ActinVisualization:
                 "scatter": [],
                 "histogram": [],
             }
-        (
-            monomer_data,
-            reactions,
-            times,
-            _,
-        ) = ReaddyUtil.monomer_data_and_reactions_from_file(
-            h5_file_path=path_to_readdy_h5,
-            stride=stride,
-            timestep=0.1,
-            reaction_names=ACTIN_REACTIONS,
-        )
         plots["scatter"] += [
             ActinVisualization.get_bound_monomers_plot(monomer_data, times),
             ActinVisualization.get_avg_length_plot(monomer_data, times),
@@ -845,7 +856,7 @@ class ActinVisualization:
 
     @staticmethod
     def generate_bend_twist_plots(
-        path_to_readdy_h5, box_size, stride=1, periodic_boundary=True, plots=None
+       monomer_data, times, box_size, periodic_boundary=True, plots=None
     ):
         """
         Use an ActinAnalyzer to generate plots of observables
@@ -856,17 +867,6 @@ class ActinVisualization:
                 "scatter": [],
                 "histogram": [],
             }
-        (
-            monomer_data,
-            reactions,
-            times,
-            _,
-        ) = ReaddyUtil.monomer_data_and_reactions_from_file(
-            h5_file_path=path_to_readdy_h5,
-            stride=stride,
-            timestep=0.1,
-            reaction_names=ACTIN_REACTIONS,
-        )
         plots["scatter"] += [
             ActinVisualization.get_total_twist_plot(
                 monomer_data, box_size, periodic_boundary, times
@@ -882,6 +882,54 @@ class ActinVisualization:
             ),
         ]
         return plots
+    
+    @staticmethod
+    def _get_edge_agents(monomer_data, times) -> AgentData:
+        """
+        Get AgentData for fibers to draw along the edges between particles
+        """
+        if monomer_data is None or times is None:
+            raise Exception("Edge visualization requires monomer_data and times")
+        # get dimensions of data
+        total_steps = len(times)
+        max_edges = 0
+        for time_index in range(total_steps):
+            for particle_id in monomer_data[time_index]["particles"]:
+                n_edges += len(particle["neighbor_ids"])
+            if n_edges > max_edges:
+                max_edges = n_edges
+        dimensions = DimensionData(
+            total_steps=total_steps,
+            max_agents=max_edges,
+            max_subpoints=2,
+        )
+        # shape data
+        result = AgentData.from_dimensions(dimensions)
+        for time_index in range(total_steps):
+            print(f"Processing edges for t = {time_index} / {total_steps}")
+            n_edges = 0
+            for particle_id in monomer_data[time_index]["particles"]:
+                particle = monomer_data[time_index]["particles"][particle_id]
+                for neighbor_id in particle["neighbor_ids"]:
+                    neighbor = monomer_data[time_index]["particles"][neighbor_id]
+                    edge = np.array([particle["position"], neighbor["position"]])
+                    edge_center = 0.5 * (edge[0] + edge[1])
+                    result.unique_ids[time_index][n_edges] = n_edges
+                    result.positions[time_index][n_edges] = edge_center
+                    result.subpoints[time_index][n_edges] = edge - edge_center
+                    n_edges += 1
+            result.n_subpoints[time_index] = max_edges * [2.]
+            result.types[time_index] += n_edges * ["edge"]
+            result.n_agents[time_index] += n_edges
+        result.display_data = {
+            "edge" : DisplayData(
+                name="edge",
+                display_type=DISPLAY_TYPE.FIBER,
+                color="#222222",  # light gray
+            ),
+        }
+        return result
+        
 
     @staticmethod
     def visualize_actin(
@@ -893,6 +941,8 @@ class ActinVisualization:
         flags_to_change: Dict[str, str] = None,
         color: str = "",
         visualize_edges: bool = False,
+        monomer_data: List[Dict[str, Any]] = None, 
+        times: np.ndarray = None,
         plots: List[Dict[str, Any]] = None
     ) -> TrajectoryData:
         """
@@ -936,27 +986,23 @@ class ActinVisualization:
             display_data=display_data,
             time_units=UnitData("µs"),
             spatial_units=UnitData("nm"),
-            plots=[],
         )
-        try:
-            converter = ReaddyConverter(data)
-        except OverflowError as e:
-            print(
-                "OverflowError during SimulariumIO conversion !!!!!!!!!!!!!!\n" + str(e)
-            )
-            return
+        converter = ReaddyConverter(data)
         if plots is not None:
             for plot_type in plots:
                 for plot in plots[plot_type]:
                     converter.add_plot(plot, plot_type)
-        return converter.filter_data(
-            [
-                MultiplyTimeFilter(
-                    multiplier=1e-3,
-                    apply_to_plots=False,
-                ),
-            ]
-        )
+        filters = [
+            MultiplyTimeFilter(
+                multiplier=1e-3,
+                apply_to_plots=False,
+            )
+        ]
+        if visualize_edges:
+            filters.append(AddAgentsFilter(
+                new_agent_data=ActinVisualization._get_edge_agents(monomer_data, times),
+            ))
+        return converter.filter_data(filters)
 
     @staticmethod
     def save_actin(

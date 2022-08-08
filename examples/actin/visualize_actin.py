@@ -29,6 +29,12 @@ COLORS = [
 ]
 
 
+def load_data_for_analysis(args) -> bool:
+    """
+    Check if the data needs to be shaped for plots or edge visualization
+    """
+    return args.plot_polymerization or args.plot_bend_twist or args.visualize_edges
+
 def main():
     parser = argparse.ArgumentParser(
         description="Parses an actin hdf5 (*.h5) trajectory file produced\
@@ -46,8 +52,9 @@ def main():
     )
     parser.add_argument(
         "experiment_name", 
+        nargs='?',  # optional
         help="prefix of file names to exclude if saving in one file",
-        default="",
+        default=""
     )
     parser.add_argument(
         "--periodic_boundary", 
@@ -92,16 +99,25 @@ def main():
             continue
         file_path = os.path.join(dir_path, file)
         print(f"visualize {file_path}")
-        plots = None
-        if bool(args.plot_bend_twist):
-            print("plot bend twist")
-            plots = ActinVisualization.generate_bend_twist_plots(
-                file_path, box_size, 10, args.periodic_boundary
+        if load_data_for_analysis(args):
+            (
+                monomer_data,
+                times,
+                reactions,
+            ) = ActinVisualization.shape_readdy_data_for_analysis(
+                h5_file_path=file_path,
+                reactions=args.plot_polymerization,
             )
-        elif bool(args.plot_polymerization):
+        plots = None
+        if args.plot_polymerization:
             print("plot polymerization")
             plots = ActinVisualization.generate_polymerization_plots(
-                file_path, box_size, 10, args.periodic_boundary
+                monomer_data, times, reactions, box_size, 10, args.periodic_boundary
+            )
+        if args.plot_bend_twist:
+            print("plot bend twist")
+            plots = ActinVisualization.generate_bend_twist_plots(
+                monomer_data, times, box_size, 10, args.periodic_boundary
             )
         trajectory_datas.append(
             ActinVisualization.visualize_actin(
@@ -118,6 +134,8 @@ def main():
                 },
                 color=COLORS[color_index] if args.color_by_run else "",
                 visualize_edges=args.visualize_edges,
+                monomer_data=monomer_data,
+                times=times,
                 plots=plots,
             )
         )
