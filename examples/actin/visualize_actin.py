@@ -77,6 +77,11 @@ def main():
         ),
         dest='color_by_run', default=False, action='store_true'
     )
+    parser.add_argument(
+        "--vis_edges",
+        help="Draw lines for the edges between particles?",
+        dest='visualize_edges', default=False, action='store_true'
+    )
     args = parser.parse_args()
     dir_path = args.dir_path
     box_size = np.array(3 * [float(args.box_size)])
@@ -111,8 +116,9 @@ def main():
                     "mid" : "",
                     "ATP" : "",
                 },
-                COLORS[color_index] if args.color_by_run else "",
-                plots,
+                color=COLORS[color_index] if args.color_by_run else "",
+                visualize_edges=args.visualize_edges,
+                plots=plots,
             )
         )
         if not args.save_in_one_file:

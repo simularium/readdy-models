@@ -892,6 +892,7 @@ class ActinVisualization:
         file_prefix: str = "",
         flags_to_change: Dict[str, str] = None,
         color: str = "",
+        visualize_edges: bool = False,
         plots: List[Dict[str, Any]] = None
     ) -> TrajectoryData:
         """
