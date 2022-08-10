@@ -121,12 +121,12 @@ def main():
             )
         trajectory_datas.append(
             ActinVisualization.visualize_actin(
-                file_path,
-                box_size,
-                float(args.total_steps),
-                args.save_in_one_file,
-                args.experiment_name,
-                {
+                path_to_readdy_h5=file_path,
+                box_size=box_size,
+                total_steps=float(args.total_steps),
+                save_in_one_file=args.save_in_one_file,
+                file_prefix=args.experiment_name,
+                flags_to_change={
                     "pointed" : "P",
                     "barbed" : "B",
                     "mid" : "",
