@@ -872,6 +872,43 @@ class ActinAnalyzer:
         return np.array(result)
 
     @staticmethod
+    def get_normals_and_axis_positions(
+        monomer_data, box_size, periodic_boundary
+    ):
+        """
+        Get the normal vector and axis position 
+        for each filamentous actin monomer (except ends) 
+        at each timestep
+        """
+        total_steps = len(monomer_data)
+        normals = [[] for t in range(total_steps)]
+        axis_positions = [[] for t in range(total_steps)]
+        for time_index in range(total_steps):
+            filaments = ActinAnalyzer._frame_all_filaments(
+                monomer_data[time_index]
+            )
+            for filament in filaments:
+                for index in range(1, len(filament) - 1):
+                    position = monomer_data[time_index]["particles"][filament[index]]["position"]
+                    actin_ids = [filament[index - 1], filament[index], filament[index + 1]]
+                    axis_pos = ActinAnalyzer._get_axis_position_for_actin(
+                        monomer_data[time_index], actin_ids, box_size, periodic_boundary
+                    )
+                    if ReaddyUtil.vector_is_invalid(axis_pos):
+                        raise Exception(
+                            "Failed normal calculation: something is wrong with "
+                            f"actin structure at monomer {filament[index]}"
+                        )
+                    if periodic_boundary:
+                        axis_pos = ReaddyUtil.get_non_periodic_boundary_position(
+                            position, axis_pos, box_size
+                        )
+                    axis_positions[time_index].append(axis_pos)
+                    normals[time_index].append(ReaddyUtil.normalize(position - axis_pos))
+        return normals, axis_positions
+
+
+    @staticmethod
     def analyze_total_twist(
         monomer_data, box_size, periodic_boundary
     ):
@@ -882,30 +919,10 @@ class ActinAnalyzer:
         total_twist = []
         total_twist_no_bend = []
         filament_positions = []
+        normals, axis_positions = ActinAnalyzer.get_normals_and_axis_positions(
+            monomer_data, box_size, periodic_boundary
+        )
         for t in range(len(monomer_data)):
-            filament = ActinAnalyzer._frame_mother_filaments(
-                monomer_data[t]
-            )[0]
-            filament_length = len(filament)
-            normals = []
-            axis_positions = []
-            for index in range(1, filament_length - 1):
-                position = monomer_data[t]["particles"][filament[index]]["position"]
-                actin_ids = [filament[index - 1], filament[index], filament[index + 1]]
-                axis_pos = ActinAnalyzer._get_axis_position_for_actin(
-                    monomer_data[t], actin_ids, box_size, periodic_boundary
-                )
-                if ReaddyUtil.vector_is_invalid(axis_pos):
-                    raise Exception(
-                        "Failed twist calculation: something is wrong with "
-                        f"actin structure at monomer {filament[index]}"
-                    )
-                if periodic_boundary:
-                    axis_pos = ReaddyUtil.get_non_periodic_boundary_position(
-                        position, axis_pos, box_size
-                    )
-                axis_positions.append(axis_pos)
-                normals.append(ReaddyUtil.normalize(position - axis_pos))
             total_twist.append([])
             total_twist_no_bend.append([])
             filament_positions.append([])

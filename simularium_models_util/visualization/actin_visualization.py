@@ -889,8 +889,63 @@ class ActinVisualization:
         return plots
     
     @staticmethod
+    def _add_normal_agents(
+        traj_data: TrajectoryData, 
+        monomer_data: List[Dict[str,Any]],
+        box_size,
+    ) -> TrajectoryData:
+        """
+        Add agent data for fibers to draw normals for each actin in a filament
+        """
+        if monomer_data is None:
+            raise Exception("Normal visualization requires monomer_data")
+        print("Processing normals...")
+        normals, axis_positions = ActinAnalyzer.get_normals_and_axis_positions(
+            monomer_data, box_size, True
+        )
+        # get dimensions of data
+        total_steps = len(monomer_data)
+        max_normals = 0
+        for time_index in range(total_steps):
+            n_normals = len(normals[time_index])
+            if n_normals > max_normals:
+                max_normals = n_normals
+        current_dimensions = traj_data.agent_data.get_dimensions()
+        dimensions = DimensionData(
+            total_steps=0,
+            max_agents=max_normals,
+            max_subpoints=2 - current_dimensions.max_subpoints,
+        )
+        new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(dimensions)
+        # add new agents
+        max_used_uid = max(list(np.unique(traj_data.agent_data.unique_ids)))
+        for time_index in range(total_steps):
+            start_i = int(traj_data.agent_data.n_agents[time_index])
+            n_normals = len(normals[time_index])
+            for index in range(n_normals):
+                agent_index = start_i + index
+                new_agent_data.unique_ids[time_index][agent_index] = max_used_uid + index + 1
+                new_agent_data.subpoints[time_index][agent_index] = np.array([
+                    axis_positions[time_index][index], 
+                    axis_positions[time_index][index] + 10 * normals[time_index][index],
+                ])
+            end_i = start_i + n_normals
+            new_agent_data.n_agents[time_index] += n_normals
+            new_agent_data.viz_types[time_index][start_i:end_i] = n_normals * [VIZ_TYPE.FIBER]
+            new_agent_data.types[time_index] += n_normals * ["normal"]
+            new_agent_data.radii[time_index][start_i:end_i] = n_normals * [0.5]
+            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_normals * [2.]
+        new_agent_data.display_data["normal"] = DisplayData(
+            name="normal",
+            display_type=DISPLAY_TYPE.FIBER,
+            color="#5243F1",  # blue
+        )
+        traj_data.agent_data = new_agent_data
+        return traj_data
+    
+    @staticmethod
     def _add_edge_agents(
-        filtered_data: TrajectoryData, 
+        traj_data: TrajectoryData, 
         monomer_data: List[Dict[str,Any]]
     ) -> TrajectoryData:
         """
@@ -898,6 +953,7 @@ class ActinVisualization:
         """
         if monomer_data is None:
             raise Exception("Edge visualization requires monomer_data")
+        print("Processing edges...")
         # get dimensions of data
         total_steps = len(monomer_data)
         max_edges = 0
@@ -908,18 +964,18 @@ class ActinVisualization:
                 n_edges += len(particle["neighbor_ids"])
             if n_edges > max_edges:
                 max_edges = n_edges
+        current_dimensions = traj_data.agent_data.get_dimensions()
         dimensions = DimensionData(
             total_steps=0,
             max_agents=max_edges,
-            max_subpoints=2,
+            max_subpoints=2 - current_dimensions.max_subpoints,
         )
-        new_agent_data = filtered_data.agent_data.get_copy_with_increased_buffer_size(dimensions)
+        new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(dimensions)
         # add new agents
-        max_used_uid = max(list(np.unique(filtered_data.agent_data.unique_ids)))
-        print("Processing edges...")
+        max_used_uid = max(list(np.unique(traj_data.agent_data.unique_ids)))
         for time_index in tqdm(range(total_steps)):
             n_edges = 0
-            start_i = int(filtered_data.agent_data.n_agents[time_index])
+            start_i = int(traj_data.agent_data.n_agents[time_index])
             existing_edges = []
             for particle_id in monomer_data[time_index]["particles"]:
                 particle = monomer_data[time_index]["particles"][particle_id]
@@ -939,15 +995,13 @@ class ActinVisualization:
             new_agent_data.types[time_index] += n_edges * ["edge"]
             new_agent_data.radii[time_index][start_i:end_i] = n_edges * [0.5]
             new_agent_data.n_subpoints[time_index][start_i:end_i] = n_edges * [2.]
-        new_agent_data.display_data = {
-            "edge" : DisplayData(
-                name="edge",
-                display_type=DISPLAY_TYPE.FIBER,
-                color="#222222",  # gray
-            ),
-        }
-        filtered_data.agent_data = new_agent_data
-        return filtered_data
+        new_agent_data.display_data["edge"] = DisplayData(
+            name="edge",
+            display_type=DISPLAY_TYPE.FIBER,
+            color="#666666",  # gray
+        )
+        traj_data.agent_data = new_agent_data
+        return traj_data
         
 
     @staticmethod
@@ -960,6 +1014,7 @@ class ActinVisualization:
         flags_to_change: Dict[str, str] = None,
         color: str = "",
         visualize_edges: bool = False,
+        visualize_normals: bool = False,
         monomer_data: List[Dict[str, Any]] = None, 
         plots: List[Dict[str, Any]] = None
     ) -> TrajectoryData:
@@ -1019,6 +1074,10 @@ class ActinVisualization:
         if visualize_edges:
             filtered_data = ActinVisualization._add_edge_agents(
                 filtered_data, monomer_data
+            )
+        if visualize_normals:
+            filtered_data = ActinVisualization._add_normal_agents(
+                filtered_data, monomer_data, box_size
             )
         return filtered_data
 

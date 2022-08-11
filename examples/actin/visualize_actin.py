@@ -33,7 +33,10 @@ def load_data_for_analysis(args) -> bool:
     """
     Check if the data needs to be shaped for plots or edge visualization
     """
-    return args.plot_polymerization or args.plot_bend_twist or args.visualize_edges
+    return (
+        args.plot_polymerization or args.plot_bend_twist 
+        or args.visualize_edges or args.visualize_normals
+    )
 
 def main():
     parser = argparse.ArgumentParser(
@@ -89,6 +92,11 @@ def main():
         help="Draw lines for the edges between particles?",
         dest='visualize_edges', default=False, action='store_true'
     )
+    parser.add_argument(
+        "--vis_normals",
+        help="Draw lines for actin normals?",
+        dest='visualize_normals', default=False, action='store_true'
+    )
     args = parser.parse_args()
     dir_path = args.dir_path
     box_size = np.array(3 * [float(args.box_size)])
@@ -134,6 +142,7 @@ def main():
                 },
                 color=COLORS[color_index] if args.color_by_run else "",
                 visualize_edges=args.visualize_edges,
+                visualize_normals=args.visualize_normals,
                 monomer_data=monomer_data,
                 plots=plots,
             )
