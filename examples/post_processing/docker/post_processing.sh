@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Download trajectory files
+echo "hello 1"
 case ${SIMULATION_TYPE} in
 	AWS)
 		FILE_INDEX=${AWS_BATCH_JOB_ARRAY_INDEX:-0}
@@ -9,6 +10,7 @@ case ${SIMULATION_TYPE} in
         FILE_INDEX=$JOB_ARRAY_INDEX
 	;;
 esac
+echo "hello 2"
 S3_FILE_PATH="${S3_INPUT_URL}outputs/"
 echo $S3_FILE_PATH
 FILE_NAME="file"
