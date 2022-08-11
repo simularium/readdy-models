@@ -23,6 +23,7 @@ from simulariumio.constants import VIZ_TYPE
 
 from ..actin import ActinAnalyzer, ACTIN_REACTIONS
 from ..common import ReaddyUtil
+from tqdm import tqdm
 
 
 TIMESTEP = 0.1  # ns
@@ -914,39 +915,35 @@ class ActinVisualization:
         )
         new_agent_data = filtered_data.agent_data.get_copy_with_increased_buffer_size(dimensions)
         # add new agents
-        for time_index in range(total_steps):
-            print(f"Processing edges for t = {time_index} / {total_steps}")
+        max_used_uid = max(list(np.unique(filtered_data.agent_data.unique_ids)))
+        print("Processing edges...")
+        for time_index in tqdm(range(total_steps)):
             n_edges = 0
             start_i = int(filtered_data.agent_data.n_agents[time_index])
-            used_uids = list(np.unique(filtered_data.agent_data.unique_ids[time_index]))
-            new_uids = {}
+            existing_edges = []
             for particle_id in monomer_data[time_index]["particles"]:
                 particle = monomer_data[time_index]["particles"][particle_id]
                 for neighbor_id in particle["neighbor_ids"]:
+                    if (particle_id, neighbor_id) in existing_edges:
+                        continue
                     neighbor = monomer_data[time_index]["particles"][neighbor_id]
                     positions = np.array([particle["position"], neighbor["position"]])
-                    edge_center = 0.5 * (positions[0] + positions[1])
                     agent_index = start_i + n_edges
-                    if n_edges not in new_uids:
-                        uid = n_edges
-                        while uid in used_uids:
-                            uid += 1
-                        new_uids[n_edges] = uid
-                        used_uids.append(uid)
-                    new_agent_data.unique_ids[time_index][agent_index] = new_uids[n_edges]
-                    new_agent_data.positions[time_index][agent_index] = edge_center
-                    new_agent_data.subpoints[time_index][agent_index] = positions - edge_center
+                    new_agent_data.unique_ids[time_index][agent_index] = max_used_uid + n_edges
+                    new_agent_data.subpoints[time_index][agent_index] = positions
+                    existing_edges.append((neighbor_id, particle_id))
                     n_edges += 1
             end_i = start_i + n_edges
             new_agent_data.n_agents[time_index] += n_edges
             new_agent_data.viz_types[time_index][start_i:end_i] = n_edges * [VIZ_TYPE.FIBER]
             new_agent_data.types[time_index] += n_edges * ["edge"]
+            new_agent_data.radii[time_index][start_i:end_i] = n_edges * [0.5]
             new_agent_data.n_subpoints[time_index][start_i:end_i] = n_edges * [2.]
         new_agent_data.display_data = {
             "edge" : DisplayData(
                 name="edge",
                 display_type=DISPLAY_TYPE.FIBER,
-                color="#444444",  # gray
+                color="#222222",  # gray
             ),
         }
         filtered_data.agent_data = new_agent_data
