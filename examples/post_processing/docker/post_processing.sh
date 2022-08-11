@@ -3,17 +3,15 @@
 # Download trajectory files
 case ${SIMULATION_TYPE} in
 	AWS)
-		WORKING_FILE_PATH=.
 		FILE_INDEX=${AWS_BATCH_JOB_ARRAY_INDEX:-0}
 	;;
 	LOCAL)
-		WORKING_FILE_PATH="/working/"
         FILE_INDEX=$JOB_ARRAY_INDEX
 	;;
 esac
 S3_FILE_PATH="${S3_INPUT_URL}outputs/"
 FILE_NAME="file"
-aws s3 cp $WORKING_FILE_PATH $S3_FILE_PATH --exclude "*" --include "${PARAM_SET_NAME}*.h5" --recursive --dryrun
+aws s3 cp . $S3_FILE_PATH --exclude "*" --include "${PARAM_SET_NAME}*.h5" --recursive --dryrun
 
 # Post-process files
 python post_processing.py $FILE_NAME
