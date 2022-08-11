@@ -489,6 +489,8 @@ class ActinVisualization:
             stride=stride,
             timestep=0.1,
             reaction_names=ACTIN_REACTIONS if reactions else None,
+            pickle_file_path=f"{h5_file_path}.dat",
+            save_pickle_file=True,
         )
         return monomer_data, times, reactions
 
@@ -888,21 +890,21 @@ class ActinVisualization:
     @staticmethod
     def _add_edge_agents(
         filtered_data: TrajectoryData, 
-        monomer_data: List[Dict[str,Any]], 
-        times: np.ndarray
+        monomer_data: List[Dict[str,Any]]
     ) -> TrajectoryData:
         """
-        Get AgentData for fibers to draw along the edges between particles
+        Add agent data for fibers to draw along the edges between particles
         """
-        if monomer_data is None or times is None:
-            raise Exception("Edge visualization requires monomer_data and times")
+        if monomer_data is None:
+            raise Exception("Edge visualization requires monomer_data")
         # get dimensions of data
-        total_steps = len(times)
+        total_steps = len(monomer_data)
         max_edges = 0
         for time_index in range(total_steps):
             n_edges = 0
             for particle_id in monomer_data[time_index]["particles"]:
-                n_edges += len(monomer_data[time_index]["particles"][particle_id]["neighbor_ids"])
+                particle = monomer_data[time_index]["particles"][particle_id]
+                n_edges += len(particle["neighbor_ids"])
             if n_edges > max_edges:
                 max_edges = n_edges
         dimensions = DimensionData(
@@ -910,28 +912,36 @@ class ActinVisualization:
             max_agents=max_edges,
             max_subpoints=2,
         )
-        # shape data
         new_agent_data = filtered_data.agent_data.get_copy_with_increased_buffer_size(dimensions)
+        # add new agents
         for time_index in range(total_steps):
             print(f"Processing edges for t = {time_index} / {total_steps}")
             n_edges = 0
-            
-            start_i = current_dimensions.max_agents
-            end_i = start_i + added_dimensions.max_agents
+            start_i = int(filtered_data.agent_data.n_agents[time_index])
+            used_uids = list(np.unique(filtered_data.agent_data.unique_ids[time_index]))
+            new_uids = {}
             for particle_id in monomer_data[time_index]["particles"]:
                 particle = monomer_data[time_index]["particles"][particle_id]
                 for neighbor_id in particle["neighbor_ids"]:
                     neighbor = monomer_data[time_index]["particles"][neighbor_id]
-                    edge = np.array([particle["position"], neighbor["position"]])
-                    edge_center = 0.5 * (edge[0] + edge[1])
-                    new_agent_data.unique_ids[time_index][n_edges] = n_edges
-                    new_agent_data.positions[time_index][n_edges] = edge_center
-                    new_agent_data.subpoints[time_index][n_edges] = edge - edge_center
+                    positions = np.array([particle["position"], neighbor["position"]])
+                    edge_center = 0.5 * (positions[0] + positions[1])
+                    agent_index = start_i + n_edges
+                    if n_edges not in new_uids:
+                        uid = n_edges
+                        while uid in used_uids:
+                            uid += 1
+                        new_uids[n_edges] = uid
+                        used_uids.append(uid)
+                    new_agent_data.unique_ids[time_index][agent_index] = new_uids[n_edges]
+                    new_agent_data.positions[time_index][agent_index] = edge_center
+                    new_agent_data.subpoints[time_index][agent_index] = positions - edge_center
                     n_edges += 1
-            new_agent_data.viz_types[time_index][] = max_edges * [VIZ_TYPE.FIBER]
-            new_agent_data.n_subpoints[time_index] = max_edges * [2.]
-            new_agent_data.types[time_index] += n_edges * ["edge"]
+            end_i = start_i + n_edges
             new_agent_data.n_agents[time_index] += n_edges
+            new_agent_data.viz_types[time_index][start_i:end_i] = n_edges * [VIZ_TYPE.FIBER]
+            new_agent_data.types[time_index] += n_edges * ["edge"]
+            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_edges * [2.]
         new_agent_data.display_data = {
             "edge" : DisplayData(
                 name="edge",
@@ -954,7 +964,6 @@ class ActinVisualization:
         color: str = "",
         visualize_edges: bool = False,
         monomer_data: List[Dict[str, Any]] = None, 
-        times: np.ndarray = None,
         plots: List[Dict[str, Any]] = None
     ) -> TrajectoryData:
         """
@@ -1012,7 +1021,7 @@ class ActinVisualization:
         ])
         if visualize_edges:
             filtered_data = ActinVisualization._add_edge_agents(
-                filtered_data, monomer_data, times
+                filtered_data, monomer_data
             )
         return filtered_data
 

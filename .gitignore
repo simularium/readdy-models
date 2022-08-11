@@ -114,6 +114,7 @@ ENV/
 # Simularium
 *.simularium
 *.h5
+*.dat
 
 # outputs
 *_logs.txt

@@ -135,7 +135,6 @@ def main():
                 color=COLORS[color_index] if args.color_by_run else "",
                 visualize_edges=args.visualize_edges,
                 monomer_data=monomer_data,
-                times=times,
                 plots=plots,
             )
         )

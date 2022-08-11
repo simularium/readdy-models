@@ -1134,7 +1134,7 @@ class ReaddyUtil:
         the timestamps for each frame,
         and the reaction time increment in seconds
         """
-        if pickle_file_path is not None:
+        if pickle_file_path is not None and os.path.isfile(pickle_file_path):
             print("Loading pickle file for shaped data")
             import pickle
 
