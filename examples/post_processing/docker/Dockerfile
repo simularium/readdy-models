@@ -7,7 +7,7 @@ RUN conda env create -f env.yml
 SHELL ["conda", "run", "-n", "simularium_models", "/bin/bash", "-c"]
 
 COPY src/ .
-COPY microtubules.sh /microtubules.sh
-RUN chmod +x /microtubules.sh
+COPY post_processing.sh /post_processing.sh
+RUN chmod +x /post_processing.sh
 
-ENTRYPOINT /microtubules.sh
+ENTRYPOINT /post_processing.sh

@@ -9,7 +9,8 @@ with open("README.md") as readme_file:
     readme = readme_file.read()
 
 viz_requirements = [
-    "simulariumio>=1.4.0",
+    # "simulariumio>=1.4.0",
+    f"simulariumio @ file://localhost//Users/blairl/Documents/Dev/simulariumio#egg=simulariumio",
 ]
 
 setup_requirements = [

@@ -1,14 +1,14 @@
 {
-    "jobDefinitionName": "blairl_readdy-post-processing-v1-microtubules-scan-20220418",
+    "jobDefinitionName": "blairl_actin-post-processing-v1",
     "type": "container",
     "containerProperties": {
-        "image": "108503617402.dkr.ecr.us-west-2.amazonaws.com/blairl/readdy-post-processing",
+        "image": "108503617402.dkr.ecr.us-west-2.amazonaws.com/blairl/actin-post-processing",
         "vcpus": 4,
         "memory": 15000,
         "environment": [
             {"name": "SIMULATION_TYPE", "value": "AWS"},
             {"name": "S3_INPUT_URL", "value": "s3://readdy-working-bucket/"},
-            {"name": "PARAM_SET_NAME", "value": "microtubules_scan_growth_attach_20220418"}
+            {"name": "PARAM_SET_NAME", "value": "actin_twist_bend"}
         ],
         "jobRoleArn": "arn:aws:iam::108503617402:role/BatchJobRole"
     }
