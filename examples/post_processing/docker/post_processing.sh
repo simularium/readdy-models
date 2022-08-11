@@ -12,7 +12,7 @@ case ${SIMULATION_TYPE} in
 	;;
 esac
 S3_FILE_PATH="${S3_INPUT_URL}outputs/"
-FILE_NAME=""
+FILE_NAME="file"
 aws s3 cp $WORKING_FILE_PATH $S3_FILE_PATH --exclude "*" --include "${PARAM_SET_NAME}*.h5" --recursive --dryrun
 
 # Post-process files
