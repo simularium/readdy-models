@@ -10,7 +10,7 @@ with open("README.md") as readme_file:
 
 viz_requirements = [
     # "simulariumio>=1.4.0",
-    f"simulariumio @ file://localhost//Users/blairl/Documents/Dev/simulariumio#egg=simulariumio",
+    "simulariumio @ git+https://github.com/allen-cell-animated/simulariumio.git@fix/append-agents-with-subpoints"
 ]
 
 setup_requirements = [
