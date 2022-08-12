@@ -39,7 +39,7 @@ def main():
     )
     args = parser.parse_args()
     s3 = boto3.client('s3')
-    condition = EXPERIMENT_CONDITIONS[args.condition_index]
+    condition = EXPERIMENT_CONDITIONS[int(args.condition_index)]
     print(f"Re-processing {args.file_name}")
     if not os.path.exists("h5_files/"):
         os.mkdir("h5_files/")
