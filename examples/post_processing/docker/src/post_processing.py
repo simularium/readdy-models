@@ -5,7 +5,7 @@ import os
 import argparse
 import boto3
 
-from .visualize_actin import visualize_actin
+from visualize_actin import visualize_actin
 
 REPLICATES = 10
 
