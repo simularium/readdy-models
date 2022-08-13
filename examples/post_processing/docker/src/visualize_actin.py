@@ -3,9 +3,13 @@
 
 import os
 import argparse
+from matplotlib.pyplot import plot
 import numpy as np
+import copy
+from typing import Dict, Any, List
 
-from simularium_models_util.visualization import ActinVisualization
+from simularium_models_util.visualization import ActinVisualization, ACTIN_DISPLAY_DATA
+from simularium_models_util.actin import ActinAnalyzer
 
 
 COLORS = [
@@ -27,6 +31,86 @@ COLORS = [
     "#9f516c",
     "#00aabf",
 ]
+
+extra_radius = 1.5
+actin_radius = 2.0 + extra_radius
+arp23_radius = 2.0 + extra_radius
+cap_radius = 3.0 + extra_radius
+obstacle_radius = 35.0
+
+
+def get_suffix_and_display_data(
+    save_in_one_file: bool, 
+    path_to_readdy_h5: str = "", 
+    file_prefix: str = "",
+    flags_to_change: Dict[str,str] = None,
+    color: str = "",
+):
+    """
+    Rename agents with trajectory suffix if saving in one file
+    """
+    suffix = ""
+    if save_in_one_file:
+        suffix = os.path.basename(path_to_readdy_h5)
+        suffix = suffix[suffix.index(file_prefix) + len(file_prefix):]
+        suffix = os.path.splitext(suffix)[0]
+        suffix = suffix.replace("_", " ")
+        suffix = suffix.strip()
+        display_data = copy.deepcopy(ACTIN_DISPLAY_DATA)
+        for agent_type in display_data:
+            base_type = display_data[agent_type].name
+            state = ""
+            if "#" in base_type:
+                state = base_type[base_type.index('#') + 1:]
+                if flags_to_change is not None:
+                    for flag in flags_to_change:
+                        state = state.replace(flag, flags_to_change[flag])
+                state = state.replace("_", " ")
+                state = state.strip()
+                if len(state) > 0:
+                    state = ":" + state
+                base_type = base_type[:base_type.index('#')]
+            new_display_name = suffix + "#" + base_type + state
+            display_data[agent_type].name = new_display_name
+            if color:
+                display_data[agent_type].color = color
+    else:
+        display_data = ACTIN_DISPLAY_DATA
+    return suffix, display_data
+
+
+def combine_plots(
+    plots: Dict[str,Dict[str,Any]], 
+    exclude_trace_keywords: List[str] = None
+) -> Dict[str,Any]:
+    """
+    Combine the plots from multiple runs
+    """
+    if exclude_trace_keywords is None:
+        exclude_trace_keywords = []
+    result = {}
+    for run_name in plots:
+        for plot_type in plots[run_name]:
+            if plot_type not in result:
+                result[plot_type] = {}
+            for plot_index in range(len(plots[run_name][plot_type])):
+                plot = plots[run_name][plot_type][plot_index]
+                if plot.title not in result[plot_type]:
+                    result[plot_type][plot.title] = copy.deepcopy(plot)
+                    result[plot_type][plot.title].ytraces = {}
+                for y_trace_name in plot.ytraces:
+                    skip = False
+                    for keyword in exclude_trace_keywords:
+                        if keyword in y_trace_name:
+                            skip = True
+                            break
+                    if skip:
+                        continue
+                    new_trace_name = f"{run_name} : {y_trace_name}"
+                    result[plot_type][plot.title].ytraces[new_trace_name] = copy.copy(plot.ytraces[y_trace_name])
+    for plot_type in result:
+        result[plot_type] = [plot for _, plot in result[plot_type].items()]
+    return result
     
 
 def visualize_actin(
@@ -51,11 +135,12 @@ def visualize_actin(
         os.mkdir("outputs/")
     box_size = np.array(3 * [float(box_size)])
     trajectory_datas = []
+    color_index = 0
+    plots = {}
     for file in os.listdir(dir_path):
-        color_index = 0
         if not file.endswith(".h5"):
             continue
-        file_path = os.path.join("outputs/", file)
+        file_path = os.path.join(dir_path, file)
         print(f"visualize {file_path}")
         if plot_polymerization or plot_bend_twist or visualize_edges or visualize_normals:
             (
@@ -66,50 +151,68 @@ def visualize_actin(
                 h5_file_path=file_path,
                 reactions=plot_polymerization,
             )
-        plots = None
+            if plot_bend_twist or visualize_normals:
+                normals, axis_positions = ActinAnalyzer.get_normals_and_axis_positions(
+                    monomer_data, box_size, periodic_boundary
+                )
+        traj_plots = None
         if plot_polymerization:
             print("plot polymerization")
-            plots = ActinVisualization.generate_polymerization_plots(
-                monomer_data, times, reactions, box_size, 10, periodic_boundary
+            traj_plots = ActinVisualization.generate_polymerization_plots(
+                monomer_data, times, reactions, box_size, periodic_boundary, traj_plots
             )
         if plot_bend_twist:
             print("plot bend twist")
-            plots = ActinVisualization.generate_bend_twist_plots(
-                monomer_data, times, box_size, 10, periodic_boundary
+            traj_plots = ActinVisualization.generate_bend_twist_plots(
+                monomer_data, times, box_size, normals, axis_positions, periodic_boundary, traj_plots
             )
+        color = COLORS[color_index] if color_by_run else ""
+        suffix, display_data = get_suffix_and_display_data(
+            save_in_one_file=save_in_one_file,
+            path_to_readdy_h5=file_path,
+            file_prefix=experiment_name,
+            flags_to_change={
+                "pointed" : "P",
+                "barbed" : "B",
+                "mid" : "",
+                "ATP" : "",
+            },
+            color=color,
+        )
         trajectory_datas.append(
             ActinVisualization.visualize_actin(
                 path_to_readdy_h5=file_path,
                 box_size=box_size,
                 total_steps=total_steps,
-                save_in_one_file=save_in_one_file,
-                file_prefix=experiment_name,
-                flags_to_change={
-                    "pointed" : "P",
-                    "barbed" : "B",
-                    "mid" : "",
-                    "ATP" : "",
-                },
-                color=COLORS[color_index] if color_by_run else "",
+                suffix=suffix,
+                display_data=display_data,
+                color=color,
                 visualize_edges=visualize_edges,
                 visualize_normals=visualize_normals,
                 monomer_data=monomer_data,
-                plots=plots,
+                normals=normals, 
+                axis_positions=axis_positions,
+                plots=traj_plots if not save_in_one_file else None,
             )
         )
-        if not save_in_one_file:
+        if save_in_one_file:
+            plots[suffix] = traj_plots
+        else:
             ActinVisualization.save_actin(
                 [trajectory_datas[len(trajectory_datas) - 1]],
-                file_path
+                os.path.join("outputs/", file)
             )
         color_index += 1
         if color_index >= len(COLORS):
             color_index = 0
     if save_in_one_file:
         print("Saving in one file")
+        exclude_y_trace_keywords = ["Start", "Mid", "+ std", "- std"] if plot_bend_twist else []
+        combo_plots = combine_plots(plots, exclude_y_trace_keywords)
         ActinVisualization.save_actin(
             trajectory_datas,
-            os.path.join("outputs/", f"{experiment_name}_combination")
+            os.path.join("outputs/", f"{experiment_name}_combo"),
+            combo_plots,
         )
 
 def main():

@@ -910,7 +910,7 @@ class ActinAnalyzer:
 
     @staticmethod
     def analyze_total_twist(
-        monomer_data, box_size, periodic_boundary
+        monomer_data, normals, axis_positions, stride=1
     ):
         """
         Get the total twist from monomer normal to monomer normal
@@ -919,34 +919,33 @@ class ActinAnalyzer:
         total_twist = []
         total_twist_no_bend = []
         filament_positions = []
-        normals, axis_positions = ActinAnalyzer.get_normals_and_axis_positions(
-            monomer_data, box_size, periodic_boundary
-        )
-        for t in range(len(monomer_data)):
+        new_t = 0
+        for t in range(0, len(monomer_data), stride):
             total_twist.append([])
             total_twist_no_bend.append([])
             filament_positions.append([])
-            for index in range(len(normals) - 2):
-                tangent = axis_positions[index + 2] - axis_positions[index]
+            for index in range(len(normals[t]) - 2):
+                tangent = axis_positions[t][index + 2] - axis_positions[t][index]
                 normal1 = ReaddyUtil.get_perpendicular_components_of_vector(
-                    normals[index], tangent
+                    normals[t][index], tangent
                 )
                 normal2 = ReaddyUtil.get_perpendicular_components_of_vector(
-                    normals[index + 2], tangent
+                    normals[t][index + 2], tangent
                 )
                 total_angle_no_bend = ReaddyUtil.get_angle_between_vectors(
                     normal1, normal2, in_degrees=True
                 )
                 total_angle = ReaddyUtil.get_angle_between_vectors(
-                    normals[index], normals[index + 2], in_degrees=True
+                    normals[t][index], normals[t][index + 2], in_degrees=True
                 )
-                total_twist[t].append(total_angle / (2 * 360.0))
-                total_twist_no_bend[t].append(total_angle_no_bend / (2 * 360.0))
-                filament_positions[t].append(index)
+                total_twist[new_t].append(total_angle / (2 * 360.0))
+                total_twist_no_bend[new_t].append(total_angle_no_bend / (2 * 360.0))
+                filament_positions[new_t].append(index)
+            new_t += 1
         return np.array(total_twist), np.array(total_twist_no_bend), np.array(filament_positions)
 
     @staticmethod
-    def analyze_bond_lengths(monomer_data, box_size, periodic_boundary):
+    def analyze_bond_lengths(monomer_data, box_size, periodic_boundary, stride=1):
         """
         Get the distance between bonds along the first mother filament,
         normalized to the ideal distance,
@@ -961,7 +960,8 @@ class ActinAnalyzer:
         ideal_length_long = np.linalg.norm(
             ActinStructure.mother_positions[2] - ActinStructure.mother_positions[0]
         )
-        for t in range(len(monomer_data)):
+        new_t = 0
+        for t in range(0, len(monomer_data), stride):
             lengths_lat.append([])
             lengths_long.append([])
             filament_positions.append([])
@@ -979,7 +979,8 @@ class ActinAnalyzer:
                     pos_long = ReaddyUtil.get_non_periodic_boundary_position(
                         pos, pos_long, box_size
                     )
-                lengths_lat[t].append(np.linalg.norm(pos_lat - pos) / ideal_length_lat)
-                lengths_long[t].append(np.linalg.norm(pos_long - pos) / ideal_length_long)
-                filament_positions[t].append(index)
+                lengths_lat[new_t].append(np.linalg.norm(pos_lat - pos) / ideal_length_lat)
+                lengths_long[new_t].append(np.linalg.norm(pos_long - pos) / ideal_length_long)
+                filament_positions[new_t].append(index)
+            new_t += 1
         return np.array(lengths_lat), np.array(lengths_long), np.array(filament_positions)

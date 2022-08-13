@@ -2,10 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import argparse
-from shutil import rmtree
-import uuid
 
 import numpy as np
 import pandas
@@ -13,13 +10,13 @@ import psutil
 
 from simularium_models_util.actin import (
     FiberData,
-    ArpData,
     ActinSimulation,
     ActinGenerator,
     ActinTestData,
+    ActinAnalyzer,
 )
-from simularium_models_util.visualization import ActinVisualization
-from simularium_models_util import RepeatedTimer, ReaddyUtil
+from simularium_models_util.visualization import ActinVisualization, ACTIN_DISPLAY_DATA
+from simularium_models_util import ReaddyUtil
 
 
 def report_hardware_usage():
@@ -86,42 +83,65 @@ def main():
                 ActinTestData.simple_branched_actin_fiber(), use_uuids=False
             )
         )
-    rt = RepeatedTimer(300, report_hardware_usage)  # every 5 min
-    try:
-        actin_simulation.simulation.run(
-            int(parameters["total_steps"]), parameters["internal_timestep"]
+    actin_simulation.simulation.run(
+        int(parameters["total_steps"]), parameters["internal_timestep"]
+    )
+    report_hardware_usage()
+    monomer_data = None
+    times = None
+    reactions = None
+    normals = None 
+    axis_positions = None
+    if (
+        parameters["plot_polymerization"] 
+        or parameters["plot_bend_twist"] 
+        or parameters["visualize_edges"] 
+        or parameters["visualize_normals"]):
+        (
+            monomer_data,
+            times,
+            reactions,
+        ) = ActinVisualization.shape_readdy_data_for_analysis(
+            h5_file_path=parameters["name"] + ".h5",
+            reactions=parameters["plot_polymerization"],
         )
-        try:
-            plots = None
-            if parameters["plot_polymerization"]:
-                plots = ActinVisualization.generate_polymerization_plots(
-                    parameters["name"] + ".h5",
-                    parameters["box_size"],
-                    10,
-                    parameters["periodic_boundary"],
-                    plots,
-                )
-            if parameters["plot_bend_twist"]:
-                plots = ActinVisualization.generate_bend_twist_plots(
-                    parameters["name"] + ".h5",
-                    parameters["box_size"],
-                    10,
-                    parameters["periodic_boundary"],
-                    plots,
-                )
-            ActinVisualization.visualize_actin(
-                parameters["name"] + ".h5",
-                parameters["box_size"],
-                parameters["total_steps"],
-                plots,
+        if parameters["plot_bend_twist"] or parameters["visualize_normals"]:
+            normals, axis_positions = ActinAnalyzer.get_normals_and_axis_positions(
+                monomer_data, parameters["box_size"], parameters["periodic_boundary"]
             )
-        except Exception as e:
-            print("Failed viz!!!!!!!!!!\n" + str(type(e)) + " " + str(e))
-            report_hardware_usage()
-            sys.exit(88888888)
-    finally:
-        rt.stop()
-    sys.exit(0)
+    plots = None
+    if parameters["plot_polymerization"]:
+        print("plot polymerization")
+        plots = ActinVisualization.generate_polymerization_plots(
+            monomer_data,
+            times,
+            reactions,
+            parameters["box_size"],
+            parameters["periodic_boundary"],
+            plots,
+        )
+    if parameters["plot_bend_twist"]:
+        plots = ActinVisualization.generate_bend_twist_plots(
+            monomer_data,
+            times,
+            parameters["box_size"],
+            normals,
+            axis_positions,
+            parameters["periodic_boundary"],
+            plots,
+        )
+    ActinVisualization.visualize_actin(
+        path_to_readdy_h5=parameters["name"] + ".h5",
+        box_size=parameters["box_size"],
+        total_steps=parameters["total_steps"],
+        display_data=ACTIN_DISPLAY_DATA,
+        visualize_edges=parameters["visualize_edges"],
+        visualize_normals=parameters["visualize_normals"],
+        monomer_data=monomer_data,
+        normals=normals,
+        axis_positions=axis_positions,
+        plots=plots,
+    )
 
 
 if __name__ == "__main__":
