@@ -130,7 +130,7 @@ def main():
             parameters["periodic_boundary"],
             plots,
         )
-    ActinVisualization.visualize_actin(
+    traj_data = ActinVisualization.visualize_actin(
         path_to_readdy_h5=parameters["name"] + ".h5",
         box_size=parameters["box_size"],
         total_steps=parameters["total_steps"],
@@ -141,6 +141,11 @@ def main():
         normals=normals,
         axis_positions=axis_positions,
         plots=plots,
+    )
+    ActinVisualization.save_actin(
+        trajectory_datas=[traj_data],
+        output_path=parameters["name"] + ".h5",
+        plots=traj_data.plots,
     )
 
 

@@ -200,7 +200,8 @@ def visualize_actin(
         else:
             ActinVisualization.save_actin(
                 [trajectory_datas[len(trajectory_datas) - 1]],
-                os.path.join("outputs/", file)
+                os.path.join("outputs/", file),
+                traj_plots,
             )
         color_index += 1
         if color_index >= len(COLORS):
