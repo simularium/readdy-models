@@ -773,7 +773,11 @@ class ActinGenerator:
 
     @staticmethod
     def get_monomers(
-        fibers_data, child_box_center=None, child_box_size=None, use_uuids=True, start_normal=None,
+        fibers_data,
+        child_box_center=None,
+        child_box_size=None,
+        use_uuids=True,
+        start_normal=None,
     ):
         """
         get all the monomer data for the (branched) fibers in fibers_data

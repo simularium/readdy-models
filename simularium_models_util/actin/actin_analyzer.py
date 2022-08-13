@@ -321,9 +321,7 @@ class ActinAnalyzer:
         """
         result = []
         for t in range(len(monomer_data)):
-            mother_filaments = ActinAnalyzer._frame_mother_filaments(
-                monomer_data[t]
-            )
+            mother_filaments = ActinAnalyzer._frame_mother_filaments(monomer_data[t])
             result.append([])
             for filament in mother_filaments:
                 result[t].append(len(filament))
@@ -872,25 +870,27 @@ class ActinAnalyzer:
         return np.array(result)
 
     @staticmethod
-    def get_normals_and_axis_positions(
-        monomer_data, box_size, periodic_boundary
-    ):
+    def get_normals_and_axis_positions(monomer_data, box_size, periodic_boundary):
         """
-        Get the normal vector and axis position 
-        for each filamentous actin monomer (except ends) 
+        Get the normal vector and axis position
+        for each filamentous actin monomer (except ends)
         at each timestep
         """
         total_steps = len(monomer_data)
         normals = [[] for t in range(total_steps)]
         axis_positions = [[] for t in range(total_steps)]
         for time_index in range(total_steps):
-            filaments = ActinAnalyzer._frame_all_filaments(
-                monomer_data[time_index]
-            )
+            filaments = ActinAnalyzer._frame_all_filaments(monomer_data[time_index])
             for filament in filaments:
                 for index in range(1, len(filament) - 1):
-                    position = monomer_data[time_index]["particles"][filament[index]]["position"]
-                    actin_ids = [filament[index - 1], filament[index], filament[index + 1]]
+                    position = monomer_data[time_index]["particles"][filament[index]][
+                        "position"
+                    ]
+                    actin_ids = [
+                        filament[index - 1],
+                        filament[index],
+                        filament[index + 1],
+                    ]
                     axis_pos = ActinAnalyzer._get_axis_position_for_actin(
                         monomer_data[time_index], actin_ids, box_size, periodic_boundary
                     )
@@ -904,14 +904,13 @@ class ActinAnalyzer:
                             position, axis_pos, box_size
                         )
                     axis_positions[time_index].append(axis_pos)
-                    normals[time_index].append(ReaddyUtil.normalize(position - axis_pos))
+                    normals[time_index].append(
+                        ReaddyUtil.normalize(position - axis_pos)
+                    )
         return normals, axis_positions
 
-
     @staticmethod
-    def analyze_total_twist(
-        monomer_data, normals, axis_positions, stride=1
-    ):
+    def analyze_total_twist(monomer_data, normals, axis_positions, stride=1):
         """
         Get the total twist from monomer normal to monomer normal
         along the first mother filament in degrees
@@ -942,7 +941,11 @@ class ActinAnalyzer:
                 total_twist_no_bend[new_t].append(total_angle_no_bend / (2 * 360.0))
                 filament_positions[new_t].append(index)
             new_t += 1
-        return np.array(total_twist), np.array(total_twist_no_bend), np.array(filament_positions)
+        return (
+            np.array(total_twist),
+            np.array(total_twist_no_bend),
+            np.array(filament_positions),
+        )
 
     @staticmethod
     def analyze_bond_lengths(monomer_data, box_size, periodic_boundary, stride=1):
@@ -965,9 +968,7 @@ class ActinAnalyzer:
             lengths_lat.append([])
             lengths_long.append([])
             filament_positions.append([])
-            filament = ActinAnalyzer._frame_mother_filaments(
-                monomer_data[t]
-            )[0]
+            filament = ActinAnalyzer._frame_mother_filaments(monomer_data[t])[0]
             for index in range(len(filament) - 2):
                 pos = monomer_data[t]["particles"][filament[index]]["position"]
                 pos_lat = monomer_data[t]["particles"][filament[index + 1]]["position"]
@@ -979,8 +980,16 @@ class ActinAnalyzer:
                     pos_long = ReaddyUtil.get_non_periodic_boundary_position(
                         pos, pos_long, box_size
                     )
-                lengths_lat[new_t].append(np.linalg.norm(pos_lat - pos) / ideal_length_lat)
-                lengths_long[new_t].append(np.linalg.norm(pos_long - pos) / ideal_length_long)
+                lengths_lat[new_t].append(
+                    np.linalg.norm(pos_lat - pos) / ideal_length_lat
+                )
+                lengths_long[new_t].append(
+                    np.linalg.norm(pos_long - pos) / ideal_length_long
+                )
                 filament_positions[new_t].append(index)
             new_t += 1
-        return np.array(lengths_lat), np.array(lengths_long), np.array(filament_positions)
+        return (
+            np.array(lengths_lat),
+            np.array(lengths_long),
+            np.array(filament_positions),
+        )

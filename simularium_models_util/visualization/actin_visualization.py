@@ -54,7 +54,7 @@ STRUCTURAL_RXNS = [
     "Bind ATP (arp2/3)",
 ]
 
-extra_radius = 0.
+extra_radius = 0.0
 actin_radius = 2.0 + extra_radius
 arp23_radius = 2.0 + extra_radius
 cap_radius = 3.0 + extra_radius
@@ -473,10 +473,12 @@ class ActinVisualization:
 
     @staticmethod
     def shape_readdy_data_for_analysis(
-        h5_file_path, stride=1, reactions=False,
+        h5_file_path,
+        stride=1,
+        reactions=False,
     ):
         """
-        Load a file from ReaDDy 
+        Load a file from ReaDDy
         and shape monomer and reactions data from it
         """
         (
@@ -746,7 +748,7 @@ class ActinVisualization:
         return plots
 
     @staticmethod
-    def get_total_twist_plot(total_twist_raw, total_twist_remove_bend_raw, times, ):
+    def get_total_twist_plot(total_twist_raw, total_twist_remove_bend_raw, times):
         """
         Add a plot of total twist vs end displacement
         """
@@ -769,17 +771,21 @@ class ActinVisualization:
             xtrace=times[::STRIDE],
             ytraces={
                 "Total twist (degrees)": np.array(total_twist[::STRIDE]),
-                "Total twist excluding bend (degrees)": np.array(total_twist_remove_bend[::STRIDE]),
+                "Total twist excluding bend (degrees)": np.array(
+                    total_twist_remove_bend[::STRIDE]
+                ),
             },
             render_mode="lines",
         )
 
     @staticmethod
-    def get_twist_per_monomer_plot(total_twist, total_twist_remove_bend, filament_positions):
+    def get_twist_per_monomer_plot(
+        total_twist, total_twist_remove_bend, filament_positions
+    ):
         """
         Add a plot of twist vs position of the monomer in filament
         """
-        mid_time = int(len(total_twist) / 2.)
+        mid_time = int(len(total_twist) / 2.0)
         end_time = len(total_twist) - 1
         return ScatterPlotData(
             title="Twist per monomer",
@@ -790,24 +796,40 @@ class ActinVisualization:
                 "Total twist (degrees) Start": total_twist[0],
                 "Total twist (degrees) Mid": total_twist[mid_time],
                 "Total twist (degrees) End": total_twist[end_time],
-                "Total twist excluding bend (degrees) Start": total_twist_remove_bend[0],
-                "Total twist excluding bend (degrees) Mid": total_twist_remove_bend[mid_time],
-                "Total twist excluding bend (degrees) End": total_twist_remove_bend[end_time],
+                "Total twist excluding bend (degrees) Start": total_twist_remove_bend[
+                    0
+                ],
+                "Total twist excluding bend (degrees) Mid": total_twist_remove_bend[
+                    mid_time
+                ],
+                "Total twist excluding bend (degrees) End": total_twist_remove_bend[
+                    end_time
+                ],
             },
             render_mode="lines",
         )
 
     @staticmethod
-    def get_total_bond_length_plot(lateral_bond_lengths, longitudinal_bond_lengths, times):
+    def get_total_bond_length_plot(
+        lateral_bond_lengths, longitudinal_bond_lengths, times
+    ):
         """
         Add a plot of bond lengths (lat and long) vs end displacement
         (normalize bond lengths relative to theoretical lengths, plot average ± std)
         """
         STRIDE = 10
-        mean_lat = ActinAnalyzer.analyze_average_for_series(lateral_bond_lengths)[::STRIDE]
-        stddev_lat = ActinAnalyzer.analyze_stddev_for_series(lateral_bond_lengths)[::STRIDE]
-        mean_long = ActinAnalyzer.analyze_average_for_series(longitudinal_bond_lengths)[::STRIDE]
-        stddev_long = ActinAnalyzer.analyze_stddev_for_series(longitudinal_bond_lengths)[::STRIDE]
+        mean_lat = ActinAnalyzer.analyze_average_for_series(lateral_bond_lengths)[
+            ::STRIDE
+        ]
+        stddev_lat = ActinAnalyzer.analyze_stddev_for_series(lateral_bond_lengths)[
+            ::STRIDE
+        ]
+        mean_long = ActinAnalyzer.analyze_average_for_series(longitudinal_bond_lengths)[
+            ::STRIDE
+        ]
+        stddev_long = ActinAnalyzer.analyze_stddev_for_series(
+            longitudinal_bond_lengths
+        )[::STRIDE]
         return ScatterPlotData(
             title="Mean Bond lengths",
             xaxis_title="T (μs)",
@@ -825,12 +847,14 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_bond_length_per_monomer_plot(lateral_bond_lengths, longitudinal_bond_lengths, filament_positions):
+    def get_bond_length_per_monomer_plot(
+        lateral_bond_lengths, longitudinal_bond_lengths, filament_positions
+    ):
         """
         Add a plot of bond lengths (lat and long) vs position of monomer in filament
         normalize bond lengths relative to theoretical lengths
         """
-        mid_time = int(len(lateral_bond_lengths) / 2.)
+        mid_time = int(len(lateral_bond_lengths) / 2.0)
         end_time = len(lateral_bond_lengths) - 1
         return ScatterPlotData(
             title="Bond lengths per monomer",
@@ -850,13 +874,13 @@ class ActinVisualization:
 
     @staticmethod
     def generate_bend_twist_plots(
-       monomer_data, 
-       times, 
-       box_size, 
-       normals, 
-       axis_positions, 
-       periodic_boundary=True,
-       plots=None,
+        monomer_data,
+        times,
+        box_size,
+        normals,
+        axis_positions,
+        periodic_boundary=True,
+        plots=None,
     ):
         """
         Use an ActinAnalyzer to generate plots of observables
@@ -867,15 +891,23 @@ class ActinVisualization:
                 "scatter": [],
                 "histogram": [],
             }
-        total_twist, total_twist_remove_bend, filament_positions1 = ActinAnalyzer.analyze_total_twist(
-            monomer_data, normals, axis_positions
-        )
-        lateral_bond_lengths, longitudinal_bond_lengths, filament_positions2 = ActinAnalyzer.analyze_bond_lengths(
+        (
+            total_twist,
+            total_twist_remove_bend,
+            filament_positions1,
+        ) = ActinAnalyzer.analyze_total_twist(monomer_data, normals, axis_positions)
+        (
+            lateral_bond_lengths,
+            longitudinal_bond_lengths,
+            filament_positions2,
+        ) = ActinAnalyzer.analyze_bond_lengths(
             monomer_data, box_size, periodic_boundary
         )
         plots["scatter"] += [
             ActinVisualization.get_total_twist_plot(
-                total_twist, total_twist_remove_bend, times,
+                total_twist,
+                total_twist_remove_bend,
+                times,
             ),
             ActinVisualization.get_twist_per_monomer_plot(
                 total_twist, total_twist_remove_bend, filament_positions1
@@ -888,10 +920,10 @@ class ActinVisualization:
             ),
         ]
         return plots
-    
+
     @staticmethod
     def _get_added_dimensions_for_lines(
-        traj_data: TrajectoryData, 
+        traj_data: TrajectoryData,
         max_agents: int,
     ) -> DimensionData:
         """
@@ -904,12 +936,12 @@ class ActinVisualization:
             max_agents=max_agents,
             max_subpoints=2 - current_dimensions.max_subpoints,
         )
-    
+
     @staticmethod
     def _add_normal_agents(
-        traj_data: TrajectoryData, 
-        monomer_data: List[Dict[str,Any]],
-        normals, 
+        traj_data: TrajectoryData,
+        monomer_data: List[Dict[str, Any]],
+        normals,
         axis_positions,
         type_name: str,
         color: str = "",
@@ -926,8 +958,12 @@ class ActinVisualization:
             n_normals = len(normals[time_index])
             if n_normals > max_normals:
                 max_normals = n_normals
-        dimensions = traj_data._get_added_dimensions(DimensionData(total_steps, max_normals, 2))
-        new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(dimensions)
+        dimensions = traj_data._get_added_dimensions(
+            DimensionData(total_steps, max_normals, 2)
+        )
+        new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(
+            dimensions
+        )
         new_type_name = f"{type_name}#normal" if type_name else "normal"
         # add new agents
         print("Processing normals...")
@@ -937,17 +973,24 @@ class ActinVisualization:
             n_normals = len(normals[time_index])
             for index in range(n_normals):
                 agent_index = start_i + index
-                new_agent_data.unique_ids[time_index][agent_index] = max_used_uid + index + 1
-                new_agent_data.subpoints[time_index][agent_index] = np.array([
-                    axis_positions[time_index][index], 
-                    axis_positions[time_index][index] + 10 * normals[time_index][index],
-                ])
+                new_agent_data.unique_ids[time_index][agent_index] = (
+                    max_used_uid + index + 1
+                )
+                new_agent_data.subpoints[time_index][agent_index] = np.array(
+                    [
+                        axis_positions[time_index][index],
+                        axis_positions[time_index][index]
+                        + 10 * normals[time_index][index],
+                    ]
+                )
             end_i = start_i + n_normals
             new_agent_data.n_agents[time_index] += n_normals
-            new_agent_data.viz_types[time_index][start_i:end_i] = n_normals * [VIZ_TYPE.FIBER]
+            new_agent_data.viz_types[time_index][start_i:end_i] = n_normals * [
+                VIZ_TYPE.FIBER
+            ]
             new_agent_data.types[time_index] += n_normals * [new_type_name]
             new_agent_data.radii[time_index][start_i:end_i] = n_normals * [0.5]
-            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_normals * [2.]
+            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_normals * [2.0]
         new_agent_data.display_data[new_type_name] = DisplayData(
             name=new_type_name,
             display_type=DISPLAY_TYPE.FIBER,
@@ -955,11 +998,11 @@ class ActinVisualization:
         )
         traj_data.agent_data = new_agent_data
         return traj_data
-    
+
     @staticmethod
     def _add_edge_agents(
-        traj_data: TrajectoryData, 
-        monomer_data: List[Dict[str,Any]],
+        traj_data: TrajectoryData,
+        monomer_data: List[Dict[str, Any]],
         type_name: str,
         color: str = "",
     ) -> TrajectoryData:
@@ -978,8 +1021,12 @@ class ActinVisualization:
                 n_edges += len(particle["neighbor_ids"])
             if n_edges > max_edges:
                 max_edges = n_edges
-        dimensions = ActinVisualization._get_added_dimensions_for_lines(traj_data, max_edges)
-        new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(dimensions)
+        dimensions = ActinVisualization._get_added_dimensions_for_lines(
+            traj_data, max_edges
+        )
+        new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(
+            dimensions
+        )
         new_type_name = f"{type_name}#edge" if type_name else "edge"
         # add new agents
         print("Processing edges...")
@@ -996,16 +1043,20 @@ class ActinVisualization:
                     neighbor = monomer_data[time_index]["particles"][neighbor_id]
                     positions = np.array([particle["position"], neighbor["position"]])
                     agent_index = start_i + n_edges
-                    new_agent_data.unique_ids[time_index][agent_index] = max_used_uid + n_edges
+                    new_agent_data.unique_ids[time_index][agent_index] = (
+                        max_used_uid + n_edges
+                    )
                     new_agent_data.subpoints[time_index][agent_index] = positions
                     existing_edges.append((neighbor_id, particle_id))
                     n_edges += 1
             end_i = start_i + n_edges
             new_agent_data.n_agents[time_index] += n_edges
-            new_agent_data.viz_types[time_index][start_i:end_i] = n_edges * [VIZ_TYPE.FIBER]
+            new_agent_data.viz_types[time_index][start_i:end_i] = n_edges * [
+                VIZ_TYPE.FIBER
+            ]
             new_agent_data.types[time_index] += n_edges * [new_type_name]
             new_agent_data.radii[time_index][start_i:end_i] = n_edges * [0.5]
-            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_edges * [2.]
+            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_edges * [2.0]
         new_agent_data.display_data[new_type_name] = DisplayData(
             name=new_type_name,
             display_type=DISPLAY_TYPE.FIBER,
@@ -1013,22 +1064,21 @@ class ActinVisualization:
         )
         traj_data.agent_data = new_agent_data
         return traj_data
-        
 
     @staticmethod
     def visualize_actin(
-        path_to_readdy_h5: str, 
-        box_size: np.ndarray, 
-        total_steps: int,  
+        path_to_readdy_h5: str,
+        box_size: np.ndarray,
+        total_steps: int,
         suffix: str = "",
-        display_data: Dict[str,DisplayData] = None,
+        display_data: Dict[str, DisplayData] = None,
         color: str = "",
         visualize_edges: bool = False,
         visualize_normals: bool = False,
-        monomer_data: List[Dict[str, Any]] = None, 
-        normals: List[np.ndarray] = None, 
+        monomer_data: List[Dict[str, Any]] = None,
+        normals: List[np.ndarray] = None,
         axis_positions: List[np.ndarray] = None,
-        plots: List[Dict[str, Any]] = None
+        plots: List[Dict[str, Any]] = None,
     ) -> TrajectoryData:
         """
         visualize an actin trajectory in Simularium
@@ -1041,9 +1091,9 @@ class ActinVisualization:
             meta_data=MetaData(
                 box_size=box_size,
                 camera_defaults=CameraData(
-                    position=np.array([0., 0., 300.]),
+                    position=np.array([0.0, 0.0, 300.0]),
                     look_at_position=np.zeros(3),
-                    up_vector=np.array([0., 1., 0.]),
+                    up_vector=np.array([0.0, 1.0, 0.0]),
                     fov_degrees=120.0,
                 ),
             ),
@@ -1056,12 +1106,14 @@ class ActinVisualization:
             for plot_type in plots:
                 for plot in plots[plot_type]:
                     converter.add_plot(plot, plot_type)
-        filtered_data = converter.filter_data([
-            MultiplyTimeFilter(
-                multiplier=1e-3,
-                apply_to_plots=False,
-            )
-        ])
+        filtered_data = converter.filter_data(
+            [
+                MultiplyTimeFilter(
+                    multiplier=1e-3,
+                    apply_to_plots=False,
+                )
+            ]
+        )
         if visualize_edges:
             filtered_data = ActinVisualization._add_edge_agents(
                 filtered_data, monomer_data, suffix, color
@@ -1075,7 +1127,7 @@ class ActinVisualization:
     @staticmethod
     def save_actin(
         trajectory_datas: List[TrajectoryData],
-        output_path: str, 
+        output_path: str,
         plots: List[Dict[str, Any]] = None,
     ):
         """
@@ -1083,11 +1135,13 @@ class ActinVisualization:
         """
         traj_data = trajectory_datas[0]
         for index in range(1, len(trajectory_datas)):
-            traj_data = TrajectoryConverter(traj_data).filter_data([
-                AddAgentsFilter(
-                    new_agent_data=trajectory_datas[index].agent_data,
-                )
-            ])
+            traj_data = TrajectoryConverter(traj_data).filter_data(
+                [
+                    AddAgentsFilter(
+                        new_agent_data=trajectory_datas[index].agent_data,
+                    )
+                ]
+            )
         converter = TrajectoryConverter(traj_data)
         if plots is not None:
             for plot_type in plots:

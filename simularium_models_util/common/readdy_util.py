@@ -1305,7 +1305,7 @@ class ReaddyUtil:
             [last_particle_id] if last_particle_id is not None else [],
             exact_match=exact_match,
         )
-        
+
         if n_id is None:
             return result
         result.append(n_id)
