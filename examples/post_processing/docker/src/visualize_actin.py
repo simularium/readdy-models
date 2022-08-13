@@ -32,12 +32,6 @@ COLORS = [
     "#00aabf",
 ]
 
-extra_radius = 1.5
-actin_radius = 2.0 + extra_radius
-arp23_radius = 2.0 + extra_radius
-cap_radius = 3.0 + extra_radius
-obstacle_radius = 35.0
-
 
 def get_suffix_and_display_data(
     save_in_one_file: bool, 

@@ -67,8 +67,8 @@ def main():
             FiberData(
                 28,
                 [
-                    np.array([-75, 0, 0]),
-                    np.array([75, 0, 0]),
+                    np.array([-250, 0, 0]),
+                    np.array([250, 0, 0]),
                 ],
                 "Actin-Polymer",
             )

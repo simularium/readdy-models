@@ -53,6 +53,12 @@ STRUCTURAL_RXNS = [
     "Bind ATP (arp2/3)",
 ]
 
+extra_radius = 1.5
+actin_radius = 2.0 + extra_radius
+arp23_radius = 2.0 + extra_radius
+cap_radius = 3.0 + extra_radius
+obstacle_radius = 35.0
+
 ACTIN_DISPLAY_DATA = {
     "arp2": DisplayData(
         name="arp2",
