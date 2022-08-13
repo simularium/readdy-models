@@ -205,6 +205,13 @@ class ActinGenerator:
                 np.linalg.norm(axis_pos - fiber_points[i + 1])
                 >= ActinStructure.actin_to_actin_axis_distance
             ):
+                new_particle_id = ActinGenerator.get_next_monomer_id()
+                particle_ids.append(new_particle_id)
+                particles[new_particle_id] = ParticleData(
+                    unique_id=new_particle_id,
+                    position=axis_pos + actin_offset_from_axis * normal + offset_vector,
+                    neighbor_ids=[],
+                )
                 axis_pos += (
                     ActinStructure.actin_to_actin_axis_distance
                     * direction
@@ -214,13 +221,6 @@ class ActinGenerator:
                     normal,
                     fiber_tangents[i],
                     direction * ActinStructure.actin_to_actin_axis_angle(),
-                )
-                new_particle_id = ActinGenerator.get_next_monomer_id()
-                particle_ids.append(new_particle_id)
-                particles[new_particle_id] = ParticleData(
-                    unique_id=new_particle_id,
-                    position=axis_pos + actin_offset_from_axis * normal + offset_vector,
-                    neighbor_ids=[],
                 )
         # get actin types and edges
         actin_number = pointed_actin_number
@@ -773,7 +773,7 @@ class ActinGenerator:
 
     @staticmethod
     def get_monomers(
-        fibers_data, child_box_center=None, child_box_size=None, use_uuids=True
+        fibers_data, child_box_center=None, child_box_size=None, use_uuids=True, start_normal=None,
     ):
         """
         get all the monomer data for the (branched) fibers in fibers_data
@@ -797,11 +797,15 @@ class ActinGenerator:
         else:
             cropped_fiber_data = fibers_data
         for fiber in cropped_fiber_data:
+            if start_normal is None:
+                normal = ReaddyUtil.get_random_perpendicular_vector(
+                    fiber.get_first_segment_direction()
+                )
+            else:
+                normal = start_normal
             particles, particle_ids = ActinGenerator.get_monomers_for_fiber(
                 fiber,
-                ReaddyUtil.get_random_perpendicular_vector(
-                    fiber.get_first_segment_direction()
-                ),
+                normal,
                 fiber.pointed_point(),
                 np.zeros(3),
                 1,

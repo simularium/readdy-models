@@ -14,6 +14,7 @@ from simulariumio import (
     DISPLAY_TYPE,
     TrajectoryData,
     DimensionData,
+    CameraData,
 )
 from simulariumio.filters import MultiplyTimeFilter, AddAgentsFilter
 from simulariumio.constants import VIZ_TYPE
@@ -53,7 +54,7 @@ STRUCTURAL_RXNS = [
     "Bind ATP (arp2/3)",
 ]
 
-extra_radius = 1.5
+extra_radius = 0.
 actin_radius = 2.0 + extra_radius
 arp23_radius = 2.0 + extra_radius
 cap_radius = 3.0 + extra_radius
@@ -866,10 +867,10 @@ class ActinVisualization:
                 "scatter": [],
                 "histogram": [],
             }
-        total_twist, total_twist_remove_bend, filament_positions = ActinAnalyzer.analyze_total_twist(
+        total_twist, total_twist_remove_bend, filament_positions1 = ActinAnalyzer.analyze_total_twist(
             monomer_data, normals, axis_positions
         )
-        lateral_bond_lengths, longitudinal_bond_lengths, filament_positions = ActinAnalyzer.analyze_bond_lengths(
+        lateral_bond_lengths, longitudinal_bond_lengths, filament_positions2 = ActinAnalyzer.analyze_bond_lengths(
             monomer_data, box_size, periodic_boundary
         )
         plots["scatter"] += [
@@ -877,13 +878,13 @@ class ActinVisualization:
                 total_twist, total_twist_remove_bend, times,
             ),
             ActinVisualization.get_twist_per_monomer_plot(
-                total_twist, total_twist_remove_bend, filament_positions
+                total_twist, total_twist_remove_bend, filament_positions1
             ),
             ActinVisualization.get_total_bond_length_plot(
                 lateral_bond_lengths, longitudinal_bond_lengths, times
             ),
             ActinVisualization.get_bond_length_per_monomer_plot(
-                lateral_bond_lengths, longitudinal_bond_lengths, filament_positions
+                lateral_bond_lengths, longitudinal_bond_lengths, filament_positions2
             ),
         ]
         return plots
@@ -1039,6 +1040,12 @@ class ActinVisualization:
             path_to_readdy_h5=path_to_readdy_h5,
             meta_data=MetaData(
                 box_size=box_size,
+                camera_defaults=CameraData(
+                    position=np.array([0., 0., 300.]),
+                    look_at_position=np.zeros(3),
+                    up_vector=np.array([0., 1., 0.]),
+                    fov_degrees=120.0,
+                ),
             ),
             display_data=display_data,
             time_units=UnitData("µs"),

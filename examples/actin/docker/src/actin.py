@@ -73,7 +73,8 @@ def main():
                 "Actin-Polymer",
             )
         ]
-        monomers = ActinGenerator.get_monomers(fiber_data, use_uuids=False)
+        monomers = ActinGenerator.get_monomers(
+            fiber_data, use_uuids=False, start_normal=np.array([0., 1., 0.]))
         monomers = ActinGenerator.setup_fixed_monomers(monomers, parameters)
         actin_simulation.add_monomers_from_data(monomers)
     if parameters["branched_seed"]:
@@ -145,7 +146,6 @@ def main():
     ActinVisualization.save_actin(
         trajectory_datas=[traj_data],
         output_path=parameters["name"] + ".h5",
-        plots=traj_data.plots,
     )
 
 
