@@ -1566,7 +1566,7 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_bonds_between_actins(force_constant, system, util, actin_number_types):
+    def add_bonds_between_actins(force_constant, system, util, actin_number_types, longitudinal_bonds):
         """
         add bonds between actins
         """
@@ -1607,42 +1607,44 @@ class ActinUtil:
             system,
             actin_number_types,
         )
-        # util.add_polymer_bond_1D(
-        #     [
-        #         "actin#",
-        #         "actin#ATP_",
-        #         "actin#mid_",
-        #         "actin#mid_ATP_",
-        #         "actin#pointed_",
-        #         "actin#pointed_ATP_",
-        #         "actin#fixed_",
-        #         "actin#fixed_ATP_",
-        #         "actin#mid_fixed_",
-        #         "actin#mid_fixed_ATP_",
-        #         "actin#pointed_fixed_",
-        #         "actin#pointed_fixed_ATP_",
-        #     ],
-        #     0,
-        #     [
-        #         "actin#",
-        #         "actin#ATP_",
-        #         "actin#mid_",
-        #         "actin#mid_ATP_",
-        #         "actin#barbed_",
-        #         "actin#barbed_ATP_",
-        #         "actin#fixed_",
-        #         "actin#fixed_ATP_",
-        #         "actin#mid_fixed_",
-        #         "actin#mid_fixed_ATP_",
-        #         "actin#fixed_barbed_",
-        #         "actin#fixed_barbed_ATP_",
-        #     ],
-        #     2,
-        #     force_constant,
-        #     bond_length,
-        #     system,
-        #     actin_number_types,
-        # )
+        if longitudinal_bonds:
+            print("Adding longitudinal bonds...")
+            util.add_polymer_bond_1D(
+                [
+                    "actin#",
+                    "actin#ATP_",
+                    "actin#mid_",
+                    "actin#mid_ATP_",
+                    "actin#pointed_",
+                    "actin#pointed_ATP_",
+                    "actin#fixed_",
+                    "actin#fixed_ATP_",
+                    "actin#mid_fixed_",
+                    "actin#mid_fixed_ATP_",
+                    "actin#pointed_fixed_",
+                    "actin#pointed_fixed_ATP_",
+                ],
+                0,
+                [
+                    "actin#",
+                    "actin#ATP_",
+                    "actin#mid_",
+                    "actin#mid_ATP_",
+                    "actin#barbed_",
+                    "actin#barbed_ATP_",
+                    "actin#fixed_",
+                    "actin#fixed_ATP_",
+                    "actin#mid_fixed_",
+                    "actin#mid_fixed_ATP_",
+                    "actin#fixed_barbed_",
+                    "actin#fixed_barbed_ATP_",
+                ],
+                2,
+                force_constant,
+                bond_length,
+                system,
+                actin_number_types,
+            )
         util.add_bond(
             [
                 "actin#branch_1",

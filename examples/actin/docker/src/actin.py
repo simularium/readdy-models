@@ -55,7 +55,7 @@ def main():
     parameters.transpose()
     run_name = list(parameters)[0]
     parameters = parameters[run_name]
-    # # read in box size
+    # read in box size
     parameters["box_size"] = ReaddyUtil.get_box_size(parameters["box_size"])
     if not os.path.exists("outputs/"):
         os.mkdir("outputs/")
@@ -65,6 +65,8 @@ def main():
     actin_simulation.add_obstacles()
     actin_simulation.add_random_monomers()
     actin_simulation.add_random_linear_fibers(use_uuids=False)
+    actin_number_types = int(parameters["actin_number_types"])
+    longitudinal_bonds = bool(parameters["longitudinal_bonds"])
     if parameters["orthogonal_seed"]:
         print("Starting with orthogonal seed")
         fiber_data = [
@@ -79,19 +81,22 @@ def main():
         ]
         print(
             "starts w/ actin_number_types in actin.py =",
-            int(parameters["actin_number_types"]),
+            actin_number_types,
         )
         monomers = ActinGenerator.get_monomers(
-            int(parameters["actin_number_types"]), fiber_data, use_uuids=False, start_normal=np.array([0., 1., 0.])
+            actin_number_types, fiber_data, use_uuids=False, start_normal=np.array([0., 1., 0.]), longitudinal_bonds=longitudinal_bonds
         )
         monomers = ActinGenerator.setup_fixed_monomers(monomers, parameters)
+        
+        # import ipdb; ipdb.set_trace()
+        
         actin_simulation.add_monomers_from_data(monomers)
     print("success orthogonal if loop")
     if parameters["branched_seed"]:
         print("Starting with branched seed")
         actin_simulation.add_monomers_from_data(
             ActinGenerator.get_monomers(
-                int(parameters["actin_number_types"]),
+                actin_number_types,
                 ActinTestData.simple_branched_actin_fiber(),
                 use_uuids=False,
             )
@@ -144,6 +149,7 @@ def main():
             plots,
         )
     traj_data = ActinVisualization.visualize_actin(
+        actin_number_types=actin_number_types,
         path_to_readdy_h5=parameters["name"] + ".h5",
         box_size=parameters["box_size"],
         total_steps=parameters["total_steps"],

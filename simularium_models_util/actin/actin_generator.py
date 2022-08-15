@@ -73,15 +73,10 @@ class ActinGenerator:
         """
         assert offset >= -1 or offset <= 1, "Offset for actin number is not in [-1, 1]"
         n = actin_number + offset
-        # actin_number_types = 5 ####actin_number_types is 1 if not hard coded; not reading from excel####
-        # print(f"{actin_number} + {offset} \n {actin_number_types}")
-        # if actin_number_types != 5:
-        #     raise Exception(actin_number_types)
         if n > actin_number_types:
             n -= actin_number_types
         if n < 1:
             n += actin_number_types
-        # print(f"{actin_number} + {offset} = {n} \n {actin_number_types}")
         return int(n)
 
     @staticmethod
@@ -193,6 +188,7 @@ class ActinGenerator:
         direction,
         offset_vector,
         pointed_actin_number,
+        longitudinal_bonds=False,
         particles={},
     ):
         """
@@ -234,9 +230,6 @@ class ActinGenerator:
             index = i if direction > 0 else len(particle_ids) - 1 - i
             particle_id = particle_ids[index]
             particles[particle_id].type_name = f"actin#mid_ATP_{actin_number}"
-            print(
-                f"line 239; get_actin_actin_for_linear_fiber number types = {actin_number_types}"
-            )
             actin_number = ActinGenerator.get_actin_number(
                 actin_number_types, actin_number, 1
             )
@@ -244,6 +237,11 @@ class ActinGenerator:
                 particles[particle_id].neighbor_ids.append(particle_ids[index - 1])
             if index < len(particle_ids) - 1:
                 particles[particle_id].neighbor_ids.append(particle_ids[index + 1])
+            if longitudinal_bonds:
+                if index > 1:
+                    particles[particle_id].neighbor_ids.append(particle_ids[index - 2])
+                if index < len(particle_ids) - 2:
+                    particles[particle_id].neighbor_ids.append(particle_ids[index + 2])
         if direction < 0:
             particle_ids.reverse()
         return particles, particle_ids, actin_number
@@ -345,7 +343,7 @@ class ActinGenerator:
 
     @staticmethod
     def get_monomers_for_daughter_fiber(
-        actin_number_types, mother_fiber, nucleated_arp, offset_vector, particles={}
+        actin_number_types, mother_fiber, nucleated_arp, offset_vector, longitudinal_bonds=False, particles={}
     ):
         """
         get any bound arps and any daughter fibers attached to this fiber
@@ -365,7 +363,8 @@ class ActinGenerator:
             axis_pos,
             offset_vector + v_branch_shift,
             2,
-            particles,
+            longitudinal_bonds=longitudinal_bonds,
+            particles=particles,
         )
         # create branch junction monomers (arp2, arp3, first daughter actin)
         arp2_id = ActinGenerator.get_next_monomer_id()
@@ -444,15 +443,13 @@ class ActinGenerator:
         start_axis_pos,
         offset_vector,
         pointed_actin_number,
+        longitudinal_bonds=False,
         particles={},
     ):
         """
         get the main actins for a fiber (i.e. no branches or arps)
         """
         actin_number = pointed_actin_number
-        print(
-            f"line 459 extra; actin_number_types in get_main_monomers_for_fiber = {actin_number_types}"
-        )
         if not fiber.is_daughter and len(fiber.nucleated_arps) > 0:
             # if this is a mother filament with daughters,
             # the pointed end is constrained by the first branch junction
@@ -478,7 +475,8 @@ class ActinGenerator:
                 -1,
                 offset_vector,
                 actin_number,
-                particles,
+                longitudinal_bonds=longitudinal_bonds,
+                particles=particles,
             )
             if len(pointed_particle_ids) > 0:
                 # add "pointed" flag to first actin
@@ -516,7 +514,8 @@ class ActinGenerator:
                 1,
                 offset_vector,
                 actin_number,
-                particles,
+                longitudinal_bonds=longitudinal_bonds,
+                particles=particles,
             )
             if len(barbed_particle_ids) == 0:
                 raise Exception("No actin was generated to attach arp3 to")
@@ -526,10 +525,6 @@ class ActinGenerator:
             particle_ids = pointed_particle_ids + [actin_arp2_id] + barbed_particle_ids
             actin_arp_ids = [actin_arp2_id, actin_arp3_id]
         else:
-            print(
-                f"line 530; get_main_monomers_for_fiber: actin number types = {actin_number_types}"
-            )
-
             (particles, particle_ids, _,) = ActinGenerator.get_actins_for_linear_fiber(
                 actin_number_types,
                 fiber,
@@ -538,7 +533,8 @@ class ActinGenerator:
                 1,
                 offset_vector,
                 actin_number,
-                particles,
+                longitudinal_bonds=longitudinal_bonds,
+                particles=particles,
             )
             if fiber.is_daughter:
                 particles = ActinGenerator.check_shift_branch_actin_numbers(
@@ -567,14 +563,12 @@ class ActinGenerator:
         start_axis_pos,
         offset_vector,
         pointed_actin_number,
+        longitudinal_bonds=False,
         particles={},
     ):
         """
         get the main actins for a fiber as well as any bound arps and daughter fibers
         """
-        print(
-            f"line 577; get_monomers_for_fiber: actin number types = {actin_number_types}"
-        )
         (
             particles,
             main_particle_ids,
@@ -586,6 +580,7 @@ class ActinGenerator:
             start_axis_pos,
             offset_vector,
             pointed_actin_number,
+            longitudinal_bonds,
             particles,
         )
         daughter_particle_ids = []
@@ -597,7 +592,7 @@ class ActinGenerator:
                 particle_ids,
                 junction_ids,
             ) = ActinGenerator.get_monomers_for_daughter_fiber(
-                actin_number_types, fiber, nucleated_arp, offset_vector, particles
+                actin_number_types, fiber, nucleated_arp, offset_vector, longitudinal_bonds, particles
             )
             (
                 particles,
@@ -802,6 +797,7 @@ class ActinGenerator:
         child_box_size=None,
         use_uuids=True,
         start_normal=None,
+        longitudinal_bonds=False,
     ):
         """
         get all the monomer data for the (branched) fibers in fibers_data
@@ -831,9 +827,6 @@ class ActinGenerator:
                 )
             else:
                 normal = start_normal
-            print(
-                f"line 823; get_monomers_for_fiber is using actin number types = {actin_number_types}"
-            )
             particles, particle_ids = ActinGenerator.get_monomers_for_fiber(
                 actin_number_types,
                 fiber,
@@ -841,6 +834,7 @@ class ActinGenerator:
                 fiber.pointed_point(),
                 np.zeros(3),
                 1,
+                longitudinal_bonds=longitudinal_bonds,
             )
             result["topologies"][ActinGenerator.get_next_monomer_id()] = {
                 "type_name": "Actin-Polymer",
