@@ -87,7 +87,9 @@ class ActinUtil:
                 f"Failed to get actin number: {pt} is not actin\n"
                 f"{ReaddyUtil.topology_to_string(topology)}"
             )
-        return ReaddyUtil.calculate_polymer_number(int(pt[-1]), offset)
+        return ReaddyUtil.calculate_polymer_number(
+            int(pt[-1]), offset, int(parameters["actin_number_types"])
+        )
 
     @staticmethod
     def get_all_polymer_actin_types(vertex_type):
@@ -103,6 +105,8 @@ class ActinUtil:
             f"{vertex_type}{spacer}1",
             f"{vertex_type}{spacer}2",
             f"{vertex_type}{spacer}3",
+            f"{vertex_type}{spacer}4",
+            f"{vertex_type}{spacer}5",
         ]
 
     @staticmethod
@@ -582,7 +586,9 @@ class ActinUtil:
                 ActinUtil.set_actin_mid_flag(topology, recipe, v_actin, arp3_id)
 
     @staticmethod
-    def add_random_linear_fibers(simulation, n_fibers, length=20, use_uuids=True):
+    def add_random_linear_fibers(
+        simulation, n_fibers, actin_number_types=3, length=20, use_uuids=True
+    ):
         """
         add linear actin fibers of the given length
         """
@@ -591,9 +597,10 @@ class ActinUtil:
             - parameters["box_size"] * 0.5
         )
         print("Adding random fibers at \n" + str(positions))
-        for fiber in range(n_fibers):
+        for fiber in range(0, n_fibers):
             direction = ReaddyUtil.get_random_unit_vector()
             monomers = ActinGenerator.get_monomers(
+                actin_number_types,
                 [
                     FiberData(
                         0,
@@ -605,16 +612,21 @@ class ActinUtil:
                 ],
                 use_uuids,
             )
+            print(f"monomers:{monomers}")
             ActinUtil.add_monomers_from_data(simulation, monomers)
 
     @staticmethod
-    def add_fibers_from_data(simulation, fibers_data, use_uuids=True):
+    def add_fibers_from_data(
+        simulation, fibers_data, actin_number_types=3, use_uuids=True
+    ):
         """
         add (branched) actin fiber(s)
 
         fibers_data : List[FiberData]
         """
-        fiber_monomers = ActinGenerator.get_monomers(fibers_data, use_uuids)
+        fiber_monomers = ActinGenerator.get_monomers(
+            actin_number_types, fibers_data, use_uuids
+        )
         ActinUtil.add_monomers_from_data(simulation, fiber_monomers)
 
     @staticmethod
@@ -643,10 +655,14 @@ class ActinUtil:
             topology = monomer_data["topologies"][topology_id]
             types = []
             positions = []
+            print(topology)
+
             for particle_id in topology["particle_ids"]:
                 particle = monomer_data["particles"][particle_id]
+                print(f"particles:{particle}")
                 types.append(particle["type_name"])
                 positions.append(particle["position"])
+            print(f"types:{types}")
             top = simulation.add_topology(
                 topology["type_name"], types, np.array(positions)
             )
@@ -770,16 +786,12 @@ class ActinUtil:
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
             print("Reverse Dimerize")
+        actin_types = ActinUtil.get_all_polymer_actin_types(
+            "actin#barbed"
+        ) + ActinUtil.get_all_polymer_actin_types("actin#barbed_ATP")
         v_barbed = ReaddyUtil.get_first_vertex_of_types(
             topology,
-            [
-                "actin#barbed_ATP_1",
-                "actin#barbed_ATP_2",
-                "actin#barbed_ATP_3",
-                "actin#barbed_1",
-                "actin#barbed_2",
-                "actin#barbed_3",
-            ],
+            actin_types,
             error_msg="Failed to find barbed end of dimer",
         )
         v_pointed = ReaddyUtil.get_first_neighbor(
@@ -840,16 +852,12 @@ class ActinUtil:
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
             print("Reverse Trimerize")
+        actin_types = ActinUtil.get_all_polymer_actin_types(
+            "actin#barbed"
+        ) + ActinUtil.get_all_polymer_actin_types("actin#barbed_ATP")
         v_barbed = ReaddyUtil.get_first_vertex_of_types(
             topology,
-            [
-                "actin#barbed_ATP_1",
-                "actin#barbed_ATP_2",
-                "actin#barbed_ATP_3",
-                "actin#barbed_1",
-                "actin#barbed_2",
-                "actin#barbed_3",
-            ],
+            actin_types,
             error_msg="Failed to find barbed end in trimer",
         )
         v_neighbor = ReaddyUtil.get_first_neighbor(
@@ -1385,7 +1393,7 @@ class ActinUtil:
         return recipe
 
     @staticmethod
-    def get_all_actin_particle_types():
+    def get_all_actin_particle_types(actin_number_types):
         """
         get particle types for actin
 
@@ -1427,7 +1435,7 @@ class ActinUtil:
             "actin#branch_barbed_1",
             "actin#branch_barbed_ATP_1",
         ]
-        for i in range(1, 4):
+        for i in ActinUtil.actin_number_range(actin_number_types):
             result += [
                 f"actin#{i}",
                 f"actin#ATP_{i}",
@@ -1438,15 +1446,16 @@ class ActinUtil:
                 f"actin#barbed_{i}",
                 f"actin#barbed_ATP_{i}",
             ]
+
         return result
 
     @staticmethod
-    def get_all_fixed_actin_particle_types():
+    def get_all_fixed_actin_particle_types(actin_number_types):
         """
         get particle types for actins that don't diffuse
         """
         result = []
-        for i in range(1, 4):
+        for i in ActinUtil.actin_number_range(actin_number_types):
             result += [
                 f"actin#fixed_{i}",
                 f"actin#fixed_ATP_{i}",
@@ -1486,13 +1495,13 @@ class ActinUtil:
         ]
 
     @staticmethod
-    def get_all_particle_types():
+    def get_all_particle_types(actin_number_types):
         """
         add the given particle_types to the system
         """
         return (
-            ActinUtil.get_all_actin_particle_types()
-            + ActinUtil.get_all_fixed_actin_particle_types()
+            ActinUtil.get_all_actin_particle_types(actin_number_types)
+            + ActinUtil.get_all_fixed_actin_particle_types(actin_number_types)
             + ActinUtil.get_all_arp23_particle_types()
             + ActinUtil.get_all_cap_particle_types()
             + ["obstacle"]
@@ -1507,7 +1516,7 @@ class ActinUtil:
             system.add_topology_species(particle_type, diffCoeff)
 
     @staticmethod
-    def add_actin_types(system, diffCoeff):
+    def add_actin_types(system, diffCoeff, actin_number_types):
         """
         add particle and topology types for actin
         """
@@ -1525,10 +1534,14 @@ class ActinUtil:
         system.topologies.add_type("Actin-Polymer#Branch-Nucleating")
         system.topologies.add_type("Actin-Polymer#Capping")
         ActinUtil.add_particle_types(
-            ActinUtil.get_all_actin_particle_types(), system, diffCoeff
+            ActinUtil.get_all_actin_particle_types(actin_number_types),
+            system,
+            diffCoeff,
         )
         ActinUtil.add_particle_types(
-            ActinUtil.get_all_fixed_actin_particle_types(), system, 0.0
+            ActinUtil.get_all_fixed_actin_particle_types(actin_number_types),
+            system,
+            0.0,
         )
 
     @staticmethod
@@ -1553,7 +1566,7 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_bonds_between_actins(force_constant, system, util):
+    def add_bonds_between_actins(force_constant, system, util, actin_number_types):
         """
         add bonds between actins
         """
@@ -1592,7 +1605,44 @@ class ActinUtil:
             force_constant,
             bond_length,
             system,
+            actin_number_types,
         )
+        # util.add_polymer_bond_1D(
+        #     [
+        #         "actin#",
+        #         "actin#ATP_",
+        #         "actin#mid_",
+        #         "actin#mid_ATP_",
+        #         "actin#pointed_",
+        #         "actin#pointed_ATP_",
+        #         "actin#fixed_",
+        #         "actin#fixed_ATP_",
+        #         "actin#mid_fixed_",
+        #         "actin#mid_fixed_ATP_",
+        #         "actin#pointed_fixed_",
+        #         "actin#pointed_fixed_ATP_",
+        #     ],
+        #     0,
+        #     [
+        #         "actin#",
+        #         "actin#ATP_",
+        #         "actin#mid_",
+        #         "actin#mid_ATP_",
+        #         "actin#barbed_",
+        #         "actin#barbed_ATP_",
+        #         "actin#fixed_",
+        #         "actin#fixed_ATP_",
+        #         "actin#mid_fixed_",
+        #         "actin#mid_fixed_ATP_",
+        #         "actin#fixed_barbed_",
+        #         "actin#fixed_barbed_ATP_",
+        #     ],
+        #     2,
+        #     force_constant,
+        #     bond_length,
+        #     system,
+        #     actin_number_types,
+        # )
         util.add_bond(
             [
                 "actin#branch_1",
@@ -1644,6 +1694,7 @@ class ActinUtil:
             force_constant,
             bond_length,
             system,
+            actin_number_types,
         )
         util.add_bond(  # temporary during growth reactions
             [
@@ -1663,7 +1714,7 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_filament_twist_angles(force_constant, system, util):
+    def add_filament_twist_angles(force_constant, system, util, actin_number_types):
         """
         add angles for filament twist and cohesiveness
         """
@@ -1713,6 +1764,7 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
         util.add_angle(
             [
@@ -1745,7 +1797,7 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_filament_twist_dihedrals(force_constant, system, util):
+    def add_filament_twist_dihedrals(force_constant, system, util, actin_number_types):
         """
         add dihedrals for filament twist and cohesiveness
         """
@@ -1806,53 +1858,54 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
-        util.add_dihedral(
-            [
-                "actin#branch_1",
-                "actin#branch_ATP_1",
-            ],
-            [
-                "actin#2",
-                "actin#ATP_2",
-                "actin#mid_2",
-                "actin#mid_ATP_2",
-                "actin#fixed_2",
-                "actin#fixed_ATP_2",
-                "actin#mid_fixed_2",
-                "actin#mid_fixed_ATP_2",
-            ],
-            [
-                "actin#3",
-                "actin#ATP_3",
-                "actin#mid_3",
-                "actin#mid_ATP_3",
-                "actin#fixed_3",
-                "actin#fixed_ATP_3",
-                "actin#mid_fixed_3",
-                "actin#mid_fixed_ATP_3",
-            ],
-            [
-                "actin#1",
-                "actin#ATP_1",
-                "actin#mid_1",
-                "actin#mid_ATP_1",
-                "actin#barbed_1",
-                "actin#barbed_ATP_1",
-                "actin#fixed_1",
-                "actin#fixed_ATP_1",
-                "actin#mid_fixed_1",
-                "actin#mid_fixed_ATP_1",
-                "actin#fixed_barbed_1",
-                "actin#fixed_barbed_ATP_1",
-            ],
-            force_constant,
-            angle,
-            system,
-        )
+        # util.add_dihedral(
+        #     [
+        #         "actin#branch_1",
+        #         "actin#branch_ATP_1",
+        #     ],
+        #     [
+        #         "actin#2",
+        #         "actin#ATP_2",
+        #         "actin#mid_2",
+        #         "actin#mid_ATP_2",
+        #         "actin#fixed_2",
+        #         "actin#fixed_ATP_2",
+        #         "actin#mid_fixed_2",
+        #         "actin#mid_fixed_ATP_2",
+        #     ],
+        #     [
+        #         "actin#3",
+        #         "actin#ATP_3",
+        #         "actin#mid_3",
+        #         "actin#mid_ATP_3",
+        #         "actin#fixed_3",
+        #         "actin#fixed_ATP_3",
+        #         "actin#mid_fixed_3",
+        #         "actin#mid_fixed_ATP_3",
+        #     ],
+        #     [
+        #         "actin#1",
+        #         "actin#ATP_1",
+        #         "actin#mid_1",
+        #         "actin#mid_ATP_1",
+        #         "actin#barbed_1",
+        #         "actin#barbed_ATP_1",
+        #         "actin#fixed_1",
+        #         "actin#fixed_ATP_1",
+        #         "actin#mid_fixed_1",
+        #         "actin#mid_fixed_ATP_1",
+        #         "actin#fixed_barbed_1",
+        #         "actin#fixed_barbed_ATP_1",
+        #     ],
+        #     force_constant,
+        #     angle,
+        #     system,
+        # )  
 
     @staticmethod
-    def add_branch_bonds(force_constant, system, util):
+    def add_branch_bonds(force_constant, system, util, actin_number_types):
         """
         add bonds between arp2, arp3, and actins
         """
@@ -1881,6 +1934,7 @@ class ActinUtil:
             force_constant,
             ActinStructure.arp2_to_mother_distance(),
             system,
+            actin_number_types,
         )
         util.add_polymer_bond_1D(  # mother filament actin to arp3 bonds
             [
@@ -1908,6 +1962,7 @@ class ActinUtil:
             force_constant,
             ActinStructure.arp3_to_mother_distance(),
             system,
+            actin_number_types,
         )
         util.add_bond(  # arp2 to arp3 bonds
             [
@@ -1941,7 +1996,7 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_branch_angles(force_constant, system, util):
+    def add_branch_angles(force_constant, system, util, actin_number_types):
         """
         add angles for branching
         """
@@ -2004,6 +2059,7 @@ class ActinUtil:
             force_constant,
             ActinStructure.mother1_mother2_arp3_angle(),
             system,
+            actin_number_types,
         )
         util.add_polymer_angle_1D(
             [
@@ -2033,6 +2089,7 @@ class ActinUtil:
             force_constant,
             ActinStructure.mother3_mother2_arp3_angle(),
             system,
+            actin_number_types,
         )
         angle = ActinStructure.mother0_mother1_arp2_angle()
         util.add_polymer_angle_1D(
@@ -2059,6 +2116,7 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
         util.add_angle(
             ["actin#branch_1", "actin#branch_ATP_1"],
@@ -2070,7 +2128,7 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_branch_dihedrals(force_constant, system, util):
+    def add_branch_dihedrals(force_constant, system, util, actin_number_types):
         """
         add dihedrals for branching
         """
@@ -2097,6 +2155,7 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
         angle = ActinStructure.mother_mother0_mother1_arp2_dihedral_angle()
         util.add_polymer_dihedral_1D(
@@ -2124,6 +2183,7 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
         util.add_dihedral(
             ["actin#branch_1", "actin#branch_ATP_1"],
@@ -2155,6 +2215,7 @@ class ActinUtil:
             force_constant,
             ActinStructure.mother3_mother2_arp3_arp2_dihedral_angle(),
             system,
+            actin_number_types,
         )
         # arp ring
         angle = ActinStructure.mother1_mother2_arp3_arp2_dihedral_angle()
@@ -2179,6 +2240,7 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
         util.add_dihedral(
             ["actin#branch_1", "actin#branch_ATP_1"],
@@ -2220,6 +2282,7 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
         util.add_dihedral(
             ["arp2", "arp2#branched"],
@@ -2317,6 +2380,7 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
         util.add_dihedral(
             ["actin#branch_1", "actin#branch_ATP_1"],
@@ -2358,6 +2422,7 @@ class ActinUtil:
             force_constant,
             ActinStructure.mother2_arp3_arp2_daughter1_dihedral_angle(),
             system,
+            actin_number_types,
         )
         util.add_dihedral(
             [
@@ -2406,7 +2471,7 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_cap_bonds(force_constant, system, util):
+    def add_cap_bonds(force_constant, system, util, actin_number_types):
         """
         add capping protein to actin bonds
         """
@@ -2418,10 +2483,11 @@ class ActinUtil:
             force_constant,
             ActinStructure.actin_to_actin_distance() + 1.0,
             system,
+            actin_number_types,
         )
 
     @staticmethod
-    def add_cap_angles(force_constant, system, util):
+    def add_cap_angles(force_constant, system, util, actin_number_types):
         """
         add angles for capping protein
         """
@@ -2458,6 +2524,7 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
         util.add_angle(
             ["actin#branch_1", "actin#branch_ATP_1"],
@@ -2469,7 +2536,7 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_cap_dihedrals(force_constant, system, util):
+    def add_cap_dihedrals(force_constant, system, util, actin_number_types):
         """
         add dihedrals for capping protein
         """
@@ -2495,6 +2562,7 @@ class ActinUtil:
             force_constant,
             angle,
             system,
+            actin_number_types,
         )
         util.add_dihedral(
             ["actin#branch_1", "actin#branch_ATP_1"],
@@ -2524,14 +2592,14 @@ class ActinUtil:
         force_constant,
         system,
         util,
+        actin_number_types,
     ):
         """
         add repulsions
         """
-        actin_types = (
-            ActinUtil.get_all_actin_particle_types()
-            + ActinUtil.get_all_fixed_actin_particle_types()
-        )
+        actin_types = ActinUtil.get_all_actin_particle_types(
+            actin_number_types
+        ) + ActinUtil.get_all_fixed_actin_particle_types(actin_number_types)
         arp_types = ActinUtil.get_all_arp23_particle_types()
         cap_types = ActinUtil.get_all_cap_particle_types()
         # actin
@@ -2616,7 +2684,7 @@ class ActinUtil:
             )
 
     @staticmethod
-    def check_add_global_box_potential(system):
+    def check_add_global_box_potential(system, actin_number_types):
         """
         If the boundaries are not periodic,
         all particles need a box potential to keep them in the box volume
@@ -2626,7 +2694,7 @@ class ActinUtil:
         # 1.0 margin on each side
         box_potential_size = np.array(parameters["box_size"] - 2.0)
         ActinUtil.add_box_potential(
-            particle_types=ActinUtil.get_all_particle_types(),
+            particle_types=ActinUtil.get_all_particle_types(actin_number_types),
             origin=-0.5 * box_potential_size,
             extent=box_potential_size,
             force_constant=parameters["force_constant"],
@@ -2695,11 +2763,11 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_trimerize_reaction(system):
+    def add_trimerize_reaction(system, actin_number_types):
         """
         attach a monomer to a dimer
         """
-        for i in range(1, 4):
+        for i in ActinUtil.actin_number_range(actin_number_types):
             system.topologies.add_spatial_reaction(
                 f"Trimerize{i}: "
                 f"Actin-Dimer(actin#barbed_ATP_{i}) + "
@@ -2728,11 +2796,11 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_nucleate_reaction(system):
+    def add_nucleate_reaction(system, actin_number_types):
         """
         reversibly attach a monomer to a trimer
         """
-        for i in range(1, 4):
+        for i in ActinUtil.actin_number_range(actin_number_types):
             system.topologies.add_spatial_reaction(
                 f"Barbed_Growth_Nucleate_ATP{i}: "
                 f"Actin-Trimer(actin#barbed_ATP_{i}) + "
@@ -2750,11 +2818,11 @@ class ActinUtil:
             )
 
     @staticmethod
-    def add_pointed_growth_reaction(system):
+    def add_pointed_growth_reaction(system, actin_number_types):
         """
-        attach a monomer to the pointed end of a filament
+        attach a monomer to the pointed (-) end of a filament
         """
-        for i in range(1, 4):
+        for i in ActinUtil.actin_number_range(actin_number_types):
             system.topologies.add_spatial_reaction(
                 f"Pointed_Growth_ATP1{i}: Actin-Polymer(actin#pointed_{i}) + "
                 "Actin-Monomer-ATP(actin#free_ATP) -> "
@@ -2793,7 +2861,7 @@ class ActinUtil:
     @staticmethod
     def add_pointed_shrink_reaction(system):
         """
-        remove a monomer from the pointed end of a filament
+        remove a monomer from the pointed (-) end of a filament
         """
         system.topologies.add_structural_reaction(
             "Pointed_Shrink_ATP",
@@ -2815,11 +2883,11 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_barbed_growth_reaction(system):
+    def add_barbed_growth_reaction(system, actin_number_types):
         """
-        attach a monomer to the barbed end of a filament
+        attach a monomer to the barbed (+) end of a filament
         """
-        for i in range(1, 4):
+        for i in ActinUtil.actin_number_range(actin_number_types):
             system.topologies.add_spatial_reaction(
                 f"Barbed_Growth_ATP1{i}: Actin-Polymer(actin#barbed_{i}) + "
                 "Actin-Monomer-ATP(actin#free_ATP) -> "
@@ -2886,7 +2954,7 @@ class ActinUtil:
     @staticmethod
     def add_barbed_shrink_reaction(system):
         """
-        remove a monomer from the barbed end of a filament
+        remove a monomer from the barbed (+) end of a filament
         """
         system.topologies.add_structural_reaction(
             "Barbed_Shrink_ATP",
@@ -2944,11 +3012,11 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_arp23_bind_reaction(system):
+    def add_arp23_bind_reaction(system, actin_number_types):
         """
         add arp2/3 along filament to start a branch
         """
-        for i in range(1, 4):
+        for i in ActinUtil.actin_number_range(actin_number_types):
             system.topologies.add_spatial_reaction(
                 f"Arp_Bind_ATP1{i}: "
                 f"Actin-Polymer(actin#mid_ATP_{i}) + Arp23-Dimer(arp3) -> "
@@ -3059,11 +3127,11 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_cap_bind_reaction(system):
+    def add_cap_bind_reaction(system, actin_number_types):
         """
         add capping protein to a barbed end to stop growth
         """
-        for i in range(1, 4):
+        for i in ActinUtil.actin_number_range(actin_number_types):
             system.topologies.add_spatial_reaction(
                 f"Cap_Bind1{i}: Actin-Polymer(actin#barbed_{i}) + Cap(cap) -> "
                 f"Actin-Polymer#Capping(actin#{i}--cap#new)",
@@ -3156,3 +3224,11 @@ class ActinUtil:
         return (monomer_pos - pos_magnitude * v_pos_1) + (
             d_pos_0 + pos_magnitude * v_pos_2
         )
+
+    @staticmethod
+    def actin_number_range(actin_number_types):
+        if (
+            actin_number_types < 3 or actin_number_types > 5
+        ) or actin_number_types == 4:
+            raise Exception("Only polymer number values of 3 and 5 are supported.")
+        return range(1, int(actin_number_types + 1))

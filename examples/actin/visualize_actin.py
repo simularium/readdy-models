@@ -153,7 +153,7 @@ def visualize_actin(
         if plot_polymerization:
             print("plot polymerization")
             traj_plots = ActinVisualization.generate_polymerization_plots(
-                monomer_data, times, reactions, box_size, periodic_boundary, traj_plots
+                int(args.actin_number_types), monomer_data, times, reactions, box_size, periodic_boundary, traj_plots
             )
         if plot_bend_twist:
             print("plot bend twist")
@@ -268,6 +268,10 @@ def main():
         "--vis_normals",
         help="Draw lines for actin normals?",
         dest='visualize_normals', default=False, action='store_true'
+    )
+    parser.add_argument(
+        "actin_number_types",
+        help="number of possible actin monomer types. can be either 3 or 5.",
     )
     args = parser.parse_args()
     visualize_actin(

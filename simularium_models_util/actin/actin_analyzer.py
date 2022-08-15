@@ -412,8 +412,8 @@ class ActinAnalyzer:
     def neighbor_types_to_string(particle_id, frame_particle_data):
         """ """
         result = ""
-        for neighbor_id in frame_particle_data[particle_id]["neighbor_ids"]:
-            result += frame_particle_data[neighbor_id]["type_name"] + ", "
+        for neighbor_id in (frame_particle_data["particles"][particle_id])["neighbor_ids"]:
+            result += (frame_particle_data["particles"][neighbor_id])["type_name"] + ", "
         return result[:-2]
 
     @staticmethod
@@ -421,7 +421,7 @@ class ActinAnalyzer:
         """ """
         positions = []
         for i in range(3):
-            positions.append(frame_particle_data[particle_ids[i]]["position"])
+            positions.append(frame_particle_data["particles"][particle_ids[i]]["position"])
         for i in range(len(positions)):
             if i == 1:
                 continue
@@ -431,7 +431,7 @@ class ActinAnalyzer:
         return str(positions)
 
     @staticmethod
-    def _get_frame_branch_ids(frame_particle_data):
+    def _get_frame_branch_ids(frame_particle_data, actin_number_types):
         """
         for each branch point at a time frame, get list of ids for (in order):
         - [0,1,2,3] 4 actins after branch on main filament
@@ -455,7 +455,7 @@ class ActinAnalyzer:
             if actin1_id is None:
                 print(
                     "Failed to parse branch point: couldn't find branch actin\n"
-                    + frame_particle_data[arp2_id]["type_name"]
+                    + frame_particle_data["particles"][arp2_id]["type_name"]
                     + " neighbor types are: ["
                     + ActinAnalyzer.neighbor_types_to_string(
                         arp2_id, frame_particle_data
@@ -475,7 +475,7 @@ class ActinAnalyzer:
             if actin_arp2_id is None:
                 print(
                     "Failed to parse branch point: failed to find actin_arp2\n"
-                    + frame_particle_data[arp2_id]["type_name"]
+                    + frame_particle_data["particles"][arp2_id]["type_name"]
                     + " neighbor types are: ["
                     + ActinAnalyzer.neighbor_types_to_string(
                         arp2_id, frame_particle_data
@@ -484,7 +484,9 @@ class ActinAnalyzer:
                 )
                 continue
             n = ReaddyUtil.calculate_polymer_number(
-                int(frame_particle_data[actin_arp2_id]["type_name"][-1:]), 1
+                int(frame_particle_data["particles"][actin_arp2_id]["type_name"][-1:]),
+                1,
+                actin_number_types,
             )
             actin_arp3_types = [
                 f"actin#{n}",
@@ -502,13 +504,13 @@ class ActinAnalyzer:
             if actin_arp3_id is None:
                 raise Exception(
                     "Failed to parse branch point: failed to find actin_arp3\n"
-                    + frame_particle_data[actin_arp2_id]["type_name"]
+                    + frame_particle_data["particles"][actin_arp2_id]["type_name"]
                     + " neighbor types are: ["
                     + ActinAnalyzer.neighbor_types_to_string(
                         actin_arp2_id, frame_particle_data
                     )
                     + "]\n"
-                    + frame_particle_data[arp2_id]["type_name"]
+                    + frame_particle_data["particles"][arp2_id]["type_name"]
                     + " neighbor types are: ["
                     + ActinAnalyzer.neighbor_types_to_string(
                         arp2_id, frame_particle_data
@@ -530,12 +532,17 @@ class ActinAnalyzer:
         return result
 
     @staticmethod
-    def _get_frame_branch_angles(frame_particle_data, box_size, periodic_boundary=True):
+    def _get_frame_branch_angles(
+        actin_number_types, frame_particle_data, box_size, periodic_boundary=True
+    ):
         """
         get the angle between mother and daughter filament
         at each branch point in the given frame of the trajectory
         """
-        branch_ids = ActinAnalyzer._get_frame_branch_ids(frame_particle_data)
+        actin_number_types = int(actin_number_types)
+        branch_ids = ActinAnalyzer._get_frame_branch_ids(
+            frame_particle_data, actin_number_types
+        )
         result = []
         for branch in branch_ids:
             actin_ids = [branch[0], branch[1], branch[2]]
@@ -596,15 +603,18 @@ class ActinAnalyzer:
         return result
 
     @staticmethod
-    def analyze_branch_angles(monomer_data, box_size, periodic_boundary):
+    def analyze_branch_angles(
+        actin_number_types, monomer_data, box_size, periodic_boundary
+    ):
         """
         Get a list of the angles between mother and daughter filaments
         at each branch point in each frame of the trajectory
         """
+        actin_number_types = int(actin_number_types)
         result = []
         for t in range(len(monomer_data)):
             branch_angles = ActinAnalyzer._get_frame_branch_angles(
-                monomer_data[t], box_size, periodic_boundary
+                actin_number_types, monomer_data[t], box_size, periodic_boundary
             )
             result.append(branch_angles)
         return result
@@ -618,7 +628,7 @@ class ActinAnalyzer:
         actin_ids = [previous actin id, this actin id, next actin id]
         for each of the two actins
         """
-        actin1_pos = frame_particle_data[actin1_ids[1]]["position"]
+        actin1_pos = frame_particle_data["particles"][actin1_ids[1]]["position"]
         actin1_axis_pos = ActinAnalyzer._get_axis_position_for_actin(
             frame_particle_data, actin1_ids, box_size, periodic_boundary
         )
@@ -631,7 +641,7 @@ class ActinAnalyzer:
                 )
             )
         v1 = ReaddyUtil.normalize(actin1_axis_pos - actin1_pos)
-        actin2_pos = frame_particle_data[actin2_ids[1]]["position"]
+        actin2_pos = frame_particle_data["particles"][actin2_ids[1]]["position"]
         actin2_axis_pos = ActinAnalyzer._get_axis_position_for_actin(
             frame_particle_data, actin2_ids, box_size, periodic_boundary
         )
@@ -759,7 +769,7 @@ class ActinAnalyzer:
         filaments = ActinAnalyzer._frame_all_filaments(frame_particle_data)
         for filament in filaments:
             positions = []
-            last_pos = frame_particle_data[filament[0]]["position"]
+            last_pos = frame_particle_data["particles"][filament[0]]["position"]
             for i in range(1, len(filament) - 1):
                 actin_ids = [filament[i - 1], filament[i], filament[i + 1]]
                 axis_pos = ActinAnalyzer._get_axis_position_for_actin(
@@ -833,7 +843,7 @@ class ActinAnalyzer:
             pointed_id = ReaddyUtil.analyze_frame_get_ids_for_types(
                 ActinAnalyzer._pointed_actin_types(), monomer_data[t]
             )[0]
-            pointed_position = monomer_data[t]["particles"][pointed_id]["position"]
+            pointed_position = monomer_data[t][pointed_id]["position"]
             if t == 0:
                 result.append(0.0)
                 initial_pointed_pos = pointed_position

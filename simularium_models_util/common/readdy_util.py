@@ -453,20 +453,20 @@ class ReaddyUtil:
         recipe.change_particle_type(vertex, particle_type)
 
     @staticmethod
-    def calculate_polymer_number(number, offset):
+    def calculate_polymer_number(number, offset, polymer_number_types):
         """
         calculates the polymer number
             from number
             by offset in [-2, 2]
 
-            returns number in [1,3]
+            returns number in [1,5]
         """
         n = number + offset
-        if n > 3:
-            n -= 3
+        if n > polymer_number_types:
+            n -= polymer_number_types
         if n < 1:
-            n += 3
-        return n
+            n += polymer_number_types
+        return int(n)
 
     @staticmethod
     def get_vertex_position(topology, vertex):
@@ -530,7 +530,9 @@ class ReaddyUtil:
         return offsets
 
     @staticmethod
-    def get_types_with_polymer_numbers_1D(particle_types, x, polymer_offset):
+    def get_types_with_polymer_numbers_1D(
+        particle_types, x, polymer_offset, polymer_number_types
+    ):
         """
         creates a list of types with 1D polymer numbers
             for each type in particle types
@@ -542,7 +544,14 @@ class ReaddyUtil:
         types = []
         for t in particle_types:
             types.append(
-                (t + str(ReaddyUtil.calculate_polymer_number(x, polymer_offset)))
+                (
+                    t
+                    + str(
+                        ReaddyUtil.calculate_polymer_number(
+                            x, polymer_offset, polymer_number_types
+                        )
+                    )
+                )
                 if polymer_offset is not None
                 else t
             )
@@ -656,6 +665,7 @@ class ReaddyUtil:
                         )
                         self.angle_triples.append((t1, t2, t3))
                         self.angle_triples.append((t3, t2, t1))
+                        # print(f"angles: {t1}, {t2}, {t3}")
 
     def add_dihedral(self, types1, types2, types3, types4, force_const, angle, system):
         """
@@ -685,6 +695,8 @@ class ReaddyUtil:
                             )
                             self.dihedral_quads.append((t1, t2, t3, t4))
                             self.dihedral_quads.append((t4, t3, t2, t1))
+                            # print(f"dihedrals: {t1}, {t2}, {t3}, {t4}")
+                            # print("from add_dihedrals:", self.dihedral_quads)
 
     def add_repulsion(self, types1, types2, force_const, distance, system):
         """
@@ -715,6 +727,7 @@ class ReaddyUtil:
         force_const,
         bond_length,
         system,
+        polymer_number_types,
     ):
         """
         adds a bond between all polymer numbers
@@ -725,18 +738,19 @@ class ReaddyUtil:
             with force constant force_const
             and length bond_length [nm]
         """
-        for x in range(1, 4):
+        polymer_number_types = int(polymer_number_types)
+        for x in range(1, polymer_number_types + 1):
             self.add_bond(
                 (
                     ReaddyUtil.get_types_with_polymer_numbers_1D(
-                        particle_types1, x, polymer_offset1
+                        particle_types1, x, polymer_offset1, polymer_number_types
                     )
                     if polymer_offset1 is not None
                     else particle_types1
                 ),
                 (
                     ReaddyUtil.get_types_with_polymer_numbers_1D(
-                        particle_types2, x, polymer_offset2
+                        particle_types2, x, polymer_offset2, polymer_number_types
                     )
                     if polymer_offset2 is not None
                     else particle_types2
@@ -792,6 +806,7 @@ class ReaddyUtil:
         force_const,
         angle,
         system,
+        polymer_number_types,
     ):
         """
         adds an angle between all polymer numbers
@@ -800,16 +815,17 @@ class ReaddyUtil:
             with force constant force_const
             and angle [radians]
         """
-        for x in range(1, 4):
+
+        for x in range(1, polymer_number_types + 1):
             self.add_angle(
                 ReaddyUtil.get_types_with_polymer_numbers_1D(
-                    particle_types1, x, polymer_offset1
+                    particle_types1, x, polymer_offset1, polymer_number_types
                 ),
                 ReaddyUtil.get_types_with_polymer_numbers_1D(
-                    particle_types2, x, polymer_offset2
+                    particle_types2, x, polymer_offset2, polymer_number_types
                 ),
                 ReaddyUtil.get_types_with_polymer_numbers_1D(
-                    particle_types3, x, polymer_offset3
+                    particle_types3, x, polymer_offset3, polymer_number_types
                 ),
                 force_const,
                 angle,
@@ -868,6 +884,7 @@ class ReaddyUtil:
         force_const,
         angle,
         system,
+        polymer_number_types,
     ):
         """
         adds a cosine dihedral between all polymer numbers
@@ -876,19 +893,20 @@ class ReaddyUtil:
             with force constant force_const
             and angle [radians]
         """
-        for x in range(1, 4):
+
+        for x in range(1, polymer_number_types + 1):
             self.add_dihedral(
                 ReaddyUtil.get_types_with_polymer_numbers_1D(
-                    particle_types1, x, polymer_offset1
+                    particle_types1, x, polymer_offset1, polymer_number_types
                 ),
                 ReaddyUtil.get_types_with_polymer_numbers_1D(
-                    particle_types2, x, polymer_offset2
+                    particle_types2, x, polymer_offset2, polymer_number_types
                 ),
                 ReaddyUtil.get_types_with_polymer_numbers_1D(
-                    particle_types3, x, polymer_offset3
+                    particle_types3, x, polymer_offset3, polymer_number_types
                 ),
                 ReaddyUtil.get_types_with_polymer_numbers_1D(
-                    particle_types4, x, polymer_offset4
+                    particle_types4, x, polymer_offset4, polymer_number_types
                 ),
                 force_const,
                 angle,
@@ -1310,7 +1328,7 @@ class ReaddyUtil:
             return result
         result.append(n_id)
 
-        if chain_length == 1:
+        if chain_length == 0:
             return result
 
         if next_neighbor_index is not None:
