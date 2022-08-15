@@ -108,6 +108,7 @@ def combine_plots(
     
 
 def visualize_actin(
+    actin_number_types: int,
     dir_path: str,
     box_size: float,
     total_steps: float,
@@ -175,6 +176,7 @@ def visualize_actin(
         )
         trajectory_datas.append(
             ActinVisualization.visualize_actin(
+                actin_number_types=actin_number_types,
                 path_to_readdy_h5=file_path,
                 box_size=box_size,
                 total_steps=total_steps,
@@ -275,6 +277,7 @@ def main():
     )
     args = parser.parse_args()
     visualize_actin(
+        args.actin_number_types,
         args.dir_path,
         float(args.box_size),
         float(args.total_steps),
