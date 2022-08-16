@@ -1312,7 +1312,7 @@ class ReaddyUtil:
         if chain_length = 0, return entire chain
         """
         if next_neighbor_index is not None:
-            n_types = [neighbor_types[next_neighbor_index]]
+            n_types = neighbor_types[next_neighbor_index]
         else:
             n_types = neighbor_types
 
@@ -1328,7 +1328,7 @@ class ReaddyUtil:
             return result
         result.append(n_id)
 
-        if chain_length == 0:
+        if chain_length == 1:
             return result
 
         if next_neighbor_index is not None:

@@ -124,8 +124,8 @@ def main():
             reactions=parameters["plot_polymerization"],
         )
         if parameters["plot_bend_twist"] or parameters["visualize_normals"]:
-            normals, axis_positions = ActinAnalyzer.get_normals_and_axis_positions(
-                monomer_data, parameters["box_size"], parameters["periodic_boundary"]
+            normals, axis_positions = ActinAnalyzer.analyze_normals_and_axis_positions(
+                monomer_data, parameters["box_size"], actin_number_types, parameters["periodic_boundary"]
             )
     plots = None
     if parameters["plot_polymerization"]:
@@ -135,6 +135,7 @@ def main():
             times,
             reactions,
             parameters["box_size"],
+            actin_number_types,
             parameters["periodic_boundary"],
             plots,
         )
@@ -145,6 +146,7 @@ def main():
             parameters["box_size"],
             normals,
             axis_positions,
+            actin_number_types,
             parameters["periodic_boundary"],
             plots,
         )

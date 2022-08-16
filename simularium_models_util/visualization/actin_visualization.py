@@ -497,7 +497,7 @@ class ActinVisualization:
         return monomer_data, times, reactions
 
     @staticmethod
-    def get_bound_monomers_plot(monomer_data, times):
+    def get_bound_monomers_plot(monomer_data, times, actin_number_types):
         """
         Add a plot of percent actin in filaments
         """
@@ -514,13 +514,13 @@ class ActinVisualization:
                 "Arp2/3 in filaments": 100.0
                 * ActinAnalyzer.analyze_ratio_of_bound_to_total_arp23(monomer_data),
                 "Actin in daughter filaments": 100.0
-                * ActinAnalyzer.analyze_ratio_of_daughter_to_total_actin(monomer_data),
+                * ActinAnalyzer.analyze_ratio_of_daughter_to_total_actin(monomer_data, actin_number_types),
             },
             render_mode="lines",
         )
 
     @staticmethod
-    def get_avg_length_plot(monomer_data, times):
+    def get_avg_length_plot(monomer_data, times, actin_number_types):
         """
         Add a plot of average mother and daughter filament length
         """
@@ -531,10 +531,10 @@ class ActinVisualization:
             xtrace=times,
             ytraces={
                 "Mother filaments": ActinAnalyzer.analyze_average_for_series(
-                    ActinAnalyzer.analyze_mother_filament_lengths(monomer_data)
+                    ActinAnalyzer.analyze_mother_filament_lengths(monomer_data, actin_number_types)
                 ),
                 "Daughter filaments": ActinAnalyzer.analyze_average_for_series(
-                    ActinAnalyzer.analyze_daughter_filament_lengths(monomer_data)
+                    ActinAnalyzer.analyze_daughter_filament_lengths(monomer_data, actin_number_types)
                 ),
             },
             render_mode="lines",
@@ -663,7 +663,7 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_helix_pitch_plot(monomer_data, box_size, periodic_boundary, times):
+    def get_helix_pitch_plot(monomer_data, box_size, actin_number_types, periodic_boundary, times):
         """
         Add a plot of average helix pitch
         for both the short and long helices
@@ -678,13 +678,13 @@ class ActinVisualization:
                 "Ideal short pitch": np.array(times.shape[0] * [5.9]),
                 "Mean short pitch": ActinAnalyzer.analyze_average_for_series(
                     ActinAnalyzer.analyze_short_helix_pitches(
-                        monomer_data, box_size, periodic_boundary
+                        monomer_data, box_size, actin_number_types, periodic_boundary
                     )
                 ),
                 "Ideal long pitch": np.array(times.shape[0] * [72]),
                 "Mean long pitch": ActinAnalyzer.analyze_average_for_series(
                     ActinAnalyzer.analyze_long_helix_pitches(
-                        monomer_data, box_size, periodic_boundary
+                        monomer_data, box_size, actin_number_types, periodic_boundary
                     )
                 ),
             },
@@ -693,7 +693,7 @@ class ActinVisualization:
 
     @staticmethod
     def get_filament_straightness_plot(
-        monomer_data, box_size, periodic_boundary, times
+        monomer_data, box_size, actin_number_types, periodic_boundary, times
     ):
         """
         Add a plot of how many nm each monomer is away
@@ -708,7 +708,7 @@ class ActinVisualization:
                 "Filament bending": (
                     ActinAnalyzer.analyze_average_for_series(
                         ActinAnalyzer.analyze_filament_straightness(
-                            monomer_data, box_size, periodic_boundary
+                            monomer_data, box_size, actin_number_types, periodic_boundary
                         )
                     )
                 ),
@@ -718,7 +718,7 @@ class ActinVisualization:
 
     @staticmethod
     def generate_polymerization_plots(
-        actin_number_types, monomer_data, times, reactions, box_size, periodic_boundary=True, plots=None
+        monomer_data, times, reactions, box_size, actin_number_types, periodic_boundary=True, plots=None
     ):
         """
         Use an ActinAnalyzer to generate plots of observables
@@ -731,8 +731,8 @@ class ActinVisualization:
                 "histogram": [],
             }
         plots["scatter"] += [
-            ActinVisualization.get_bound_monomers_plot(monomer_data, times),
-            ActinVisualization.get_avg_length_plot(monomer_data, times),
+            ActinVisualization.get_bound_monomers_plot(monomer_data, times, actin_number_types),
+            ActinVisualization.get_avg_length_plot(monomer_data, times, actin_number_types),
             ActinVisualization.get_growth_reactions_plot(reactions, times),
             ActinVisualization.get_growth_reactions_vs_actin_plot(
                 reactions, monomer_data, box_size
@@ -742,10 +742,10 @@ class ActinVisualization:
                 actin_number_types, monomer_data, box_size, periodic_boundary, times
             ),
             ActinVisualization.get_helix_pitch_plot(
-                monomer_data, box_size, periodic_boundary, times
+                monomer_data, box_size, actin_number_types, periodic_boundary, times
             ),
             ActinVisualization.get_filament_straightness_plot(
-                monomer_data, box_size, periodic_boundary, times
+                monomer_data, box_size, actin_number_types, periodic_boundary, times
             ),
             ActinVisualization.get_structural_reactions_plot(reactions, times),
         ]
@@ -886,6 +886,7 @@ class ActinVisualization:
         box_size,
         normals,
         axis_positions,
+        actin_number_types,
         periodic_boundary=True,
         plots=None,
     ):
@@ -902,13 +903,13 @@ class ActinVisualization:
             total_twist,
             total_twist_remove_bend,
             filament_positions1,
-        ) = ActinAnalyzer.analyze_total_twist(monomer_data, normals, axis_positions)
+        ) = ActinAnalyzer.analyze_total_twist(normals, axis_positions)
         (
             lateral_bond_lengths,
             longitudinal_bond_lengths,
             filament_positions2,
         ) = ActinAnalyzer.analyze_bond_lengths(
-            monomer_data, box_size, periodic_boundary
+            monomer_data, box_size, actin_number_types, periodic_boundary
         )
         plots["scatter"] += [
             ActinVisualization.get_total_twist_plot(
@@ -1001,7 +1002,7 @@ class ActinVisualization:
         new_agent_data.display_data[new_type_name] = DisplayData(
             name=new_type_name,
             display_type=DISPLAY_TYPE.FIBER,
-            color="#5243F1" if not color else color,  # default to blue
+            color="#685bf3" if not color else color,  # default to blue
         )
         traj_data.agent_data = new_agent_data
         return traj_data
@@ -1067,7 +1068,7 @@ class ActinVisualization:
         new_agent_data.display_data[new_type_name] = DisplayData(
             name=new_type_name,
             display_type=DISPLAY_TYPE.FIBER,
-            color="#666666" if not color else color,  # default to gray
+            color="#eaeaea" if not color else color,  # default to light gray
         )
         traj_data.agent_data = new_agent_data
         return traj_data
