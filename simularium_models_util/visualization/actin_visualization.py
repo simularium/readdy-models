@@ -817,6 +817,29 @@ class ActinVisualization:
         )
 
     @staticmethod
+    def get_bend_per_monomer_plot(
+        bend, filament_positions
+    ):
+        """
+        Add a plot of bend vs position of the monomer in filament
+        """
+        mid_time = int(len(bend) / 2.0)
+        end_time = len(bend) - 1
+        return ScatterPlotData(
+            title="Bend per monomer",
+            xaxis_title="Position in filament",
+            yaxis_title="Bend (degrees)",
+            xtrace=filament_positions[0],
+            ytraces={
+                "Total bend (degrees) Start": bend[0],
+                "Total bend (degrees) Mid": bend[mid_time],
+                "Total bend (degrees) End": bend[end_time],
+            },
+            render_mode="lines",
+        )
+
+
+    @staticmethod
     def get_total_bond_length_plot(
         lateral_bond_lengths, longitudinal_bond_lengths, times
     ):
@@ -904,10 +927,11 @@ class ActinVisualization:
             total_twist_remove_bend,
             filament_positions1,
         ) = ActinAnalyzer.analyze_total_twist(normals, axis_positions)
+        bend, filament_positions2 = ActinAnalyzer.analyze_bend_per_monomer(axis_positions)
         (
             lateral_bond_lengths,
             longitudinal_bond_lengths,
-            filament_positions2,
+            filament_positions3,
         ) = ActinAnalyzer.analyze_bond_lengths(
             monomer_data, box_size, actin_number_types, periodic_boundary
         )
@@ -920,11 +944,14 @@ class ActinVisualization:
             ActinVisualization.get_twist_per_monomer_plot(
                 total_twist, total_twist_remove_bend, filament_positions1
             ),
+            ActinVisualization.get_bend_per_monomer_plot(
+                bend, filament_positions2
+            ),
             ActinVisualization.get_total_bond_length_plot(
                 lateral_bond_lengths, longitudinal_bond_lengths, times
             ),
             ActinVisualization.get_bond_length_per_monomer_plot(
-                lateral_bond_lengths, longitudinal_bond_lengths, filament_positions2
+                lateral_bond_lengths, longitudinal_bond_lengths, filament_positions3
             ),
         ]
         return plots

@@ -930,8 +930,7 @@ class ActinAnalyzer:
     @staticmethod
     def analyze_total_twist(normals, axis_positions, stride=1):
         """
-        Get the total twist from monomer normal to monomer normal
-        along the first mother filament in degrees
+        Get the total twist from monomer normal to monomer normal in degrees
         """
         total_twist = []
         total_twist_no_bend = []
@@ -962,6 +961,33 @@ class ActinAnalyzer:
         return (
             np.array(total_twist),
             np.array(total_twist_no_bend),
+            np.array(filament_positions),
+        )
+
+    @staticmethod
+    def analyze_bend_per_monomer(axis_positions, stride=1):
+        """
+        Get the angles between monomer to monomer tangents in degrees
+        """
+        bend = []
+        filament_positions = []
+        new_t = 0
+        for t in range(0, len(axis_positions), stride):
+            bend.append([])
+            filament_positions.append([])
+            last_tangent = None
+            for index in range(len(axis_positions[t]) - 1):
+                tangent = axis_positions[t][index + 1] - axis_positions[t][index]
+                if last_tangent is not None:
+                    angle = ReaddyUtil.get_angle_between_vectors(
+                        last_tangent, tangent, in_degrees=True
+                    )
+                    bend[new_t].append(angle)
+                    filament_positions[new_t].append(index)
+                last_tangent = tangent
+            new_t += 1
+        return (
+            np.array(bend),
             np.array(filament_positions),
         )
 
