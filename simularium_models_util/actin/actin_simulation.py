@@ -101,7 +101,6 @@ class ActinSimulation:
         Add geometric constraints for connected actin particles,
         including bonds, angles, and repulsions, to the ReaDDy system
         """
-        angle = ActinStructure.actin_to_actin_dihedral_angle()
         force_constant = self.parameters["force_constant"]
         util = ReaddyUtil()
         actin_number_types = int(self.parameters["actin_number_types"])

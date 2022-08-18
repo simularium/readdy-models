@@ -3,7 +3,6 @@
 
 import os
 import argparse
-from matplotlib.pyplot import plot
 import numpy as np
 import copy
 from typing import Dict, Any, List

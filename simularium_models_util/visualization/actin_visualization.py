@@ -514,7 +514,9 @@ class ActinVisualization:
                 "Arp2/3 in filaments": 100.0
                 * ActinAnalyzer.analyze_ratio_of_bound_to_total_arp23(monomer_data),
                 "Actin in daughter filaments": 100.0
-                * ActinAnalyzer.analyze_ratio_of_daughter_to_total_actin(monomer_data, actin_number_types),
+                * ActinAnalyzer.analyze_ratio_of_daughter_to_total_actin(
+                    monomer_data, actin_number_types
+                ),
             },
             render_mode="lines",
         )
@@ -531,10 +533,14 @@ class ActinVisualization:
             xtrace=times,
             ytraces={
                 "Mother filaments": ActinAnalyzer.analyze_average_for_series(
-                    ActinAnalyzer.analyze_mother_filament_lengths(monomer_data, actin_number_types)
+                    ActinAnalyzer.analyze_mother_filament_lengths(
+                        monomer_data, actin_number_types
+                    )
                 ),
                 "Daughter filaments": ActinAnalyzer.analyze_average_for_series(
-                    ActinAnalyzer.analyze_daughter_filament_lengths(monomer_data, actin_number_types)
+                    ActinAnalyzer.analyze_daughter_filament_lengths(
+                        monomer_data, actin_number_types
+                    )
                 ),
             },
             render_mode="lines",
@@ -663,7 +669,9 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_helix_pitch_plot(monomer_data, box_size, actin_number_types, periodic_boundary, times):
+    def get_helix_pitch_plot(
+        monomer_data, box_size, actin_number_types, periodic_boundary, times
+    ):
         """
         Add a plot of average helix pitch
         for both the short and long helices
@@ -708,7 +716,10 @@ class ActinVisualization:
                 "Filament bending": (
                     ActinAnalyzer.analyze_average_for_series(
                         ActinAnalyzer.analyze_filament_straightness(
-                            monomer_data, box_size, actin_number_types, periodic_boundary
+                            monomer_data,
+                            box_size,
+                            actin_number_types,
+                            periodic_boundary,
                         )
                     )
                 ),
@@ -718,7 +729,13 @@ class ActinVisualization:
 
     @staticmethod
     def generate_polymerization_plots(
-        monomer_data, times, reactions, box_size, actin_number_types, periodic_boundary=True, plots=None
+        monomer_data,
+        times,
+        reactions,
+        box_size,
+        actin_number_types,
+        periodic_boundary=True,
+        plots=None,
     ):
         """
         Use an ActinAnalyzer to generate plots of observables
@@ -731,8 +748,12 @@ class ActinVisualization:
                 "histogram": [],
             }
         plots["scatter"] += [
-            ActinVisualization.get_bound_monomers_plot(monomer_data, times, actin_number_types),
-            ActinVisualization.get_avg_length_plot(monomer_data, times, actin_number_types),
+            ActinVisualization.get_bound_monomers_plot(
+                monomer_data, times, actin_number_types
+            ),
+            ActinVisualization.get_avg_length_plot(
+                monomer_data, times, actin_number_types
+            ),
             ActinVisualization.get_growth_reactions_plot(reactions, times),
             ActinVisualization.get_growth_reactions_vs_actin_plot(
                 reactions, monomer_data, box_size
@@ -817,9 +838,7 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_bend_per_monomer_plot(
-        bend, filament_positions
-    ):
+    def get_bend_per_monomer_plot(bend, filament_positions):
         """
         Add a plot of bend vs position of the monomer in filament
         """
@@ -837,7 +856,6 @@ class ActinVisualization:
             },
             render_mode="lines",
         )
-
 
     @staticmethod
     def get_total_bond_length_plot(
@@ -927,7 +945,9 @@ class ActinVisualization:
             total_twist_remove_bend,
             filament_positions1,
         ) = ActinAnalyzer.analyze_total_twist(normals, axis_positions)
-        bend, filament_positions2 = ActinAnalyzer.analyze_bend_per_monomer(axis_positions)
+        bend, filament_positions2 = ActinAnalyzer.analyze_bend_per_monomer(
+            axis_positions
+        )
         (
             lateral_bond_lengths,
             longitudinal_bond_lengths,
@@ -944,9 +964,7 @@ class ActinVisualization:
             ActinVisualization.get_twist_per_monomer_plot(
                 total_twist, total_twist_remove_bend, filament_positions1
             ),
-            ActinVisualization.get_bend_per_monomer_plot(
-                bend, filament_positions2
-            ),
+            ActinVisualization.get_bend_per_monomer_plot(bend, filament_positions2),
             ActinVisualization.get_total_bond_length_plot(
                 lateral_bond_lengths, longitudinal_bond_lengths, times
             ),
@@ -1102,7 +1120,7 @@ class ActinVisualization:
 
     @staticmethod
     def visualize_actin(
-        actin_number_types, 
+        actin_number_types,
         path_to_readdy_h5: str,
         box_size: np.ndarray,
         total_steps: int,

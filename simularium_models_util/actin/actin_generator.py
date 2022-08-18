@@ -343,7 +343,12 @@ class ActinGenerator:
 
     @staticmethod
     def get_monomers_for_daughter_fiber(
-        actin_number_types, mother_fiber, nucleated_arp, offset_vector, longitudinal_bonds=False, particles={}
+        actin_number_types,
+        mother_fiber,
+        nucleated_arp,
+        offset_vector,
+        longitudinal_bonds=False,
+        particles={},
     ):
         """
         get any bound arps and any daughter fibers attached to this fiber
@@ -592,7 +597,12 @@ class ActinGenerator:
                 particle_ids,
                 junction_ids,
             ) = ActinGenerator.get_monomers_for_daughter_fiber(
-                actin_number_types, fiber, nucleated_arp, offset_vector, longitudinal_bonds, particles
+                actin_number_types,
+                fiber,
+                nucleated_arp,
+                offset_vector,
+                longitudinal_bonds,
+                particles,
             )
             (
                 particles,

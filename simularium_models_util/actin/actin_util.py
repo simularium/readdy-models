@@ -1566,7 +1566,9 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_bonds_between_actins(force_constant, system, util, actin_number_types, longitudinal_bonds):
+    def add_bonds_between_actins(
+        force_constant, system, util, actin_number_types, longitudinal_bonds
+    ):
         """
         add bonds between actins
         """
@@ -1904,7 +1906,7 @@ class ActinUtil:
         #     force_constant,
         #     angle,
         #     system,
-        # )  
+        # )
 
     @staticmethod
     def add_branch_bonds(force_constant, system, util, actin_number_types):

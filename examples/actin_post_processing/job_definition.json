@@ -2,12 +2,10 @@
     "jobDefinitionName": "blairl_readdy-actin-post-processing",
     "type": "container",
     "containerProperties": {
-        "image": "public.ecr.aws/h9b1t0o4/blairl/readdy-actin-post-processing",
+        "image": "108503617402.dkr.ecr.us-west-2.amazonaws.com/blairl/readdy-actin-post-processing:latest",
         "vcpus": 4,
         "memory": 15000,
-        "environment": [
-            {"name": "S3_INPUT_URL", "value": "s3://readdy-working-bucket/"}
-        ],
+        "environment": [],
         "jobRoleArn": "arn:aws:iam::108503617402:role/BatchJobRole"
     }
 }
