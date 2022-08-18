@@ -10,13 +10,11 @@ from visualize_actin import visualize_actin
 
 S3_BUCKET_NAME = "readdy-working-bucket"
 
-# EXPERIMENT_NAME = "actin_twist_bend_long_bonds"
-EXPERIMENT_NAME = "actin_twist_bend_1"
+EXPERIMENT_NAME = "actin_twist_bend_long_bonds"
 
 REPLICATES = 3
 
 EXPERIMENT_CONDITIONS = [
-    "radial_fixed",
     "tangent_fixed",
     "tangent_free",
     "radial_fixed",
@@ -27,17 +25,7 @@ EXPERIMENT_CONDITIONS = [
     "long_radial_free",
 ]
 
-ACTIN_NUMBER_TYPES = [
-    3,
-    3,
-    3,
-    3,
-    3,
-    5,
-    5,
-    5,
-    5,
-]
+ACTIN_NUMBER_TYPES = 4 * [3] + 4 * [5]
 
 
 def main():
