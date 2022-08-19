@@ -57,6 +57,7 @@ def main():
         box_size=600,
         total_steps=1e5,
         experiment_name=f"{EXPERIMENT_NAME}_",
+        condition_name=condition,
         periodic_boundary=False,
         plot_bend_twist=True,
         plot_polymerization=False,

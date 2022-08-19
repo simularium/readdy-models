@@ -112,6 +112,7 @@ def visualize_actin(
     box_size: float,
     total_steps: float,
     experiment_name: str,
+    condition_name: str,
     periodic_boundary: bool,
     plot_bend_twist: bool,
     plot_polymerization: bool,
@@ -207,7 +208,7 @@ def visualize_actin(
         combo_plots = combine_plots(plots, exclude_y_trace_keywords)
         ActinVisualization.save_actin(
             trajectory_datas,
-            os.path.join("outputs/", f"{experiment_name}_combo"),
+            os.path.join("outputs/", f"{experiment_name}_{condition_name}_combo"),
             combo_plots,
         )
 
@@ -280,7 +281,8 @@ def main():
         args.dir_path,
         float(args.box_size),
         float(args.total_steps),
-        args.experiment_name,
+        "",
+        args.condition_name,
         args.periodic_boundary,
         args.plot_bend_twist,
         args.plot_polymerization,
