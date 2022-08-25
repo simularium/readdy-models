@@ -69,7 +69,12 @@ class MicrotubulesVisualization:
         """
         protofilament_list = MicrotubulesAnalyzer.analyze_protofilament_lengths(monomer_data)
 
-        mean_lengths = np.array([np.nanmean(protofilament) for protofilament in protofilament_list])
+        mean_lengths = np.array(
+                [
+                    np.nanmean(protofilament) if len(protofilament) else 0
+                    for protofilament in protofilament_list
+                ]
+            )
         return ScatterPlotData(
             title="Average microtubule length",
             xaxis_title="Time (µs)",
@@ -160,29 +165,13 @@ class MicrotubulesVisualization:
 
     @staticmethod
     def generate_plots(
-        path_to_readdy_h5,
-        box_size,
-        stride=1,
-        periodic_boundary=True,
-        save_pickle_file=False,
-        pickle_file_path=None,
+        monomer_data,
+        reactions,
+        times,
     ):
         """
         Use an MicrotubulesAnalyzer to generate plots of observables
         """
-        (
-            monomer_data,
-            reactions,
-            times,
-            _,
-        ) = ReaddyUtil.monomer_data_and_reactions_from_file(
-            h5_file_path=path_to_readdy_h5,
-            stride=stride,
-            timestep=0.1,
-            reaction_names=MICROTUBULES_REACTIONS,
-            save_pickle_file=save_pickle_file,
-            pickle_file_path=pickle_file_path,
-        )
         return {
             "scatter": [
                 MicrotubulesVisualization.get_avg_microtubule_length_plot(
@@ -296,16 +285,31 @@ class MicrotubulesVisualization:
             ignore_types=ignore_types,
             plots=[],
         )
+        
         try:
             converter = ReaddyConverter(data)
         except Exception as e:
             print(str(e))
-        if plots is not None:
-            for plot_type in plots:
-                for plot in plots[plot_type]:
-                    converter.add_plot(plot, plot_type)
 
-        converter.write_JSON(path_to_readdy_h5)
+        return converter
+
+    @staticmethod
+    def add_plots(
+        converter,
+        plots,
+    ):
+        if plots is not None:
+                    for plot_type in plots:
+                        for plot in plots[plot_type]:
+                            converter.add_plot(plot, plot_type)
+        return converter
+
+    @staticmethod
+    def save(
+        converter,
+        output_path,
+    ):
+        converter.save(output_path, binary=True)
 
 
 def main():

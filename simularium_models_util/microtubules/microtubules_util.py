@@ -330,10 +330,10 @@ class MicrotubulesUtil:
         is the tubulin connected to a neighbor on each ring side?
         """
         return (
-            MicrotubulesUtil.get_neighboring_tubulin(topology, tubulin, [0, -1])
-            is not None
-            and MicrotubulesUtil.get_neighboring_tubulin(topology, tubulin, [0, 1])
-            is not None
+            (MicrotubulesUtil.get_neighboring_tubulin(topology, tubulin, [0, -1])
+            is not None)
+            and (MicrotubulesUtil.get_neighboring_tubulin(topology, tubulin, [0, 1])
+            is not None)
         )
 
     @staticmethod
@@ -377,6 +377,7 @@ class MicrotubulesUtil:
             tubulin_crosslinked
             or MicrotubulesUtil.tubulin_is_crosslinked(topology, tubulin)
         ):
+            # import ipdb; ipdb.set_trace()
             MicrotubulesUtil.remove_tubulin_sites(topology, recipe, tubulin)
             return True
         return False
@@ -1256,14 +1257,12 @@ class MicrotubulesUtil:
         if not removed:
             raise Exception(message + "\n" + ReaddyUtil.topology_to_string(topology))
         recipe.add_edge(tubulins[0], tubulins[1])
-        for i in range(2):
-            if prev_tubulin[i] is not None:
-                recipe.add_edge(tubulins[i], prev_tubulin[i])
-            if next_tubulin[i] is not None:
-                recipe.add_edge(tubulins[i], next_tubulin[i])
-        import ipdb; ipdb.set_trace()
+        # for i in range(2):
+        #     if prev_tubulin[i] is not None:
+        #         recipe.add_edge(tubulins[i], prev_tubulin[i])
+        #     if next_tubulin[i] is not None:
+        #         recipe.add_edge(tubulins[i], next_tubulin[i])
         recipe.change_topology_type("Microtubule")
-        MicrotubulesUtil.check_tubulin_neighbors(topology)
         return recipe
 
     @staticmethod

@@ -29,9 +29,9 @@ class MicrotubulesAnalyzer:
 
             if plus_end_neighbor_id is None or minus_end_neighbor_id is not None:
                 continue
+            protofilament = [particle_id]
             if debug_flag:
                 import ipdb; ipdb.set_trace()
-            protofilament = [particle_id]
             while plus_end_neighbor_id is not None:
                 protofilament.append(plus_end_neighbor_id)
                 (
@@ -111,9 +111,14 @@ class MicrotubulesAnalyzer:
         in each frame of the trajectory
         """
         result = []
+        # debug_flag = False
         for t in range(len(monomer_data)):
-            print(f"processing time step {t}")
-            protofilaments = MicrotubulesAnalyzer.get_protofilaments(monomer_data[t], t>=7)
+            # print(f"processing time step {t}")
+            # debug_flag = t>=3
+            debug_flag = False
+            if debug_flag:
+                import ipdb; ipdb.set_trace()
+            protofilaments = MicrotubulesAnalyzer.get_protofilaments(monomer_data[t], debug_flag)
             result.append([])
             for filament in protofilaments:
                 result[t].append(len(filament))

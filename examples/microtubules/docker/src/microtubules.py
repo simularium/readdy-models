@@ -7,7 +7,7 @@ import pandas
 import argparse
 import psutil
 
-from simularium_models_util.microtubules import MicrotubulesSimulation
+from simularium_models_util.microtubules import MicrotubulesSimulation, MICROTUBULES_REACTIONS
 from simularium_models_util.visualization import MicrotubulesVisualization
 from simularium_models_util import RepeatedTimer, ReaddyUtil
 
@@ -54,19 +54,56 @@ def main():
             int(parameters["total_steps"]), parameters["timestep"]
         )
         try:
-            plots = MicrotubulesVisualization.generate_plots(
-                parameters["name"] + ".h5",
-                parameters["box_size"],
-                stride=1,
-                save_pickle_file=True,
-            )
+            save_converter = True
+            h5_path = parameters["name"] + ".h5"
+            stride = 1
+
             viz_stepsize = max(int(parameters["total_steps"] / 1000.0), 1)
             scaled_time_step_us = parameters["timestep"] * 1e-3 * viz_stepsize
-            MicrotubulesVisualization.visualize_microtubules(
-                parameters["name"] + ".h5",
-                parameters["box_size"],
+
+            (monomer_data, reactions, times, _,) = ReaddyUtil.monomer_data_and_reactions_from_file(
+                h5_file_path=h5_path,
+                stride=stride,
+                timestep=0.1,
+                reaction_names=MICROTUBULES_REACTIONS,
+                save_pickle_file=True,
+                pickle_file_path=None,
+            )
+
+            plots = MicrotubulesVisualization.generate_plots(
+                monomer_data=monomer_data,
+                reactions=reactions,
+                times=times,
+            )
+
+            converter = MicrotubulesVisualization.visualize_microtubules(
+                h5_path,
+                box_size=parameters["box_size"],
                 scaled_time_step_us=scaled_time_step_us,
                 plots=plots,
+            )
+            
+            converter._data = ReaddyUtil._add_edge_agents(
+                traj_data=converter._data,
+                monomer_data=monomer_data,
+                exclude_types=["tubulinA#free",
+                    "tubulinB#free"]
+            )
+
+            if save_converter:
+                MicrotubulesVisualization.save(
+                    converter,
+                    output_path=h5_path,
+                )
+
+            converter = MicrotubulesVisualization.add_plots(
+                converter,
+                plots,
+            )
+
+            MicrotubulesVisualization.save(
+                converter,
+                output_path=h5_path,
             )
         except Exception as e:
             print("Failed viz!!!!!!!!!!\n" + str(type(e)) + " " + str(e))

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import copy
+from time import time
 import numpy as np
 import scipy.linalg as linalg
 import random
@@ -11,6 +12,9 @@ from shutil import rmtree
 import math
 import pandas as pd
 from tqdm import tqdm
+from simulariumio import TrajectoryData, DisplayData, DimensionData
+from simulariumio.constants import VIZ_TYPE, DISPLAY_TYPE
+from typing import List, Dict, Any
 
 
 class ReaddyUtil:
@@ -29,6 +33,92 @@ class ReaddyUtil:
         normalize a vector
         """
         return v / np.linalg.norm(v)
+
+    @staticmethod
+    def _add_edge_agents(
+        traj_data: TrajectoryData,
+        monomer_data: List[Dict[str, Any]],
+        type_name: str = "",
+        color: str = "",
+        exclude_types: List[str] = []
+    ) -> TrajectoryData:
+        """
+        Add agent data for fibers to draw along the edges between particles
+        """
+        if monomer_data is None:
+            raise Exception("Edge visualization requires monomer_data")
+        # get dimensions of data
+        total_steps = len(monomer_data)
+        max_edges = 0
+        for time_index in range(total_steps):
+            n_edges = 0
+            for particle_id in monomer_data[time_index]["particles"]:
+                particle = monomer_data[time_index]["particles"][particle_id]
+                n_edges += len(particle["neighbor_ids"])
+            if n_edges > max_edges:
+                max_edges = n_edges
+        dimensions = ReaddyUtil._get_added_dimensions_for_lines(
+            traj_data, max_edges
+        )
+        new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(
+            dimensions
+        )
+        new_type_name = f"{type_name}#edge" if type_name else "edge"
+        # add new agents
+        print("Processing edges...")
+        max_used_uid = max(list(np.unique(traj_data.agent_data.unique_ids)))
+        for time_index in tqdm(range(total_steps)):
+            n_edges = 0
+            start_i = int(traj_data.agent_data.n_agents[time_index])
+            existing_edges = []
+            for particle_id in monomer_data[time_index]["particles"]:
+                particle = monomer_data[time_index]["particles"][particle_id]
+                if particle["type_name"] in exclude_types:
+                    continue
+                for neighbor_id in particle["neighbor_ids"]:
+                    if (particle_id, neighbor_id) in existing_edges:
+                        continue
+                    if neighbor_id in monomer_data[time_index]["particles"]:
+                        neighbor = monomer_data[time_index]["particles"][neighbor_id]
+                        positions = np.array([particle["position"], neighbor["position"]])
+                        agent_index = start_i + n_edges
+                        new_agent_data.unique_ids[time_index][agent_index] = (
+                            max_used_uid + n_edges
+                        )
+                        new_agent_data.subpoints[time_index][agent_index] = positions
+                        existing_edges.append((neighbor_id, particle_id))
+                        n_edges += 1
+            end_i = start_i + n_edges
+            new_agent_data.n_agents[time_index] += n_edges
+            new_agent_data.viz_types[time_index][start_i:end_i] = n_edges * [
+                VIZ_TYPE.FIBER
+            ]
+            new_agent_data.types[time_index] += n_edges * [new_type_name]
+            new_agent_data.radii[time_index][start_i:end_i] = n_edges * [0.5]
+            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_edges * [2.0]
+        new_agent_data.display_data[new_type_name] = DisplayData(
+            name=new_type_name,
+            display_type=DISPLAY_TYPE.FIBER,
+            color="#eaeaea" if not color else color,  # default to light gray
+        )
+        traj_data.agent_data = new_agent_data
+        return traj_data
+
+    @staticmethod
+    def _get_added_dimensions_for_lines(
+        traj_data: TrajectoryData,
+        max_agents: int,
+    ) -> DimensionData:
+        """
+        Get a DimensionData with the deltas for each dimension
+        of AgentData when adding fibers with 2 points each
+        """
+        current_dimensions = traj_data.agent_data.get_dimensions()
+        return DimensionData(
+            total_steps=0,
+            max_agents=max_agents,
+            max_subpoints=2 - current_dimensions.max_subpoints,
+        )
 
     @staticmethod
     def analyze_reaction_count_over_time(reactions, reaction_name):
@@ -1059,6 +1149,7 @@ class ReaddyUtil:
                 "type_name": top.type,
                 "particle_ids": top.particles,
             }
+        # TODO: set breakpoint here to check if neighbors are added correctly
         for p in range(len(ids[time_index])):
             p_id = ids[time_index][p]
             position = positions[time_index][p]
@@ -1068,7 +1159,7 @@ class ReaddyUtil:
                     neighbor_ids.append(edge[1])
                 elif p_id == edge[1]:
                     neighbor_ids.append(edge[0])
-            result["particles"][ids[time_index][p]] = {
+            result["particles"][p_id] = {
                 "type_name": traj.species_name(types[time_index][p]),
                 "position": np.array([position[0], position[1], position[2]]),
                 "neighbor_ids": neighbor_ids,
