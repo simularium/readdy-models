@@ -279,19 +279,13 @@ class MicrotubulesVisualization:
             ),
             timestep=scaled_time_step_us,
             path_to_readdy_h5=path_to_readdy_h5,
-            display_data=display_data,
+            # display_data=display_data,
             time_units=UnitData("µs"),
             spatial_units=UnitData("nm"),
             ignore_types=ignore_types,
             plots=[],
         )
-        
-        try:
-            converter = ReaddyConverter(data)
-        except Exception as e:
-            print(str(e))
-
-        return converter
+        return ReaddyConverter(data)
 
     @staticmethod
     def add_plots(

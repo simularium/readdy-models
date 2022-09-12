@@ -86,6 +86,7 @@ def main():
             converter._data = ReaddyUtil._add_edge_agents(
                 traj_data=converter._data,
                 monomer_data=monomer_data,
+                box_size=parameters["box_size"],
                 exclude_types=["tubulinA#free",
                     "tubulinB#free"]
             )

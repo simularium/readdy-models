@@ -38,6 +38,7 @@ class ReaddyUtil:
     def _add_edge_agents(
         traj_data: TrajectoryData,
         monomer_data: List[Dict[str, Any]],
+        box_size: np.ndarray,
         type_name: str = "",
         color: str = "",
         exclude_types: List[str] = []
@@ -80,7 +81,9 @@ class ReaddyUtil:
                         continue
                     if neighbor_id in monomer_data[time_index]["particles"]:
                         neighbor = monomer_data[time_index]["particles"][neighbor_id]
-                        positions = np.array([particle["position"], neighbor["position"]])
+                        neighbor_pos = ReaddyUtil.get_non_periodic_boundary_position(
+                            particle["position"], neighbor["position"], box_size)
+                        positions = np.array([particle["position"], neighbor_pos])
                         agent_index = start_i + n_edges
                         new_agent_data.unique_ids[time_index][agent_index] = (
                             max_used_uid + n_edges
@@ -704,6 +707,9 @@ class ReaddyUtil:
                 + " -- "
                 + ReaddyUtil.vertex_to_string(topology, vertex2)
             )
+        pid1 = topology.particle_id_of_vertex(vertex1)
+        pid2 = topology.particle_id_of_vertex(vertex2)
+        print(f"Breaking bond between {pid1} and {pid2}")
         recipe.remove_edge(vertex1, vertex2)
         return True, ""
 
@@ -1225,7 +1231,7 @@ class ReaddyUtil:
         the timestamps for each frame,
         and the reaction time increment in seconds
         """
-        if pickle_file_path is not None:
+        if pickle_file_path is not None and os.path.exists(pickle_file_path):
             print("Loading pickle file for shaped data")
             import pickle
 

@@ -255,6 +255,11 @@ class MicrotubulesUtil:
             return False
         for site in range(5):
             if v_sites[site] is not None:
+                # log all ids of neighbors of v_sites[site]
+                pid = topology.particle_id_of_vertex(v_sites[site])
+                for neighbor in v_sites[site]:
+                    neighbor_id = topology.particle_id_of_vertex(neighbor)
+                    print(f"Separating vertex {pid} from neighbor {neighbor_id}")
                 recipe.separate_vertex(v_sites[site])
                 recipe.change_particle_type(v_sites[site], "site#remove")
         return True
@@ -438,6 +443,13 @@ class MicrotubulesUtil:
             topology, tubulin, "site#", False
         )
         return v_new_sites if len(v_new_sites) >= 1 else None
+    
+    @staticmethod
+    def add_edge(topology, recipe, v1, v2, info):
+        particle_id1 = topology.particle_id_of_vertex(v1)
+        particle_id2 = topology.particle_id_of_vertex(v2)
+        print(f"Add edge between {particle_id1} and {particle_id2}, {info}")
+        recipe.add_edge(v1, v2)
 
     @staticmethod
     def setup_sites(
@@ -458,30 +470,30 @@ class MicrotubulesUtil:
         recipe.change_particle_position(v_new_sites[0], position + normal)
         recipe.change_particle_type(v_new_sites[1], f"site#1{site_state_ring}")
         recipe.change_particle_position(v_new_sites[1], position + side)
-        recipe.add_edge(v_new_sites[0], v_new_sites[1])  # edge to site#out
+        MicrotubulesUtil.add_edge(topology, recipe, v_new_sites[0], v_new_sites[1], "edge to site#out")
         recipe.change_particle_type(v_new_sites[2], f"site#2{site_state_ring}")
         recipe.change_particle_position(v_new_sites[2], position - side)
-        recipe.add_edge(v_new_sites[0], v_new_sites[2])  # edge to site#out
+        MicrotubulesUtil.add_edge(topology, recipe, v_new_sites[0], v_new_sites[2], "edge to site#out")
         recipe.change_particle_type(v_new_sites[3], "site#3")
         recipe.change_particle_position(v_new_sites[3], position - tangent)
-        recipe.add_edge(v_new_sites[0], v_new_sites[3])  # edge to site#out
-        recipe.add_edge(v_new_sites[1], v_new_sites[3])  # edge to site#1
-        recipe.add_edge(v_new_sites[2], v_new_sites[3])  # edge to site#2
+        MicrotubulesUtil.add_edge(topology, recipe, v_new_sites[0], v_new_sites[3], "edge to site#out")
+        MicrotubulesUtil.add_edge(topology, recipe, v_new_sites[1], v_new_sites[3], "edge to site#1")
+        MicrotubulesUtil.add_edge(topology, recipe, v_new_sites[2], v_new_sites[3], "edge to site#2")
         recipe.change_particle_type(v_new_sites[4], f"site#4{site_state_filament}")
         recipe.change_particle_position(v_new_sites[4], position + tangent)
-        recipe.add_edge(v_new_sites[0], v_new_sites[4])  # edge to site#out
-        recipe.add_edge(v_new_sites[1], v_new_sites[4])  # edge to site#1
-        recipe.add_edge(v_new_sites[2], v_new_sites[4])  # edge to site#2
+        MicrotubulesUtil.add_edge(topology, recipe, v_new_sites[0], v_new_sites[4], "edge to site#out")
+        MicrotubulesUtil.add_edge(topology, recipe, v_new_sites[1], v_new_sites[4], "edge to site#1")
+        MicrotubulesUtil.add_edge(topology, recipe, v_new_sites[2], v_new_sites[4], "edge to site#2")
 
     @staticmethod
     def connect_sites_between_tubulins(topology, recipe, v_sites_minus, v_sites_plus):
         """
         add inter-tubulin edges between sites
         """
-        recipe.add_edge(v_sites_plus[0], v_sites_minus[0])  # + site0 -- - site0
-        recipe.add_edge(v_sites_plus[1], v_sites_minus[1])  # + site1 -- - site1
-        recipe.add_edge(v_sites_plus[2], v_sites_minus[2])  # + site2 -- - site2
-        recipe.add_edge(v_sites_plus[3], v_sites_minus[4])  # + site3 -- - site4
+        MicrotubulesUtil.add_edge(topology, recipe, v_sites_plus[0], v_sites_minus[0], "+ site0 -- - site0")
+        MicrotubulesUtil.add_edge(topology, recipe, v_sites_plus[1], v_sites_minus[1], "+ site1 -- - site1")
+        MicrotubulesUtil.add_edge(topology, recipe, v_sites_plus[2], v_sites_minus[2], "+ site2 -- - site2")
+        MicrotubulesUtil.add_edge(topology, recipe, v_sites_plus[3], v_sites_minus[4], "+ site3 -- - site4")
 
     @staticmethod
     def get_all_polymer_tubulin_types(particle_type):
@@ -976,7 +988,7 @@ class MicrotubulesUtil:
         )
         if not removed:
             raise Exception(message + "\n" + ReaddyUtil.topology_to_string(topology))
-        recipe.add_edge(v_endB, v_newA)  # endB -- newA
+        MicrotubulesUtil.add_edge(topology, recipe, v_endB, v_newA, "endB -- newA")
         # new tubulinA
         tangent = ReaddyUtil.rotate(np.copy(tangent), side, np.deg2rad(10.0))
         normal = ReaddyUtil.rotate(np.copy(normal), side, np.deg2rad(10.0))
@@ -1256,12 +1268,12 @@ class MicrotubulesUtil:
         )
         if not removed:
             raise Exception(message + "\n" + ReaddyUtil.topology_to_string(topology))
-        recipe.add_edge(tubulins[0], tubulins[1])
+        MicrotubulesUtil.add_edge(topology, recipe, tubulins[0], tubulins[1], "attach tubulins")
         # for i in range(2):
         #     if prev_tubulin[i] is not None:
-        #         recipe.add_edge(tubulins[i], prev_tubulin[i])
+        #         MicrotubulesUtil.add_edge(topology, recipe, tubulins[i], prev_tubulin[i])
         #     if next_tubulin[i] is not None:
-        #         recipe.add_edge(tubulins[i], next_tubulin[i])
+        #         MicrotubulesUtil.add_edge(topology, recipe, tubulins[i], next_tubulin[i])
         recipe.change_topology_type("Microtubule")
         return recipe
 
