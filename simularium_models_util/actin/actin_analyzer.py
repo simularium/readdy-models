@@ -1032,16 +1032,16 @@ class ActinAnalyzer:
         )
 
     @staticmethod
-    def analyze_bond_lengths(
+    def analyze_bond_energies(
         monomer_data, box_size, actin_number_types, periodic_boundary, stride=1
     ):
         """
-        Get the distance between bonds along the first mother filament,
-        normalized to the ideal distance,
-        trace the explicit lateral and longitudinal bonds
+        Get the strain energy using the harmonic spring equation 
+        and the distance between bonds along the first mother filament,
+        trace the explicit lateral and explicit or implicit longitudinal bonds
         """
-        lengths_lat = []
-        lengths_long = []
+        energies_lat = []
+        energies_long = []
         filament_positions = []
         ideal_length_lat = np.linalg.norm(
             ActinStructure.mother_positions[1] - ActinStructure.mother_positions[0]
@@ -1049,18 +1049,35 @@ class ActinAnalyzer:
         ideal_length_long = np.linalg.norm(
             ActinStructure.mother_positions[2] - ActinStructure.mother_positions[0]
         )
+        KT_NA = 2.479  # kJ / mol ??
+        THEO_TEMP_K = 298.
+        temp_C = 22.
+        temp_K = temp_C + 273.15
+        KT_NA = temp_K * KT_NA / THEO_TEMP_K  # ???
+        k_long = 250.  # kJ / mol * nm^2
+        k_lat = 250.  # kJ / mol * nm^2
+        k_long = k_long / KT_NA
+        k_lat = k_lat / KT_NA
         new_t = 0
         for t in range(0, len(monomer_data), stride):
-            lengths_lat.append([])
-            lengths_long.append([])
+            energies_lat.append([])
+            energies_long.append([])
             filament_positions.append([])
             filament = ActinAnalyzer._frame_mother_filaments(
                 monomer_data[t], actin_number_types
             )[0]
             for index in range(len(filament) - 2):
-                pos = monomer_data[t]["particles"][filament[index]]["position"]
-                pos_lat = monomer_data[t]["particles"][filament[index + 1]]["position"]
-                pos_long = monomer_data[t]["particles"][filament[index + 2]]["position"]
+                particle = monomer_data[t]["particles"][filament[index]]
+                particle_lat = monomer_data[t]["particles"][filament[index + 1]]
+                particle_long = monomer_data[t]["particles"][filament[index + 2]]
+                type_name = particle["type_name"]
+                type_name_lat = particle_lat["type_name"]
+                type_name_long = particle_long["type_name"]
+                if "fixed" in type_name or "fixed" in type_name_lat or "fixed" in type_name_long:
+                    continue
+                pos = particle["position"]
+                pos_lat = particle_lat["position"]
+                pos_long = particle_long["position"]
                 if periodic_boundary:
                     pos_lat = ReaddyUtil.get_non_periodic_boundary_position(
                         pos, pos_lat, box_size
@@ -1068,16 +1085,18 @@ class ActinAnalyzer:
                     pos_long = ReaddyUtil.get_non_periodic_boundary_position(
                         pos, pos_long, box_size
                     )
-                lengths_lat[new_t].append(
-                    np.linalg.norm(pos_lat - pos) / ideal_length_lat
+                bond_stretch_lat = np.linalg.norm(pos_lat - pos) - ideal_length_lat
+                energies_lat[new_t].append(
+                    0.5 * k_long * bond_stretch_lat * bond_stretch_lat
                 )
-                lengths_long[new_t].append(
-                    np.linalg.norm(pos_long - pos) / ideal_length_long
+                bond_stretch_long = np.linalg.norm(pos_long - pos) - ideal_length_long
+                energies_long[new_t].append(
+                    0.5 * k_lat * bond_stretch_long * bond_stretch_long
                 )
                 filament_positions[new_t].append(index)
             new_t += 1
         return (
-            np.array(lengths_lat),
-            np.array(lengths_long),
+            np.array(energies_lat),
+            np.array(energies_long),
             np.array(filament_positions),
         )

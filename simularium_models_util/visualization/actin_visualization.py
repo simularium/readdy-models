@@ -858,64 +858,43 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_total_bond_length_plot(
-        lateral_bond_lengths, longitudinal_bond_lengths, times
+    def get_total_bond_energy_plot(
+        lateral_bond_energies, longitudinal_bond_energies, times
     ):
         """
-        Add a plot of bond lengths (lat and long) vs end displacement
-        (normalize bond lengths relative to theoretical lengths, plot average ± std)
+        Add a plot of bond energies (lat and long) vs time
         """
         STRIDE = 10
-        mean_lat = ActinAnalyzer.analyze_average_for_series(lateral_bond_lengths)[
-            ::STRIDE
-        ]
-        stddev_lat = ActinAnalyzer.analyze_stddev_for_series(lateral_bond_lengths)[
-            ::STRIDE
-        ]
-        mean_long = ActinAnalyzer.analyze_average_for_series(longitudinal_bond_lengths)[
-            ::STRIDE
-        ]
-        stddev_long = ActinAnalyzer.analyze_stddev_for_series(
-            longitudinal_bond_lengths
-        )[::STRIDE]
+        sum_lat = np.sum(lateral_bond_energies, axis=1)[::STRIDE]
+        sum_long = np.sum(longitudinal_bond_energies, axis=1)[::STRIDE]
         return ScatterPlotData(
-            title="Mean Bond lengths",
+            title="Total bond energy",
             xaxis_title="T (μs)",
-            yaxis_title="Normalized bond length",
+            yaxis_title="Strain energy (KT)",
             xtrace=times[::STRIDE],
             ytraces={
-                "Lateral mean": mean_lat,
-                "Lateral mean - std ": mean_lat - stddev_lat,
-                "Lateral mean + std": mean_lat + stddev_lat,
-                "Longitudinal mean": mean_long,
-                "Longitudinal mean - std": mean_long - stddev_long,
-                "Longitudinal mean + std": mean_long + stddev_long,
+                "Lateral": sum_lat,
+                "Longitudinal": sum_long,
             },
             render_mode="lines",
         )
 
     @staticmethod
-    def get_bond_length_per_monomer_plot(
-        lateral_bond_lengths, longitudinal_bond_lengths, filament_positions
+    def get_bond_energy_per_monomer_plot(
+        lateral_bond_energies, longitudinal_bond_energies, filament_positions
     ):
         """
-        Add a plot of bond lengths (lat and long) vs position of monomer in filament
-        normalize bond lengths relative to theoretical lengths
+        Add a plot of bond energies (lat and long) vs index of monomer in filament
         """
-        mid_time = int(len(lateral_bond_lengths) / 2.0)
-        end_time = len(lateral_bond_lengths) - 1
+        end_time = len(lateral_bond_energies) - 1
         return ScatterPlotData(
-            title="Bond lengths per monomer",
-            xaxis_title="Position in filament",
-            yaxis_title="Normalized bond length",
-            xtrace=filament_positions[0],
+            title="Bond energy per monomer",
+            xaxis_title="Filament position (index)",  # convert to nm? how?
+            yaxis_title="Strain Energy (KT)",
+            xtrace=filament_positions[end_time],
             ytraces={
-                "Lateral Start": lateral_bond_lengths[0],
-                "Lateral Mid": lateral_bond_lengths[mid_time],
-                "Lateral End": lateral_bond_lengths[end_time],
-                "Longitudinal Start": longitudinal_bond_lengths[0],
-                "Longitudinal Mid": longitudinal_bond_lengths[mid_time],
-                "Longitudinal End": longitudinal_bond_lengths[end_time],
+                "Lateral": lateral_bond_energies[end_time],
+                "Longitudinal": longitudinal_bond_energies[end_time],
             },
             render_mode="lines",
         )
@@ -949,27 +928,27 @@ class ActinVisualization:
             axis_positions
         )
         (
-            lateral_bond_lengths,
-            longitudinal_bond_lengths,
+            lateral_bond_energies,
+            longitudinal_bond_energies,
             filament_positions3,
-        ) = ActinAnalyzer.analyze_bond_lengths(
+        ) = ActinAnalyzer.analyze_bond_energies(
             monomer_data, box_size, actin_number_types, periodic_boundary
         )
         plots["scatter"] += [
-            ActinVisualization.get_total_twist_plot(
-                total_twist,
-                total_twist_remove_bend,
-                times,
+            # ActinVisualization.get_total_twist_plot(
+            #     total_twist,
+            #     total_twist_remove_bend,
+            #     times,
+            # ),
+            # ActinVisualization.get_twist_per_monomer_plot(
+            #     total_twist, total_twist_remove_bend, filament_positions1
+            # ),
+            # ActinVisualization.get_bend_per_monomer_plot(bend, filament_positions2),
+            ActinVisualization.get_total_bond_energy_plot(
+                lateral_bond_energies, longitudinal_bond_energies, times
             ),
-            ActinVisualization.get_twist_per_monomer_plot(
-                total_twist, total_twist_remove_bend, filament_positions1
-            ),
-            ActinVisualization.get_bend_per_monomer_plot(bend, filament_positions2),
-            ActinVisualization.get_total_bond_length_plot(
-                lateral_bond_lengths, longitudinal_bond_lengths, times
-            ),
-            ActinVisualization.get_bond_length_per_monomer_plot(
-                lateral_bond_lengths, longitudinal_bond_lengths, filament_positions3
+            ActinVisualization.get_bond_energy_per_monomer_plot(
+                lateral_bond_energies, longitudinal_bond_energies, filament_positions3
             ),
         ]
         return plots

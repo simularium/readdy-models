@@ -104,13 +104,13 @@ def combine_plots(
     for plot_type in result:
         result[plot_type] = [plot for _, plot in result[plot_type].items()]
     return result
-    
+
 
 def visualize_actin(
-    actin_number_types: int,
     dir_path: str,
     box_size: float,
     total_steps: float,
+    actin_number_types: int,
     experiment_name: str,
     condition_name: str,
     periodic_boundary: bool,
@@ -197,7 +197,6 @@ def visualize_actin(
             ActinVisualization.save_actin(
                 [trajectory_datas[len(trajectory_datas) - 1]],
                 os.path.join("outputs/", file),
-                traj_plots,
             )
         color_index += 1
         if color_index >= len(COLORS):
@@ -223,9 +222,15 @@ def main():
         help="the file path of the directory\
          containing the trajectories to parse",
     )
-    parser.add_argument("box_size", help="width of simulation cube")
+    parser.add_argument(
+        "box_size", help="width of simulation cube"
+    )
     parser.add_argument(
         "total_steps", help="total number of iterations during model run"
+    )
+    parser.add_argument(
+        "actin_number_types",
+        help="number of possible actin monomer types. can be either 3 or 5.",
     )
     parser.add_argument(
         "experiment_name", 
@@ -271,18 +276,14 @@ def main():
         help="Draw lines for actin normals?",
         dest='visualize_normals', default=False, action='store_true'
     )
-    parser.add_argument(
-        "actin_number_types",
-        help="number of possible actin monomer types. can be either 3 or 5.",
-    )
     args = parser.parse_args()
     visualize_actin(
-        args.actin_number_types,
         args.dir_path,
         float(args.box_size),
         float(args.total_steps),
+        int(args.actin_number_types),
+        args.experiment_name,
         "",
-        args.condition_name,
         args.periodic_boundary,
         args.plot_bend_twist,
         args.plot_polymerization,
