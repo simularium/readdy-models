@@ -40,7 +40,7 @@ def run_readdy_loop(mt_simulation, total_steps, timestep):
         
     import ipdb; ipdb.set_trace()
     
-    for t in tqdm(range(1, total_steps + 1)):
+    for t in range(1, total_steps + 1):
         diffuse()
         update_nl()
         react()        
@@ -82,70 +82,59 @@ def main():
     mt_simulation.add_random_tubulin_dimers()
     mt_simulation.add_microtubule_seed()
     rt = RepeatedTimer(600, report_memory_usage)  # every 10 min
-    try:
-        run_readdy_loop(mt_simulation, int(parameters["total_steps"]), parameters["timestep"])
-        # mt_simulation.simulation.run(
-        #     int(parameters["total_steps"]), parameters["timestep"]
-        # )
-        try:
-            save_converter = True
-            h5_path = parameters["name"] + ".h5"
-            stride = 1
+    run_readdy_loop(mt_simulation, int(parameters["total_steps"]), parameters["timestep"])
+    save_converter = True
+    h5_path = parameters["name"] + ".h5"
+    stride = 1
 
-            viz_stepsize = max(int(parameters["total_steps"] / 1000.0), 1)
-            scaled_time_step_us = parameters["timestep"] * 1e-3 * viz_stepsize
+    viz_stepsize = max(int(parameters["total_steps"] / 1000.0), 1)
+    scaled_time_step_us = parameters["timestep"] * 1e-3 * viz_stepsize
 
-            (monomer_data, reactions, times, _,) = ReaddyUtil.monomer_data_and_reactions_from_file(
-                h5_file_path=h5_path,
-                stride=stride,
-                timestep=0.1,
-                reaction_names=MICROTUBULES_REACTIONS,
-                save_pickle_file=True,
-                pickle_file_path=None,
-            )
+    (monomer_data, reactions, times, _,) = ReaddyUtil.monomer_data_and_reactions_from_file(
+        h5_file_path=h5_path,
+        stride=stride,
+        timestep=0.1,
+        reaction_names=MICROTUBULES_REACTIONS,
+        save_pickle_file=True,
+        pickle_file_path=None,
+    )
 
-            plots = MicrotubulesVisualization.generate_plots(
-                monomer_data=monomer_data,
-                reactions=reactions,
-                times=times,
-            )
+    plots = MicrotubulesVisualization.generate_plots(
+        monomer_data=monomer_data,
+        reactions=reactions,
+        times=times,
+    )
 
-            converter = MicrotubulesVisualization.visualize_microtubules(
-                h5_path,
-                box_size=parameters["box_size"],
-                scaled_time_step_us=scaled_time_step_us,
-                plots=plots,
-            )
-            
-            converter._data = ReaddyUtil._add_edge_agents(
-                traj_data=converter._data,
-                monomer_data=monomer_data,
-                box_size=parameters["box_size"],
-                exclude_types=["tubulinA#free",
-                    "tubulinB#free"]
-            )
+    converter = MicrotubulesVisualization.visualize_microtubules(
+        h5_path,
+        box_size=parameters["box_size"],
+        scaled_time_step_us=scaled_time_step_us,
+        plots=plots,
+    )
+    
+    converter._data = ReaddyUtil._add_edge_agents(
+        traj_data=converter._data,
+        monomer_data=monomer_data,
+        box_size=parameters["box_size"],
+        exclude_types=["tubulinA#free",
+            "tubulinB#free"]
+    )
 
-            if save_converter:
-                MicrotubulesVisualization.save(
-                    converter,
-                    output_path=h5_path,
-                )
+    if save_converter:
+        MicrotubulesVisualization.save(
+            converter,
+            output_path=h5_path,
+        )
 
-            converter = MicrotubulesVisualization.add_plots(
-                converter,
-                plots,
-            )
+    converter = MicrotubulesVisualization.add_plots(
+        converter,
+        plots,
+    )
 
-            MicrotubulesVisualization.save(
-                converter,
-                output_path=h5_path,
-            )
-        except Exception as e:
-            print("Failed viz!!!!!!!!!!\n" + str(type(e)) + " " + str(e))
-            sys.exit(88888888)
-    finally:
-        rt.stop()
-    sys.exit(0)
+    MicrotubulesVisualization.save(
+        converter,
+        output_path=h5_path,
+    )
 
 
 if __name__ == "__main__":
