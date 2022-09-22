@@ -6,6 +6,7 @@ import sys
 import pandas
 import argparse
 import psutil
+import tqdm
 
 from simularium_models_util.microtubules import MicrotubulesSimulation, MICROTUBULES_REACTIONS
 from simularium_models_util.visualization import MicrotubulesVisualization
@@ -14,6 +15,38 @@ from simularium_models_util import RepeatedTimer, ReaddyUtil
 
 def report_memory_usage():
     print(f"RAM percent used: {psutil.virtual_memory()[2]}")
+    
+    
+def run_readdy_loop(mt_simulation, total_steps, timestep):
+    readdy_actions = mt_simulation.simulation._actions
+    init = readdy_actions.initialize_kernel()
+    diffuse = readdy_actions.integrator_euler_brownian_dynamics(
+        timestep
+    )
+    calculate_forces = readdy_actions.calculate_forces()
+    create_nl = readdy_actions.create_neighbor_list(
+        mt_simulation.system.calculate_max_cutoff().magnitude
+    )
+    update_nl = readdy_actions.update_neighbor_list()
+    react = readdy_actions.reaction_handler_uncontrolled_approximation(
+        timestep
+    )
+    observe = readdy_actions.evaluate_observables()
+    init()
+    create_nl()
+    calculate_forces()
+    update_nl()
+    observe(0)
+        
+    import ipdb; ipdb.set_trace()
+    
+    for t in tqdm(range(1, total_steps + 1)):
+        diffuse()
+        update_nl()
+        react()        
+        update_nl()
+        calculate_forces()
+        observe(t)
 
 
 def main():
@@ -50,9 +83,10 @@ def main():
     mt_simulation.add_microtubule_seed()
     rt = RepeatedTimer(600, report_memory_usage)  # every 10 min
     try:
-        mt_simulation.simulation.run(
-            int(parameters["total_steps"]), parameters["timestep"]
-        )
+        run_readdy_loop(mt_simulation, int(parameters["total_steps"]), parameters["timestep"])
+        # mt_simulation.simulation.run(
+        #     int(parameters["total_steps"]), parameters["timestep"]
+        # )
         try:
             save_converter = True
             h5_path = parameters["name"] + ".h5"
