@@ -35,12 +35,17 @@ def run_readdy_loop(mt_simulation, total_steps, timestep):
     init()
     create_nl()
     calculate_forces()
-    update_nl()
-    observe(0)
         
     import ipdb; ipdb.set_trace()
     
+    update_nl()
+    observe(0)
+    
     for t in range(1, total_steps + 1):
+        
+        import ipdb; ipdb.set_trace()
+        
+        print(t)
         diffuse()
         update_nl()
         react()        
