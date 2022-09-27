@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from turtle import pos
 import numpy as np
+from tqdm import tqdm
 
 from ..common import ReaddyUtil
 from .actin_util import ActinUtil
@@ -968,66 +970,61 @@ class ActinAnalyzer:
         return normals, axis_positions
 
     @staticmethod
-    def analyze_total_twist(normals, axis_positions, stride=1):
+    def analyze_twist(
+        monomer_data, box_size, actin_number_types, periodic_boundary, stride=1
+    ):
         """
-        Get the total twist from monomer normal to monomer normal in degrees
+        Get the normal vector to the plane defined 
+        by each set of 3 actin positions
+        for each filamentous actin monomer (except ends)
+        at each timestep
         """
-        total_twist = []
-        total_twist_no_bend = []
-        filament_positions = []
-        new_t = 0
-        for t in range(0, len(normals), stride):
-            total_twist.append([])
-            total_twist_no_bend.append([])
-            filament_positions.append([])
-            for index in range(len(normals[t]) - 2):
-                tangent = axis_positions[t][index + 2] - axis_positions[t][index]
-                normal1 = ReaddyUtil.get_perpendicular_components_of_vector(
-                    normals[t][index], tangent
-                )
-                normal2 = ReaddyUtil.get_perpendicular_components_of_vector(
-                    normals[t][index + 2], tangent
-                )
-                total_angle_no_bend = ReaddyUtil.get_angle_between_vectors(
-                    normal1, normal2, in_degrees=True
-                )
+        total_steps = len(monomer_data)
+        plane_normals = total_steps * [[]]
+        filament_positions = total_steps * [[]]
+        print("Analyzing twist...")
+        for time_index in range(total_steps):
+            filaments = ActinAnalyzer._frame_all_filaments(
+                monomer_data[time_index], actin_number_types
+            )
+            for filament in filaments:
+                for index in range(1, len(filament) - 1):
+                    prev_particle = monomer_data[time_index]["particles"][filament[index - 1]]
+                    particle = monomer_data[time_index]["particles"][filament[index]]
+                    next_particle = monomer_data[time_index]["particles"][filament[index + 1]]
+                    prev_type_name = prev_particle["type_name"]
+                    type_name = particle["type_name"]
+                    next_type_name = next_particle["type_name"]
+                    if "fixed" in prev_type_name or "fixed" in type_name or "fixed" in next_type_name:
+                        continue
+                    prev_position = prev_particle["position"]
+                    position = particle["position"]
+                    next_position = next_particle["position"]
+                    if periodic_boundary:
+                        prev_position = ReaddyUtil.get_non_periodic_boundary_position(
+                            position, prev_position, box_size
+                        )
+                        next_position = ReaddyUtil.get_non_periodic_boundary_position(
+                            position, next_position, box_size
+                        )
+                    v1 = prev_position - position
+                    v2 = next_position - position
+                    normal = np.cross(v1, v2)
+                    normal /= np.linalg.norm(normal)
+                    plane_normals[time_index].append(normal)
+                    filament_positions[time_index].append(index)
+        plane_normals = np.array(plane_normals)
+        twist_angles = total_steps * [[]]
+        new_t = 0      
+        for t in tqdm(range(0, total_steps, stride)):
+            for index in range(len(plane_normals[t]) - 1):
                 total_angle = ReaddyUtil.get_angle_between_vectors(
-                    normals[t][index], normals[t][index + 2], in_degrees=True
+                    plane_normals[t][index], plane_normals[t][index + 1], in_degrees=True
                 )
-                total_twist[new_t].append(total_angle / (2 * 360.0))
-                total_twist_no_bend[new_t].append(total_angle_no_bend / (2 * 360.0))
-                filament_positions[new_t].append(index)
+                twist_angles[new_t].append(total_angle)
             new_t += 1
         return (
-            np.array(total_twist),
-            np.array(total_twist_no_bend),
-            np.array(filament_positions),
-        )
-
-    @staticmethod
-    def analyze_bend_per_monomer(axis_positions, stride=1):
-        """
-        Get the angles between monomer to monomer tangents in degrees
-        """
-        bend = []
-        filament_positions = []
-        new_t = 0
-        for t in range(0, len(axis_positions), stride):
-            bend.append([])
-            filament_positions.append([])
-            last_tangent = None
-            for index in range(len(axis_positions[t]) - 1):
-                tangent = axis_positions[t][index + 1] - axis_positions[t][index]
-                if last_tangent is not None:
-                    angle = ReaddyUtil.get_angle_between_vectors(
-                        last_tangent, tangent, in_degrees=True
-                    )
-                    bend[new_t].append(angle)
-                    filament_positions[new_t].append(index)
-                last_tangent = tangent
-            new_t += 1
-        return (
-            np.array(bend),
+            np.array(twist_angles),
             np.array(filament_positions),
         )
 
@@ -1059,7 +1056,8 @@ class ActinAnalyzer:
         k_long = k_long / KT_NA
         k_lat = k_lat / KT_NA
         new_t = 0
-        for t in range(0, len(monomer_data), stride):
+        print("Analyzing bond energy...")
+        for t in tqdm(range(0, len(monomer_data), stride)):
             energies_lat.append([])
             energies_long.append([])
             filament_positions.append([])
