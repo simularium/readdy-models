@@ -146,7 +146,7 @@ def visualize_actin(
                 h5_file_path=file_path,
                 reactions=plot_polymerization,
             )
-            if visualize_normals:
+            if visualize_normals or plot_bend_twist:
                 normals, axis_positions = ActinAnalyzer.analyze_normals_and_axis_positions(
                     monomer_data, box_size, actin_number_types, periodic_boundary
                 )
@@ -159,7 +159,7 @@ def visualize_actin(
         if plot_bend_twist:
             print("plot bend twist")
             traj_plots = ActinVisualization.generate_bend_twist_plots(
-                monomer_data, times, box_size, actin_number_types, periodic_boundary, traj_plots
+                monomer_data, times, box_size, actin_number_types, normals, axis_positions, periodic_boundary, traj_plots
             )
         color = COLORS[color_index] if color_by_run else ""
         suffix, display_data = get_suffix_and_display_data(

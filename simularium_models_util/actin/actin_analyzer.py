@@ -970,13 +970,51 @@ class ActinAnalyzer:
         return normals, axis_positions
 
     @staticmethod
-    def analyze_twist(
+    def analyze_twist_axis(normals, axis_positions, stride=1):
+        """
+        Get the angles in degrees from monomer normal to monomer normal
+        with normals calculated using the filament axis
+        """
+        total_twist = []
+        total_twist_no_bend = []
+        filament_positions = []
+        for time_index in range(0, len(normals), stride):
+            total_twist.append([])
+            total_twist_no_bend.append([])
+            filament_positions.append([])
+            new_time = math.floor(time_index / stride)
+            for index in range(len(normals[time_index]) - 2):
+                tangent = axis_positions[time_index][index + 2] - axis_positions[time_index][index]
+                normal1 = ReaddyUtil.get_perpendicular_components_of_vector(
+                    normals[time_index][index], tangent
+                )
+                normal2 = ReaddyUtil.get_perpendicular_components_of_vector(
+                    normals[time_index][index + 2], tangent
+                )
+                total_angle_no_bend = ReaddyUtil.get_angle_between_vectors(
+                    normal1, normal2, in_degrees=True
+                )
+                total_angle = ReaddyUtil.get_angle_between_vectors(
+                    normals[time_index][index], normals[time_index][index + 2], in_degrees=True
+                )
+                total_twist[new_time].append(total_angle / (2 * 360.0))
+                total_twist_no_bend[new_time].append(total_angle_no_bend / (2 * 360.0))
+                filament_positions[new_time].append(index)
+        return (
+            np.array(total_twist),
+            np.array(total_twist_no_bend),
+            np.array(filament_positions),
+        )
+
+    @staticmethod
+    def analyze_twist_planes(
         monomer_data, box_size, actin_number_types, periodic_boundary, stride=1
     ):
         """
-        Get the normal vector to the plane defined 
+        Get the twist in degrees between 
+        the normal vectors to the plane defined 
         by each set of 3 actin positions
-        for each filamentous actin monomer (except ends)
+        for each filamentous actin monomer (except fixed particles)
         at each timestep
         """
         total_steps = len(monomer_data)

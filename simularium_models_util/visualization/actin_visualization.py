@@ -859,6 +859,8 @@ class ActinVisualization:
         times,
         box_size,
         actin_number_types,
+        normals, 
+        axis_positions,
         periodic_boundary=True,
         plots=None,
     ):
@@ -872,8 +874,19 @@ class ActinVisualization:
                 "histogram": [],
             }
         STRIDE = 10
-        twist_angles, filament_positions1 = ActinAnalyzer.analyze_twist(
-            monomer_data, box_size, actin_number_types, periodic_boundary, STRIDE)
+        (
+            total_twist, 
+            total_twist_no_bend, 
+            filament_positions
+        ) = ActinAnalyzer.analyze_twist_axis(
+            normals, axis_positions, STRIDE
+        )
+        (
+            twist_angles, 
+            filament_positions1
+        ) = ActinAnalyzer.analyze_twist_planes(
+            monomer_data, box_size, actin_number_types, periodic_boundary, STRIDE
+        )
         (
             lateral_bond_energies,
             longitudinal_bond_energies,
