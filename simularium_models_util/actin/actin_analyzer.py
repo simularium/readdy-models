@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import math
 from turtle import pos
 import numpy as np
-from tqdm import tqdm
 
 from ..common import ReaddyUtil
 from .actin_util import ActinUtil
@@ -980,15 +980,18 @@ class ActinAnalyzer:
         at each timestep
         """
         total_steps = len(monomer_data)
-        plane_normals = total_steps * [[]]
-        filament_positions = total_steps * [[]]
+        plane_normals = []
+        filament_positions = []
         print("Analyzing twist...")
-        for time_index in range(total_steps):
+        for time_index in range(0, total_steps, stride):
+            plane_normals.append([])
+            new_time = math.floor(time_index / stride)
             filaments = ActinAnalyzer._frame_all_filaments(
                 monomer_data[time_index], actin_number_types
             )
             for filament in filaments:
-                for index in range(1, len(filament) - 1):
+                filament_length = len(filament)
+                for index in range(1, filament_length - 1):
                     prev_particle = monomer_data[time_index]["particles"][filament[index - 1]]
                     particle = monomer_data[time_index]["particles"][filament[index]]
                     next_particle = monomer_data[time_index]["particles"][filament[index + 1]]
@@ -1011,22 +1014,19 @@ class ActinAnalyzer:
                     v2 = next_position - position
                     normal = np.cross(v1, v2)
                     normal /= np.linalg.norm(normal)
-                    plane_normals[time_index].append(normal)
-                    filament_positions[time_index].append(index)
-        plane_normals = np.array(plane_normals)
-        twist_angles = total_steps * [[]]
-        new_t = 0      
-        for t in tqdm(range(0, total_steps, stride)):
-            for index in range(len(plane_normals[t]) - 1):
+                    plane_normals[new_time].append(normal)
+        twist_angles = []
+        for time_index in range(len(plane_normals)):
+            twist_angles.append([])
+            filament_positions.append([])
+            for index in range(0, len(plane_normals[time_index]) - 1, 2): 
+                # compare every other normal to get the long helix twist
                 total_angle = ReaddyUtil.get_angle_between_vectors(
-                    plane_normals[t][index], plane_normals[t][index + 1], in_degrees=True
+                    plane_normals[time_index][index], plane_normals[time_index][index + 1], in_degrees=True
                 )
-                twist_angles[new_t].append(total_angle)
-            new_t += 1
-        return (
-            np.array(twist_angles),
-            np.array(filament_positions),
-        )
+                twist_angles[time_index].append(total_angle)
+                filament_positions[time_index].append(index)
+        return np.array(twist_angles), np.array(filament_positions)
 
     @staticmethod
     def analyze_bond_energies(
@@ -1055,19 +1055,19 @@ class ActinAnalyzer:
         k_lat = 250.  # kJ / mol * nm^2
         k_long = k_long / KT_NA
         k_lat = k_lat / KT_NA
-        new_t = 0
         print("Analyzing bond energy...")
-        for t in tqdm(range(0, len(monomer_data), stride)):
+        for time_index in range(0, len(monomer_data), stride):
             energies_lat.append([])
             energies_long.append([])
             filament_positions.append([])
+            new_time = math.floor(time_index / stride)
             filament = ActinAnalyzer._frame_mother_filaments(
-                monomer_data[t], actin_number_types
+                monomer_data[time_index], actin_number_types
             )[0]
             for index in range(len(filament) - 2):
-                particle = monomer_data[t]["particles"][filament[index]]
-                particle_lat = monomer_data[t]["particles"][filament[index + 1]]
-                particle_long = monomer_data[t]["particles"][filament[index + 2]]
+                particle = monomer_data[time_index]["particles"][filament[index]]
+                particle_lat = monomer_data[time_index]["particles"][filament[index + 1]]
+                particle_long = monomer_data[time_index]["particles"][filament[index + 2]]
                 type_name = particle["type_name"]
                 type_name_lat = particle_lat["type_name"]
                 type_name_long = particle_long["type_name"]
@@ -1084,17 +1084,13 @@ class ActinAnalyzer:
                         pos, pos_long, box_size
                     )
                 bond_stretch_lat = np.linalg.norm(pos_lat - pos) - ideal_length_lat
-                energies_lat[new_t].append(
+                energies_lat[new_time].append(
                     0.5 * k_long * bond_stretch_lat * bond_stretch_lat
                 )
                 bond_stretch_long = np.linalg.norm(pos_long - pos) - ideal_length_long
-                energies_long[new_t].append(
+                energies_long[new_time].append(
                     0.5 * k_lat * bond_stretch_long * bond_stretch_long
                 )
-                filament_positions[new_t].append(index)
-            new_t += 1
-        return (
-            np.array(energies_lat),
-            np.array(energies_long),
-            np.array(filament_positions),
-        )
+                filament_positions[new_time].append(index)
+            new_time += 1
+        return np.array(energies_lat), np.array(energies_long), np.array(filament_positions)

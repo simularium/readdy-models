@@ -776,19 +776,19 @@ class ActinVisualization:
         return plots
 
     @staticmethod
-    def get_total_twist_plot(twist_angles, times, stride=1):
+    def get_total_twist_plot(twist_angles, times):
         """
         Add a plot of total twist vs end displacement
         """
-        total_twist = np.sum(twist_angles, axis=1)[::stride]
-        total_twist /= 360.
+        total_twist = np.sum(twist_angles, axis=1)
+        total_twist /= total_twist[0]
         return ScatterPlotData(
             title="Total filament twist",
             xaxis_title="T (μs)",
-            yaxis_title="Twist (rotations)",
-            xtrace=times[::stride],
+            yaxis_title="Twist (normalized)",
+            xtrace=times,
             ytraces={
-                "Total": np.array(total_twist[::stride]),
+                "Total": np.array(total_twist),
             },
             render_mode="lines",
         )
@@ -802,7 +802,7 @@ class ActinVisualization:
         """
         end_time = len(twist_angles) - 1
         return ScatterPlotData(
-            title="Twist per monomer",
+            title="Final twist along filament",
             xaxis_title="Filament position (index)",
             yaxis_title="Twist (rotations)",
             xtrace=filament_positions[end_time],
@@ -814,18 +814,18 @@ class ActinVisualization:
 
     @staticmethod
     def get_total_bond_energy_plot(
-        lateral_bond_energies, longitudinal_bond_energies, times, stride=1
+        lateral_bond_energies, longitudinal_bond_energies, times
     ):
         """
         Add a plot of bond energies (lat and long) vs time
         """
-        sum_lat = np.sum(lateral_bond_energies, axis=1)[::stride]
-        sum_long = np.sum(longitudinal_bond_energies, axis=1)[::stride]
+        sum_lat = np.sum(lateral_bond_energies, axis=1)
+        sum_long = np.sum(longitudinal_bond_energies, axis=1)
         return ScatterPlotData(
             title="Total bond energy",
             xaxis_title="T (μs)",
             yaxis_title="Strain energy (KT)",
-            xtrace=times[::stride],
+            xtrace=times,
             ytraces={
                 "Lateral": sum_lat,
                 "Longitudinal": sum_long,
@@ -882,12 +882,12 @@ class ActinVisualization:
             monomer_data, box_size, actin_number_types, periodic_boundary, STRIDE
         )
         plots["scatter"] += [
-            ActinVisualization.get_total_twist_plot(twist_angles, times),
+            ActinVisualization.get_total_twist_plot(twist_angles, times[::STRIDE]),
             ActinVisualization.get_twist_per_monomer_plot(
                 twist_angles, filament_positions1
             ),
             ActinVisualization.get_total_bond_energy_plot(
-                lateral_bond_energies, longitudinal_bond_energies, times
+                lateral_bond_energies, longitudinal_bond_energies, times[::STRIDE]
             ),
             ActinVisualization.get_bond_energy_per_monomer_plot(
                 lateral_bond_energies, longitudinal_bond_energies, filament_positions2
