@@ -9,7 +9,7 @@ from .microtubules_util import MicrotubulesUtil
 
 
 class MicrotubulesSimulation:
-    def __init__(self, parameters, record=False, save_checkpoints=False):
+    def __init__(self, parameters, record=False, save_checkpoints=False, just_bonds=False):
         """
         Creates a ReaDDy microtubules simulation
 
@@ -28,7 +28,7 @@ class MicrotubulesSimulation:
         """
         self.parameters = parameters
         self.microtubules_util = MicrotubulesUtil(self.parameters)
-        self.create_microtubules_system()
+        self.create_microtubules_system(just_bonds)
         self.simulation = ReaddyUtil.create_readdy_simulation(
             self.system,
             self.parameters["n_cpu"],
@@ -38,7 +38,7 @@ class MicrotubulesSimulation:
             save_checkpoints,
         )
 
-    def create_microtubules_system(self):
+    def create_microtubules_system(self, just_bonds=False):
         """
         Create the ReaDDy system for microtubules
         including particle types, constraints, and reactions
@@ -47,7 +47,7 @@ class MicrotubulesSimulation:
         self.parameters["temperature_K"] = self.parameters["temperature_C"] + 273.15
         self.system.temperature = self.parameters["temperature_K"]
         self.add_microtubules_types()
-        self.add_microtubules_constraints()
+        self.add_microtubules_constraints(just_bonds)
         self.add_microtubules_reactions()
 
     def add_microtubules_types(self):
@@ -62,7 +62,7 @@ class MicrotubulesSimulation:
         )  # nm^2/s
         self.microtubules_util.add_tubulin_types(self.system, tubulin_diffCoeff)
 
-    def add_microtubules_constraints(self):
+    def add_microtubules_constraints(self, just_bonds=False):
         """
         Add geometric constraints for connected microtubules particles,
         including bonds, angles, and repulsions, to the ReaDDy system
@@ -106,6 +106,8 @@ class MicrotubulesSimulation:
             all_tubulin_types, site_types, force_constant, self.system, util
         )
         self.microtubules_util.add_bent_site_bonds(force_constant, self.system, util)
+        if just_bonds:
+            return
         # angles
         self.microtubules_util.add_angles_between_tubulins(
             [tube_tubulin_types, bent_tubulin_types, all_tubulin_types],
