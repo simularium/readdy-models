@@ -776,19 +776,38 @@ class ActinVisualization:
         return plots
 
     @staticmethod
-    def get_total_twist_plot(twist_angles, times):
+    def get_total_axis_twist_plot(axis_twist, axis_twist_tangent_proj, times):
         """
-        Add a plot of total twist vs end displacement
+        Add a plot of total axis twist vs time
         """
-        total_twist = np.sum(twist_angles, axis=1)
-        total_twist /= total_twist[0]
+        axis_sum = np.sum(axis_twist, axis=1)
+        axis_sum_tangent_proj = np.sum(axis_twist_tangent_proj, axis=1)
         return ScatterPlotData(
-            title="Total filament twist",
+            title="Total filament axis twist",
+            xaxis_title="T (μs)",
+            yaxis_title="Twist (rotations)",
+            xtrace=times,
+            ytraces={
+                "Axis angle": axis_sum,
+                "Axis angle tangent projection": axis_sum_tangent_proj,
+            },
+            render_mode="lines",
+        )
+
+    @staticmethod
+    def get_total_plane_twist_plot(plane_twist, times):
+        """
+        Add a plot of total plane twist vs time
+        """
+        plane_sum = np.sum(plane_twist, axis=1)
+        plane_sum /= plane_sum[0]
+        return ScatterPlotData(
+            title="Total filament plane twist",
             xaxis_title="T (μs)",
             yaxis_title="Twist (normalized)",
             xtrace=times,
             ytraces={
-                "Total": np.array(total_twist),
+                "Total": plane_sum,
             },
             render_mode="lines",
         )
@@ -842,7 +861,7 @@ class ActinVisualization:
         """
         end_time = len(lateral_bond_energies) - 1
         return ScatterPlotData(
-            title="Bond energy per monomer",
+            title="Final bond energy along filament",
             xaxis_title="Filament position (index)",
             yaxis_title="Strain Energy (KT)",
             xtrace=filament_positions[end_time],
@@ -875,9 +894,9 @@ class ActinVisualization:
             }
         STRIDE = 10
         (
-            total_twist, 
-            total_twist_no_bend, 
-            filament_positions
+            axis_twist, 
+            axis_twist_tangent_proj, 
+            _
         ) = ActinAnalyzer.analyze_twist_axis(
             normals, axis_positions, STRIDE
         )
@@ -895,7 +914,12 @@ class ActinVisualization:
             monomer_data, box_size, actin_number_types, periodic_boundary, STRIDE
         )
         plots["scatter"] += [
-            ActinVisualization.get_total_twist_plot(twist_angles, times[::STRIDE]),
+            ActinVisualization.get_total_axis_twist_plot(
+                axis_twist, axis_twist_tangent_proj, times[::STRIDE]
+            ),
+            ActinVisualization.get_total_plane_twist_plot(
+                twist_angles, times[::STRIDE]
+            ),
             ActinVisualization.get_twist_per_monomer_plot(
                 twist_angles, filament_positions1
             ),

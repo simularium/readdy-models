@@ -976,11 +976,11 @@ class ActinAnalyzer:
         with normals calculated using the filament axis
         """
         total_twist = []
-        total_twist_no_bend = []
+        total_twist_tangent_proj = []
         filament_positions = []
         for time_index in range(0, len(normals), stride):
             total_twist.append([])
-            total_twist_no_bend.append([])
+            total_twist_tangent_proj.append([])
             filament_positions.append([])
             new_time = math.floor(time_index / stride)
             for index in range(len(normals[time_index]) - 2):
@@ -997,12 +997,12 @@ class ActinAnalyzer:
                 total_angle = ReaddyUtil.get_angle_between_vectors(
                     normals[time_index][index], normals[time_index][index + 2], in_degrees=True
                 )
-                total_twist[new_time].append(total_angle / (2 * 360.0))
-                total_twist_no_bend[new_time].append(total_angle_no_bend / (2 * 360.0))
+                total_twist[new_time].append(total_angle / 360.0)
+                total_twist_tangent_proj[new_time].append(total_angle_no_bend / 360.0)
                 filament_positions[new_time].append(index)
         return (
             np.array(total_twist),
-            np.array(total_twist_no_bend),
+            np.array(total_twist_tangent_proj),
             np.array(filament_positions),
         )
 
