@@ -85,7 +85,11 @@ def assert_monomers_equal(topology_monomers1, topology_monomers2, test_position=
         particle2 = topology_monomers2["particles"][particle_id]
         particle1 = topology_monomers1["particles"][particle_id]
         assert particle1["type_name"] == particle2["type_name"]
-        assert particle1["neighbor_ids"] == particle2["neighbor_ids"]
+        neighbor_ids1 = particle1["neighbor_ids"].copy()
+        neighbor_ids1.sort()
+        neighbor_ids2 = particle2["neighbor_ids"].copy()
+        neighbor_ids2.sort()
+        assert neighbor_ids1 == neighbor_ids2
         if test_position:
             np.testing.assert_almost_equal(
                 particle1["position"], particle2["position"], decimal=2
