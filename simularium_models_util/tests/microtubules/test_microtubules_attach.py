@@ -65,6 +65,8 @@ def get_edge(pid1, pid2):
     ReaDDy seems to sometimes not add edges if the first int 
     in the tuple is greater than the second. Why???
     """
+    # print(f"Added edge: ({pid1}, {pid2})")
+    return (pid1, pid2)
     if pid1 < pid2:
         return (pid1, pid2)
     else:
@@ -202,7 +204,7 @@ def state_to_str(monomers):
     
 def check_readdy_state(mt_simulation, expected_monomers):
     test_monomers = ReaddyUtil.get_current_monomers(mt_simulation.simulation.current_topologies)
-    raise Exception(state_to_str(test_monomers))
+    # raise Exception(state_to_str(test_monomers))
     assert_monomers_equal(test_monomers, expected_monomers, test_position=False)
 
 
@@ -266,15 +268,16 @@ def check_readdy_state(mt_simulation, expected_monomers):
                 [True, True, True, True, True],   # 3
                 [True, True, True, True, True],   # 4
                 [True, True, True, True, True], 
-            ]),
+            ]), # 5 rings, only ring bonds shown, filament bonds always true
             "Microtubule",
             {
                 "topologies": {
                     0: {
                         "type_name": "Microtubule",
-                        "particle_ids": range(20),
+                        "particle_ids": range(50),
                     }
                 },
+                # type_name format: particle_type_{filament}_{ring}
                 "particles": {
                     0: {"unique_id": 0, "type_name": "tubulinA#GTP_1_1", "position": np.zeros(3), "neighbor_ids": [1, 5]},
                     1: {"unique_id": 1, "type_name": "tubulinB#GTP_2_1", "position": np.zeros(3), "neighbor_ids": [0, 2, 6]},
@@ -283,12 +286,12 @@ def check_readdy_state(mt_simulation, expected_monomers):
                     4: {"unique_id": 4, "type_name": "tubulinA#GTP_2_2", "position": np.zeros(3), "neighbor_ids": [3, 9]},
                     5: {"unique_id": 5, "type_name": "tubulinA#GTP_1_2", "position": np.zeros(3), "neighbor_ids": [6, 0, 10]},
                     6: {"unique_id": 6, "type_name": "tubulinB#GTP_2_2", "position": np.zeros(3), "neighbor_ids": [5, 7, 1, 11]},
-                    7: {"unique_id": 7, "type_name": "tubulinA#GTP_3_2", "position": np.zeros(3), "neighbor_ids": [6, 8, 2, 12]},
+                    7: {"unique_id": 7, "type_name": "tubulinA#GTP_bent_3_2", "position": np.zeros(3), "neighbor_ids": [6, 8, 2]},
                     8: {"unique_id": 8, "type_name": "tubulinB#GTP_1_3", "position": np.zeros(3), "neighbor_ids": [7, 9, 3, 13]},
                     9: {"unique_id": 9, "type_name": "tubulinA#GTP_2_3", "position": np.zeros(3), "neighbor_ids": [8, 4, 14]},
                     10: {"unique_id": 10, "type_name": "tubulinA#GTP_1_3", "position": np.zeros(3), "neighbor_ids": [11, 5, 15]},
                     11: {"unique_id": 11, "type_name": "tubulinB#GTP_2_3", "position": np.zeros(3), "neighbor_ids": [10, 12, 6, 16]},
-                    12: {"unique_id": 12, "type_name": "tubulinA#GTP_3_3", "position": np.zeros(3), "neighbor_ids": [11, 13, 7, 17]},
+                    12: {"unique_id": 12, "type_name": "tubulinA#GTP_bent_3_3", "position": np.zeros(3), "neighbor_ids": [11, 13, 17]},
                     13: {"unique_id": 13, "type_name": "tubulinB#GTP_1_1", "position": np.zeros(3), "neighbor_ids": [12, 14, 8, 18]},
                     14: {"unique_id": 14, "type_name": "tubulinA#GTP_2_1", "position": np.zeros(3), "neighbor_ids": [13, 9, 19]},
                     15: {"unique_id": 15, "type_name": "tubulinA#GTP_1_1", "position": np.zeros(3), "neighbor_ids": [16, 10]},
