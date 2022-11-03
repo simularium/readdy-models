@@ -81,6 +81,7 @@ def assert_monomers_equal(topology_monomers1, topology_monomers2, test_position=
     for particle_id in topology_monomers2["topologies"][top_id2]["particle_ids"]:
         assert particle_id in topology_monomers1["topologies"][top_id1]["particle_ids"]
     # check the particle types, positions (optionally), and neighbors
+    test_str = ""
     for particle_id in topology_monomers1["particles"]:
         particle2 = topology_monomers2["particles"][particle_id]
         particle1 = topology_monomers1["particles"][particle_id]
@@ -89,11 +90,13 @@ def assert_monomers_equal(topology_monomers1, topology_monomers2, test_position=
         neighbor_ids1.sort()
         neighbor_ids2 = particle2["neighbor_ids"].copy()
         neighbor_ids2.sort()
-        assert neighbor_ids1 == neighbor_ids2
+        # assert neighbor_ids1 == neighbor_ids2, f"Error processing {particle_id}"
+        test_str += f"{particle_id} has neighbors {neighbor_ids1}\n"
         if test_position:
             np.testing.assert_almost_equal(
                 particle1["position"], particle2["position"], decimal=2
             )
+    raise Exception(test_str)
 
 
 def assert_fibers_equal(topology_fibers1, topology_fibers2, test_position=False):

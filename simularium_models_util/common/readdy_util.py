@@ -1125,10 +1125,10 @@ class ReaddyUtil:
         result = []
         for top in topology_records[time_index]:
             for e1, e2 in top.edges:
-                # if e1 <= e2:
-                ix1 = top.particles[e1]
-                ix2 = top.particles[e2]
-                result.append((ix1, ix2))
+                if e1 <= e2:
+                    ix1 = top.particles[e1]
+                    ix2 = top.particles[e2]
+                    result.append((ix1, ix2))
         return result
 
     @staticmethod
