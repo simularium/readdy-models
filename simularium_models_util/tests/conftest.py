@@ -3,100 +3,89 @@
 
 import numpy as np
 
-from simularium_models_util.actin import ActinStructure
+from simularium_models_util import ReaddyUtil
 
 
-parameters_rxns_off = {
-    "name": "actin",
-    "total_steps": 1e3,
-    "time_step": 0.0000001,
-    "internal_timestep": 0.1,  # ns
-    "box_size": 1000.0,  # nm
-    "temperature_C": 22.0,  # from Pollard experiments
-    "viscosity": 8.1,  # cP, viscosity in cytoplasm
-    "force_constant": 250.0,
-    "reaction_distance": 1.0,  # nm
-    "n_cpu": 4,
-    "actin_concentration": 200.0,  # uM
-    "arp23_concentration": 10.0,  # uM
-    "cap_concentration": 0.0,  # uM
-    "n_fibers": 0,
-    "fiber_length": 0.0,
-    "actin_radius": 2.0,  # nm
-    "arp23_radius": 2.0,  # nm
-    "cap_radius": 3.0,  # nm
-    "dimerize_rate": 1e-30,  # 1/ns
-    "dimerize_reverse_rate": 1e-30,  # 1/ns
-    "trimerize_rate": 1e-30,  # 1/ns
-    "trimerize_reverse_rate": 1e-30,  # 1/ns
-    "pointed_growth_ATP_rate": 1e-30,  # 1/ns
-    "pointed_growth_ADP_rate": 1e-30,  # 1/ns
-    "pointed_shrink_ATP_rate": 1e-30,  # 1/ns
-    "pointed_shrink_ADP_rate": 1e-30,  # 1/ns
-    "barbed_growth_ATP_rate": 1e-30,  # 1/ns
-    "barbed_growth_ADP_rate": 1e-30,  # 1/ns
-    "nucleate_ATP_rate": 1e-30,  # 1/ns
-    "nucleate_ADP_rate": 1e-30,  # 1/ns
-    "barbed_shrink_ATP_rate": 1e-30,  # 1/ns
-    "barbed_shrink_ADP_rate": 1e-30,  # 1/ns
-    "arp_bind_ATP_rate": 1e-30,  # 1/ns
-    "arp_bind_ADP_rate": 1e-30,  # 1/ns
-    "arp_unbind_ATP_rate": 1e-30,  # 1/ns
-    "arp_unbind_ADP_rate": 1e-30,  # 1/ns
-    "barbed_growth_branch_ATP_rate": 1e-30,  # 1/ns
-    "barbed_growth_branch_ADP_rate": 1e-30,  # 1/ns
-    "debranching_ATP_rate": 1e-30,  # 1/ns
-    "debranching_ADP_rate": 1e-30,  # 1/ns
-    "cap_bind_rate": 1e-30,  # 1/ns
-    "cap_unbind_rate": 1e-30,  # 1/ns
-    "hydrolysis_actin_rate": 1e-30,  # 1/ns
-    "hydrolysis_arp_rate": 1e-30,  # 1/ns
-    "nucleotide_exchange_actin_rate": 1e-30,  # 1/ns
-    "nucleotide_exchange_arp_rate": 1e-30,  # 1/ns
-    "use_box_actin": False,
-    "use_box_arp": False,
-    "use_box_cap": False,
-    "verbose": False,
-    "periodic_boundary": True,
-    "obstacle_radius": 1.0,
-}
+def run_one_timestep_readdy(mt_simulation):
+    # setup readdy functions
+    timestep = 0.1
+    readdy_actions = mt_simulation.simulation._actions
+    init = readdy_actions.initialize_kernel()
+    # diffuse = readdy_actions.integrator_euler_brownian_dynamics(timestep)
+    calculate_forces = readdy_actions.calculate_forces()
+    create_nl = readdy_actions.create_neighbor_list(mt_simulation.system.calculate_max_cutoff().magnitude)
+    update_nl = readdy_actions.update_neighbor_list()
+    react = readdy_actions.reaction_handler_uncontrolled_approximation(timestep)
+    observe = readdy_actions.evaluate_observables()
+    # run simulation
+    init()
+    create_nl()
+    calculate_forces()
+    update_nl()
+    observe(0)
+    update_nl()
+    react()        
+    update_nl()
+    calculate_forces()
+    observe(1)    
 
 
-def assert_monomers_equal(topology_monomers1, topology_monomers2, test_position=False):
+def monomer_state_to_str(monomers):
+    result = "topologies:\n"
+    for top_id in monomers["topologies"]:
+        top = monomers["topologies"][top_id]
+        result += f"  {top_id} : {top}\n"
+    result += "particles:\n"
+    for particle_id in monomers["particles"]:
+        particle = monomers["particles"][particle_id]
+        type_name = particle["type_name"]
+        neighbor_ids = particle["neighbor_ids"]
+        result += f"  {particle_id} : {type_name}, {neighbor_ids}\n"
+    return result
+    
+    
+def check_readdy_state(simulation, expected_monomers):
+    test_monomers = ReaddyUtil.get_current_monomers(simulation.simulation.current_topologies)
+    # raise Exception(monomer_state_to_str(test_monomers))
+    assert_monomers_equal(test_monomers, expected_monomers, test_position=False)
+
+
+def assert_monomers_equal(test_monomers, expected_monomers, test_position=False):
     """
     Assert two topologies (in monomer form) are equivalent
     """
     # check topology has the correct type_name
-    # and contains the correct particle_ids (in any order)
-    top_id1 = list(topology_monomers1["topologies"].keys())[0]
-    top_id2 = list(topology_monomers2["topologies"].keys())[0]
-    assert len(topology_monomers1["topologies"][top_id1]["type_name"]) == len(
-        topology_monomers2["topologies"][top_id2]["type_name"]
+    # and contains the correct particle_ids (in any order, starting at any index)
+    test_top_id = list(test_monomers["topologies"].keys())[0]
+    exp_top_id = list(expected_monomers["topologies"].keys())[0]
+    assert len(test_monomers["topologies"][test_top_id]["type_name"]) == len(
+        expected_monomers["topologies"][exp_top_id]["type_name"]
     )
-    assert len(topology_monomers1["topologies"][top_id1]["particle_ids"]) == len(
-        topology_monomers2["topologies"][top_id2]["particle_ids"]
+    test_particle_ids = test_monomers["topologies"][test_top_id]["particle_ids"]
+    # pytest caches something that causes particle IDs to not always start at 0
+    min_id = np.amin(np.array(test_particle_ids))
+    assert len(test_particle_ids) == len(
+        expected_monomers["topologies"][exp_top_id]["particle_ids"]
     )
-    for particle_id in topology_monomers1["topologies"][top_id1]["particle_ids"]:
-        assert particle_id in topology_monomers2["topologies"][top_id2]["particle_ids"]
-    for particle_id in topology_monomers2["topologies"][top_id2]["particle_ids"]:
-        assert particle_id in topology_monomers1["topologies"][top_id1]["particle_ids"]
+    for particle_id in test_particle_ids:
+        assert particle_id - min_id in expected_monomers["topologies"][exp_top_id]["particle_ids"], f"top particle IDs = {test_particle_ids}"
+    for particle_id in expected_monomers["topologies"][exp_top_id]["particle_ids"]:
+        assert particle_id + min_id in test_particle_ids
     # check the particle types, positions (optionally), and neighbors
-    test_str = ""
-    for particle_id in topology_monomers1["particles"]:
-        particle2 = topology_monomers2["particles"][particle_id]
-        particle1 = topology_monomers1["particles"][particle_id]
-        assert particle1["type_name"] == particle2["type_name"]
-        neighbor_ids1 = particle1["neighbor_ids"].copy()
+    for particle_id in test_monomers["particles"]:
+        test_particle = test_monomers["particles"][particle_id]
+        exp_particle = expected_monomers["particles"][particle_id - min_id]
+        assert test_particle["type_name"] == exp_particle["type_name"]
+        neighbor_ids1 = test_particle["neighbor_ids"].copy()
         neighbor_ids1.sort()
-        neighbor_ids2 = particle2["neighbor_ids"].copy()
+        neighbor_ids2 = exp_particle["neighbor_ids"].copy()
         neighbor_ids2.sort()
-        # assert neighbor_ids1 == neighbor_ids2, f"Error processing {particle_id}"
-        test_str += f"{particle_id} has neighbors {neighbor_ids1}\n"
+        neighbor_ids2 = [nid + min_id for nid in neighbor_ids2]
+        assert neighbor_ids1 == neighbor_ids2, f"Neighbors don't match for particle ID {particle_id - min_id}"
         if test_position:
             np.testing.assert_almost_equal(
-                particle1["position"], particle2["position"], decimal=2
+                test_particle["position"], exp_particle["position"], decimal=2
             )
-    raise Exception(test_str)
 
 
 def assert_fibers_equal(topology_fibers1, topology_fibers2, test_position=False):
@@ -113,52 +102,3 @@ def assert_fibers_equal(topology_fibers1, topology_fibers2, test_position=False)
             np.testing.assert_allclose(
                 topology_fibers1[f].points[p], topology_fibers2[f].points[p]
             )
-
-
-def monomer():
-    return {
-        "topologies": {
-            0: {
-                "type_name": "Actin-Monomer",
-                "particle_ids": [
-                    0,
-                ],
-            }
-        },
-        "particles": {
-            0: {
-                "unique_id": 0,
-                "type_name": "actin#free_ATP",
-                "position": np.array(ActinStructure.mother_positions[0]),
-                "neighbor_ids": [],
-            },
-        },
-    }
-
-
-def dimer():
-    return {
-        "topologies": {
-            0: {
-                "type_name": "Actin-Dimer",
-                "particle_ids": [
-                    0,
-                    1,
-                ],
-            }
-        },
-        "particles": {
-            0: {
-                "unique_id": 0,
-                "type_name": "actin#pointed_ATP_1",
-                "position": np.array(ActinStructure.mother_positions[0]),
-                "neighbor_ids": [1],
-            },
-            1: {
-                "unique_id": 1,
-                "type_name": "actin#barbed_ATP_2",
-                "position": np.array(ActinStructure.mother_positions[1]),
-                "neighbor_ids": [0],
-            },
-        },
-    }

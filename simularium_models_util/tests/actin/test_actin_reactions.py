@@ -2,17 +2,17 @@
 # # -*- coding: utf-8 -*-
 
 # import pytest
-
+from .actin_conftest import actin_parameters_rxns_off
 # from simularium_models_util.actin import ActinSimulation
 # from simularium_models_util.tests.conftest import (
-#     parameters_rxns_off,
+#     actin_parameters_rxns_off,
 #     assert_monomers_equal,
-#     dimer,
+#     actin_dimer,
 # )
 
 
 # def reverse_dimerize_parameters():
-#     result = parameters_rxns_off
+#     result = actin_parameters_rxns_off
 #     result["dimerize_reverse_rate"] = 1e30
 #     return result
 
@@ -22,8 +22,8 @@
 #     [
 #         (
 #             reverse_dimerize_parameters(),
-#             dimer(),
-#             dimer(),  # TODO get reaction to happen
+#             actin_dimer(),
+#             actin_dimer(),  # TODO get reaction to happen
 #         ),
 #     ],
 # )
