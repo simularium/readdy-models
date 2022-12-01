@@ -61,9 +61,9 @@ def add_edge(pid1, pid2, edges):
     Add particle ids for the edge
     
     ReaDDy seems to sometimes not add edges or to duplicate them:
-    - if the first int in the tuple is less than the second: 
+    - if the first int is less than the second: 
         add (and duplicate if already added)
-    - if the first int in the tuple is greater than the second: 
+    - if the first int is greater than the second: 
         ignore
     """
     edge = (pid1, pid2)

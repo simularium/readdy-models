@@ -144,6 +144,6 @@ from simularium_models_util.tests.microtubules.microtubules_conftest import crea
 )
 def test_attach(ring_connections, topology_type, expected_monomers):
     mt_simulation = create_microtubules_simulation(ring_connections, topology_type)
-    run_one_timestep_readdy(mt_simulation)
+    run_one_timestep_readdy(mt_simulation.system, mt_simulation.simulation)
     check_readdy_state(mt_simulation, expected_monomers)
     del mt_simulation

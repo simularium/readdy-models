@@ -6,14 +6,14 @@ import numpy as np
 from simularium_models_util import ReaddyUtil
 
 
-def run_one_timestep_readdy(mt_simulation):
+def run_one_timestep_readdy(system, simulation):
     # setup readdy functions
     timestep = 0.1
-    readdy_actions = mt_simulation.simulation._actions
+    readdy_actions = simulation._actions
     init = readdy_actions.initialize_kernel()
     # diffuse = readdy_actions.integrator_euler_brownian_dynamics(timestep)
     calculate_forces = readdy_actions.calculate_forces()
-    create_nl = readdy_actions.create_neighbor_list(mt_simulation.system.calculate_max_cutoff().magnitude)
+    create_nl = readdy_actions.create_neighbor_list(system.calculate_max_cutoff().magnitude)
     update_nl = readdy_actions.update_neighbor_list()
     react = readdy_actions.reaction_handler_uncontrolled_approximation(timestep)
     observe = readdy_actions.evaluate_observables()
