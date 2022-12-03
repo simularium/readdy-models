@@ -36,17 +36,33 @@ def run_readdy(total_steps, system, simulation):
         observe(t + 1)
 
 
+def get_min_id(monomers):
+    """
+    pytest caches something that causes particle IDs 
+    to not always start at 0 in separate tests,
+    so use min ID to offset test values to match expected.
+    """
+    particle_ids = list(monomers["particles"].keys())
+    return np.amin(np.array(particle_ids))
+
+
 def monomer_state_to_str(monomers):
     result = "topologies:\n"
     for top_id in monomers["topologies"]:
         top = monomers["topologies"][top_id]
-        result += f"  {top_id} : {top}\n"
+        type_name = top["type_name"]
+        particles = top["particle_ids"].copy()
+        particles.sort()
+        result += f"  {top_id} : {type_name} {particles}\n"
     result += "particles:\n"
-    for particle_id in monomers["particles"]:
+    min_id = get_min_id(monomers)
+    particle_ids = list(monomers["particles"].keys())
+    particle_ids.sort()
+    for particle_id in particle_ids:
         particle = monomers["particles"][particle_id]
         type_name = particle["type_name"]
-        neighbor_ids = particle["neighbor_ids"]
-        result += f"  {particle_id} : {type_name}, {neighbor_ids}\n"
+        neighbor_ids = [nid - min_id for nid in particle["neighbor_ids"]]
+        result += f"  {particle_id - min_id} : {type_name}, {neighbor_ids}\n"
     return result
     
     
@@ -69,7 +85,7 @@ def assert_monomers_equal(test_monomers, expected_monomers, test_position=False)
     )
     test_particle_ids = test_monomers["topologies"][test_top_id]["particle_ids"]
     # pytest caches something that causes particle IDs to not always start at 0
-    min_id = np.amin(np.array(test_particle_ids))
+    min_id = get_min_id(test_monomers)
     assert len(test_particle_ids) == len(
         expected_monomers["topologies"][exp_top_id]["particle_ids"]
     )
