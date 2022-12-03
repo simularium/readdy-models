@@ -1234,8 +1234,8 @@ class MicrotubulesUtil:
                     + ") can't attach"
                 )
             return recipe
-        prev_tubulin = [None]*2
-        next_tubulin = [None]*2
+        prev_tubulin = [None, None]
+        next_tubulin = [None, None]
         for i in range(2):
             crosslinked = (
                 MicrotubulesUtil.get_neighboring_tubulin(

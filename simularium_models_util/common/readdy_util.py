@@ -1074,10 +1074,13 @@ class ReaddyUtil:
         result = []
         for top in current_topologies:
             for v1, v2 in top.graph.edges:
-                p1_id = top.particle_id_of_vertex(v1)
-                p2_id = top.particle_id_of_vertex(v2)
-                if p1_id <= p2_id:
-                    result.append((p1_id, p2_id))
+                pid1 = top.particle_id_of_vertex(v1)
+                pid2 = top.particle_id_of_vertex(v2)
+                edge = (pid1, pid2)
+                if pid1 > pid2:
+                    edge = (pid2, pid1)
+                if edge not in result:
+                    result.append(edge)
         return result
 
     @staticmethod

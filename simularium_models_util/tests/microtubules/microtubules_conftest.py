@@ -38,10 +38,10 @@ default_microtubule_parameters = {
 def tubulin_is_bent(ring_ix, filament_ix, ring_connections):
     """
     Is the tubulin in bent state?
-    Bent means it is missing at least one ring edge
+    Bent means it is missing both ring edges
     """
     return (
-        False in ring_connections[ring_ix + 1, filament_ix:filament_ix + 2]
+        True not in ring_connections[ring_ix + 1, filament_ix:filament_ix + 2]
     )
 
 
@@ -66,6 +66,7 @@ def add_edge(pid1, pid2, edges):
     - if the first int is greater than the second: 
         ignore
     """
+    # edges.append((pid1, pid2))
     edge = (pid1, pid2)
     if pid1 > pid2:
         edge = (pid2, pid1)
@@ -73,7 +74,7 @@ def add_edge(pid1, pid2, edges):
         edges.append(edge)
 
 
-def add_init_microtubule_state(readdy_simulation, ring_connections, topology_type):
+def add_init_microtubule_state(readdy_simulation, ring_connections, topology_type, new_edge_tub_ix):
     """
     Create patch of tubulins with given types and connections
     """
@@ -89,6 +90,7 @@ def add_init_microtubule_state(readdy_simulation, ring_connections, topology_typ
     d_ring = np.array([4., 0., 0.])
     d_filament = np.array([0., 0., 4.])
     out_string = "\n"
+    new_edge_site_ix = [0, 0]
     for filament_ix in range(n_filaments):
         for ring_ix in range(n_rings):
             # each tubulin
@@ -119,7 +121,7 @@ def add_init_microtubule_state(readdy_simulation, ring_connections, topology_typ
                 add_edge(tubulin_id, next_id, edges)
             # sites
             if has_sites:
-                print("site found")
+                print(f"Adding sites for tubulin {tubulin_id}")
                 tublin_position = positions[len(positions) - 1]
                 site_out_id = n_tubulin + len(site_types)
                 for site_ix in range(5):
@@ -133,22 +135,32 @@ def add_init_microtubule_state(readdy_simulation, ring_connections, topology_typ
                         d_site *= -1 if site_ix % 2 == 1 else 1
                         site_types.append(f"site#{site_ix}")
                         add_edge(site_id, site_out_id, edges) # edge to site#out
-                        # if site_ix > 2:  # diagonal edges between sites
-                        #     edges.append((site_id, site_id - (site_ix - 2))) 
-                        #     edges.append((site_id, site_id - (site_ix - 1)))
+                        if site_ix > 2:  # diagonal edges between sites
+                            add_edge(site_id, site_id - (site_ix - 2), edges)
+                            add_edge(site_id, site_id - (site_ix - 1), edges)
+                        if new_edge_tub_ix is not None:
+                            if tubulin_id == new_edge_tub_ix[0] and site_ix == 2:
+                                new_edge_site_ix[1] = site_id
+                            if tubulin_id == new_edge_tub_ix[1] and site_ix == 1:
+                                new_edge_site_ix[0] = site_id
                     site_positions.append(tublin_position + d_site)
-                # # site bonds to minus end tubulin sites
-                # if ring_ix > 0 and tubulin_has_sites(ring_ix - 1, filament_ix, ring_connections):
-                #     minus_site_out_id = site_out_id - 5
-                #     edges.append((site_out_id + 1, minus_site_out_id + 1))  # sites 1
-                #     edges.append((site_out_id + 2, minus_site_out_id + 2))  # sites 2
-                #     edges.append((site_out_id + 3, minus_site_out_id + 4))  # sites 3 and 4
-                # # site bonds to plus end tubulin sites
-                # if ring_ix < n_rings - 1 and tubulin_has_sites(ring_ix + 1, filament_ix, ring_connections):
-                #     plus_site_out_id = site_out_id + 5
-                #     edges.append((site_out_id + 1, plus_site_out_id + 1))  # sites 1
-                #     edges.append((site_out_id + 2, plus_site_out_id + 2))  # sites 2
-                #     edges.append((site_out_id + 4, plus_site_out_id + 3))  # sites 3 and 4
+                # site bonds to minus end tubulin sites
+                if ring_ix > 0 and tubulin_has_sites(ring_ix - 1, filament_ix, ring_connections):
+                    minus_site_out_id = site_out_id - 5
+                    add_edge(site_out_id, minus_site_out_id, edges) # sites out
+                    add_edge(site_out_id + 1, minus_site_out_id + 1, edges) # sites 1
+                    add_edge(site_out_id + 2, minus_site_out_id + 2, edges) # sites 2
+                    add_edge(site_out_id + 3, minus_site_out_id + 4, edges) # sites 3 and 4
+                # site bonds to plus end tubulin sites
+                if ring_ix < n_rings - 1 and tubulin_has_sites(ring_ix + 1, filament_ix, ring_connections):
+                    plus_site_out_id = site_out_id + 5
+                    add_edge(site_out_id, plus_site_out_id, edges) # sites out
+                    add_edge(site_out_id + 1, plus_site_out_id + 1, edges) # sites 1
+                    add_edge(site_out_id + 2, plus_site_out_id + 2, edges) # sites 2
+                    add_edge(site_out_id + 4, plus_site_out_id + 3, edges) # sites 3 and 4
+    if new_edge_tub_ix is not None:
+        # temporary edge between attaching tubulin sites
+        add_edge(new_edge_site_ix[0], new_edge_site_ix[1], edges)
     microtubule = readdy_simulation.add_topology(
         topology_type, types + site_types, np.array(positions + site_positions)
     )
@@ -156,10 +168,10 @@ def add_init_microtubule_state(readdy_simulation, ring_connections, topology_typ
         microtubule.get_graph().add_edge(edge[0], edge[1])
         
         
-def create_microtubules_simulation(ring_connections, topology_type):
+def create_microtubules_simulation(ring_connections, topology_type, new_edge_tub_ix):
     """
     create simulation and add initial particles
     """
     mt_simulation = MicrotubulesSimulation(default_microtubule_parameters, just_bonds=True)
-    add_init_microtubule_state(mt_simulation.simulation, ring_connections, topology_type)
+    add_init_microtubule_state(mt_simulation.simulation, ring_connections, topology_type, new_edge_tub_ix)
     return mt_simulation

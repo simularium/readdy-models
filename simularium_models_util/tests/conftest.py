@@ -6,7 +6,7 @@ import numpy as np
 from simularium_models_util import ReaddyUtil
 
 
-def run_one_timestep_readdy(system, simulation):
+def run_readdy(total_steps, system, simulation):
     # setup readdy functions
     timestep = 0.1
     readdy_actions = simulation._actions
@@ -16,18 +16,24 @@ def run_one_timestep_readdy(system, simulation):
     create_nl = readdy_actions.create_neighbor_list(system.calculate_max_cutoff().magnitude)
     update_nl = readdy_actions.update_neighbor_list()
     react = readdy_actions.reaction_handler_uncontrolled_approximation(timestep)
+    react_top = readdy_actions.topology_reaction_handler(timestep)
     observe = readdy_actions.evaluate_observables()
-    # run simulation
+    integrate = readdy_actions.integrator_euler_brownian_dynamics(timestep)
+    # init simulation
     init()
     create_nl()
     calculate_forces()
-    update_nl()
     observe(0)
-    update_nl()
-    react()        
-    update_nl()
-    calculate_forces()
-    observe(1)    
+    for t in range(total_steps):
+        integrate()
+        update_nl()
+        react()
+        react_top()
+        update_nl()
+        calculate_forces()
+        update_nl()
+        integrate()
+        observe(t + 1)
 
 
 def monomer_state_to_str(monomers):
