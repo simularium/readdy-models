@@ -40,6 +40,7 @@ class ActinSimulation:
         nucleotide_exchange_actin_rate, nucleotide_exchange_arp_rate, verbose
         """
         self.parameters = parameters
+        self.set_constant_parameters()
         self.actin_util = ActinUtil(
             self.parameters, self.get_pointed_end_displacements()
         )
@@ -52,6 +53,17 @@ class ActinSimulation:
             record,
             save_checkpoints,
         )
+
+    def set_constant_parameters(self):
+        """
+        Set values for "parameters" that never change.
+        """
+        self.parameters["internal_timestep"] = 0.1
+        self.parameters["temperature_C"] = 22.
+        self.parameters["viscosity"] = 8.1  # cP
+        self.parameters["actin_radius"] = 2.
+        self.parameters["arp23_radius"] = 2.
+        self.parameters["cap_radius"] = 3.
 
     def create_actin_system(self):
         """
