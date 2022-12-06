@@ -1386,6 +1386,10 @@ class ActinUtil:
         """
         global time_index
         recipe = readdy.StructuralReactionRecipe(topology)
+        if time_index % displacements["displace_stride"] != 0:
+            return recipe
+        if parameters["verbose"]:
+            print("Translate particles")
         for vertex_id in displacements:
             v = ReaddyUtil.get_vertex_with_id(
                 topology,
@@ -1395,6 +1399,7 @@ class ActinUtil:
             vertex_pos = ReaddyUtil.get_vertex_position(topology, v)
             new_pos = displacements[vertex_id]["get_translation"](
                 time_index,
+                displacements["displace_stride"],
                 vertex_id,
                 vertex_pos,
                 displacements[vertex_id]["parameters"],
@@ -3211,18 +3216,20 @@ class ActinUtil:
 
     @staticmethod
     def get_position_for_tangent_translation(
-        time_index, monomer_id, monomer_pos, displacement_parameters
+        time_index, displace_stride, monomer_id, monomer_pos, displacement_parameters
     ):
-        return monomer_pos + (
+        return monomer_pos + (displace_stride *
             displacement_parameters["total_displacement_nm"]
-            / displacement_parameters["total_steps"]
+            / (displacement_parameters["total_steps"])
         )
 
     @staticmethod
     def get_position_for_radial_translation(
-        time_index, monomer_id, monomer_pos, displacement_parameters
+        time_index, displace_stride, monomer_id, monomer_pos, displacement_parameters
     ):
         global init_monomer_positions, pointed_monomer_positions
+        if displace_stride != 1:
+            raise Exception("Displacement stride is not implemented for radial translation.")
         if time_index == 0 and monomer_id > 0:
             init_monomer_positions[monomer_id] = monomer_pos
         if monomer_id == 0:

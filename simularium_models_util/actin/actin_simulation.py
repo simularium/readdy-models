@@ -173,14 +173,16 @@ class ActinSimulation:
             self.actin_util.add_translate_reaction(self.system)
 
     def do_pointed_end_translation(self):
-        return (
-            self.parameters["orthogonal_seed"]
-            and int(self.parameters["n_fixed_monomers_pointed"]) > 0
-            and (
-                self.parameters["displace_pointed_end_tangent"]
-                or self.parameters["displace_pointed_end_radial"]
-            )
+        result = (
+            self.parameters["displace_pointed_end_tangent"]
+            or self.parameters["displace_pointed_end_radial"]
         )
+        if result and (not self.parameters["orthogonal_seed"] or int(self.parameters["n_fixed_monomers_pointed"]) < 1):
+            raise Exception(
+                "Pointed end translation requires orthogonal seed "
+                "and non-zero number of fixed monomers at the pointed end."
+            )
+        return result
 
     def get_pointed_end_displacements(self):
         """
@@ -216,7 +218,9 @@ class ActinSimulation:
                     "total_steps": float(self.parameters["total_steps"]),
                 },
             }
-        result = {}
+        result = {
+            "displace_stride": int(self.parameters["displace_stride"]),
+        }
         for monomer_index in range(int(self.parameters["n_fixed_monomers_pointed"])):
             result[monomer_index] = displacement
         return result
