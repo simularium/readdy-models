@@ -45,6 +45,18 @@ def tubulin_is_bent(ring_ix, filament_ix, ring_connections):
     )
 
 
+def site_can_attach(ring_ix, filament_ix, site_ix, ring_connections):
+    """
+    Can the site do an attach rxn?
+    True if the ring edge is not attached yet
+    """
+    if site_ix == 1:
+        return not ring_connections[ring_ix + 1, filament_ix + 1]
+    if site_ix == 2:
+        return not ring_connections[ring_ix + 1, filament_ix]
+    return False
+
+
 def tubulin_has_sites(ring_ix, filament_ix, ring_connections):
     """
     Does the tubulin need to have sites?
@@ -133,16 +145,22 @@ def add_init_microtubule_state(readdy_simulation, ring_connections, topology_typ
                     else:
                         d_site = 0.5 * (d_ring if site_ix > 2 else d_filament)
                         d_site *= -1 if site_ix % 2 == 1 else 1
-                        site_types.append(f"site#{site_ix}")
+                        site_type = f"site#{site_ix}"
                         add_edge(site_id, site_out_id, edges) # edge to site#out
                         if site_ix > 2:  # diagonal edges between sites
                             add_edge(site_id, site_id - (site_ix - 2), edges)
                             add_edge(site_id, site_id - (site_ix - 1), edges)
+                        is_new_edge_site = False
                         if new_edge_tub_ix is not None:
                             if tubulin_id == new_edge_tub_ix[0] and site_ix == 2:
                                 new_edge_site_ix[1] = site_id
+                                is_new_edge_site = True
                             if tubulin_id == new_edge_tub_ix[1] and site_ix == 1:
                                 new_edge_site_ix[0] = site_id
+                                is_new_edge_site = True
+                        if not is_new_edge_site and site_can_attach(ring_ix, filament_ix, site_ix, ring_connections):
+                            site_type += "_GTP"
+                        site_types.append(site_type)
                     site_positions.append(tublin_position + d_site)
                 # site bonds to minus end tubulin sites
                 if ring_ix > 0 and tubulin_has_sites(ring_ix - 1, filament_ix, ring_connections):
@@ -168,10 +186,10 @@ def add_init_microtubule_state(readdy_simulation, ring_connections, topology_typ
         microtubule.get_graph().add_edge(edge[0], edge[1])
         
         
-def create_microtubules_simulation(ring_connections, topology_type, new_edge_tub_ix):
+def create_microtubules_simulation(parameters, ring_connections, topology_type, new_edge_tub_ix):
     """
     create simulation and add initial particles
     """
-    mt_simulation = MicrotubulesSimulation(default_microtubule_parameters, just_bonds=True)
+    mt_simulation = MicrotubulesSimulation(parameters, just_bonds=True)
     add_init_microtubule_state(mt_simulation.simulation, ring_connections, topology_type, new_edge_tub_ix)
     return mt_simulation

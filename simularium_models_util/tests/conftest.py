@@ -31,8 +31,6 @@ def run_readdy(total_steps, system, simulation):
         react_top()
         update_nl()
         calculate_forces()
-        update_nl()
-        integrate()
         observe(t + 1)
 
 
@@ -66,13 +64,13 @@ def monomer_state_to_str(monomers):
     return result
     
     
-def check_readdy_state(simulation, expected_monomers):
+def check_readdy_state(simulation, expected_monomers, ignore_extra_spatial_rxn=False):
     test_monomers = ReaddyUtil.get_current_monomers(simulation.simulation.current_topologies)
-    # raise Exception(monomer_state_to_str(test_monomers))
-    assert_monomers_equal(test_monomers, expected_monomers, test_position=False)
+    raise Exception(monomer_state_to_str(test_monomers))
+    assert_monomers_equal(test_monomers, expected_monomers, ignore_extra_spatial_rxn=ignore_extra_spatial_rxn, test_position=False)
 
 
-def assert_monomers_equal(test_monomers, expected_monomers, test_position=False):
+def assert_monomers_equal(test_monomers, expected_monomers, ignore_extra_spatial_rxn=False, test_position=False):
     """
     Assert two topologies (in monomer form) are equivalent
     """
@@ -80,30 +78,40 @@ def assert_monomers_equal(test_monomers, expected_monomers, test_position=False)
     # and contains the correct particle_ids (in any order, starting at any index)
     test_top_id = list(test_monomers["topologies"].keys())[0]
     exp_top_id = list(expected_monomers["topologies"].keys())[0]
-    assert len(test_monomers["topologies"][test_top_id]["type_name"]) == len(
-        expected_monomers["topologies"][exp_top_id]["type_name"]
-    )
+    assert "SpatialRxnResult" not in test_monomers["topologies"][test_top_id]["type_name"]
+    if not ignore_extra_spatial_rxn:
+        assert test_monomers["topologies"][test_top_id]["type_name"] == expected_monomers["topologies"][exp_top_id]["type_name"]
     test_particle_ids = test_monomers["topologies"][test_top_id]["particle_ids"]
     # pytest caches something that causes particle IDs to not always start at 0
     min_id = get_min_id(test_monomers)
-    assert len(test_particle_ids) == len(
-        expected_monomers["topologies"][exp_top_id]["particle_ids"]
-    )
-    for particle_id in test_particle_ids:
-        assert particle_id - min_id in expected_monomers["topologies"][exp_top_id]["particle_ids"], f"top particle IDs = {test_particle_ids}"
+    if ignore_extra_spatial_rxn:
+        assert len(test_particle_ids) >= len(
+            expected_monomers["topologies"][exp_top_id]["particle_ids"]
+        )
+    else:
+        assert len(test_particle_ids) == len(
+            expected_monomers["topologies"][exp_top_id]["particle_ids"]
+        )
+        for particle_id in test_particle_ids:
+            assert particle_id - min_id in expected_monomers["topologies"][exp_top_id]["particle_ids"], f"top particle IDs = {test_particle_ids}"
     for particle_id in expected_monomers["topologies"][exp_top_id]["particle_ids"]:
         assert particle_id + min_id in test_particle_ids
     # check the particle types, positions (optionally), and neighbors
     for particle_id in test_monomers["particles"]:
         test_particle = test_monomers["particles"][particle_id]
         exp_particle = expected_monomers["particles"][particle_id - min_id]
-        assert test_particle["type_name"] == exp_particle["type_name"]
-        neighbor_ids1 = test_particle["neighbor_ids"].copy()
-        neighbor_ids1.sort()
-        neighbor_ids2 = exp_particle["neighbor_ids"].copy()
-        neighbor_ids2.sort()
-        neighbor_ids2 = [nid + min_id for nid in neighbor_ids2]
-        assert neighbor_ids1 == neighbor_ids2, f"Neighbors don't match for particle ID {particle_id - min_id}"
+        if not ignore_extra_spatial_rxn:
+            assert test_particle["type_name"] == exp_particle["type_name"]
+        test_neighbor_ids = test_particle["neighbor_ids"].copy()
+        test_neighbor_ids.sort()
+        exp_neighbor_ids = exp_particle["neighbor_ids"].copy()
+        exp_neighbor_ids.sort()
+        exp_neighbor_ids = [nid + min_id for nid in exp_neighbor_ids]
+        if not ignore_extra_spatial_rxn:
+            assert test_neighbor_ids == exp_neighbor_ids, f"Neighbors don't match for particle ID {particle_id - min_id}"
+        else:
+            for exp_neighbor_id in exp_neighbor_ids:
+                assert exp_neighbor_id in test_particle["neighbor_ids"]
         if test_position:
             np.testing.assert_almost_equal(
                 test_particle["position"], exp_particle["position"], decimal=2
