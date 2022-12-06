@@ -2732,7 +2732,7 @@ class ActinUtil:
             particle_types=ActinUtil.get_all_particle_types(),
             origin=-0.5 * box_potential_size,
             extent=box_potential_size,
-            force_constant=parameters["force_constant"],
+            force_constant=ActinUtil.DEFAULT_FORCE_CONSTANT,
             system=system,
         )
 
@@ -2768,7 +2768,7 @@ class ActinUtil:
                 particle_types[particle_type],
                 center - 0.5 * size,
                 size,
-                parameters["force_constant"],
+                ActinUtil.DEFAULT_FORCE_CONSTANT,
                 system,
             )
 
