@@ -114,6 +114,24 @@ class ReaddyUtil:
             return np.array([0, 1, 0])
         u = ReaddyUtil.normalize(np.array([-v[1], v[0], 0]))
         return ReaddyUtil.rotate(u, v, 2 * np.pi * random.random())
+    
+    def monomer_state_to_str(monomers):
+        result = "topologies:\n"
+        for top_id in monomers["topologies"]:
+            top = monomers["topologies"][top_id]
+            type_name = top["type_name"]
+            particles = top["particle_ids"].copy()
+            particles.sort()
+            result += f"  {top_id} : {type_name} {particles}\n"
+        result += "particles:\n"
+        particle_ids = list(monomers["particles"].keys())
+        particle_ids.sort()
+        for particle_id in particle_ids:
+            particle = monomers["particles"][particle_id]
+            type_name = particle["type_name"]
+            neighbor_ids = [nid for nid in particle["neighbor_ids"]]
+            result += f"  {particle_id} : {type_name}, {neighbor_ids}\n"
+        return result
 
     @staticmethod
     def topology_to_string(topology):

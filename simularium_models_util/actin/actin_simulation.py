@@ -47,9 +47,9 @@ class ActinSimulation:
         self.create_actin_system()
         self.simulation = ReaddyUtil.create_readdy_simulation(
             self.system,
-            self.parameters["n_cpu"],
-            self.parameters["name"],
-            self.parameters["total_steps"],
+            self._parameter("n_cpu"),
+            self._parameter("name"),
+            self._parameter("total_steps"),
             record,
             save_checkpoints,
         )
@@ -65,38 +65,50 @@ class ActinSimulation:
         self.parameters["arp23_radius"] = 2.
         self.parameters["cap_radius"] = 3.
 
+    def _parameter(self, parameter_name):
+        """
+        Safely get a parameter using defaults when possible.
+        """
+        try:
+            return self.parameters.get(parameter_name, ActinUtil.DEFAULT_PARAMETERS[parameter_name])
+        except KeyError:
+            raise Exception(
+                f"Parameter {parameter_name} is required but was not provided."
+            )
+
     def create_actin_system(self):
         """
         Create the ReaDDy system for actin
         including particle types, constraints, and reactions
         """
         self.system = readdy.ReactionDiffusionSystem(
-            box_size=self.parameters["box_size"],
-            periodic_boundary_conditions=[bool(self.parameters["periodic_boundary"])]
+            box_size=self._parameter("box_size"),
+            periodic_boundary_conditions=[bool(self._parameter("periodic_boundary"))]
             * 3,
         )
-        self.parameters["temperature_K"] = self.parameters["temperature_C"] + 273.15
+        self.parameters["temperature_K"] = self._parameter("temperature_C") + 273.15
         self.system.temperature = self.parameters["temperature_K"]
         self.add_particle_types()
         ActinUtil.check_add_global_box_potential(self.system)
         self.add_constraints()
-        self.add_reactions()
+        if bool(self._parameter("reactions")):
+            self.add_reactions()
 
     def add_particle_types(self):
         """
         Add particle and topology types for actin particles
         to the ReaDDy system
         """
-        temperature = self.parameters["temperature_K"]
-        viscosity = self.parameters["viscosity"]
+        temperature = self._parameter("temperature_K")
+        viscosity = self._parameter("viscosity")
         actin_diffCoeff = ReaddyUtil.calculate_diffusionCoefficient(
-            self.parameters["actin_radius"], viscosity, temperature
+            self._parameter("actin_radius"), viscosity, temperature
         )  # nm^2/s
         arp23_diffCoeff = ReaddyUtil.calculate_diffusionCoefficient(
-            self.parameters["arp23_radius"], viscosity, temperature
+            self._parameter("arp23_radius"), viscosity, temperature
         )  # nm^2/s
         cap_diffCoeff = ReaddyUtil.calculate_diffusionCoefficient(
-            self.parameters["cap_radius"], viscosity, temperature
+            self._parameter("cap_radius"), viscosity, temperature
         )  # nm^2/s
         self.actin_util.add_actin_types(self.system, actin_diffCoeff)
         self.actin_util.add_arp23_types(self.system, arp23_diffCoeff)
@@ -109,49 +121,52 @@ class ActinSimulation:
         including bonds, angles, and repulsions, to the ReaDDy system
         """
         util = ReaddyUtil()
-        accurate_force_constants = self.parameters["accurate_force_constants"]
-        longitudinal_bonds = bool(self.parameters["longitudinal_bonds"])
+        accurate_force_constants = self._parameter("accurate_force_constants")
+        longitudinal_bonds = bool(self._parameter("longitudinal_bonds"))
+        only_linear_actin = bool(self._parameter("only_linear_actin_constraints"))
+        # force constants
         dihedral_strength = 10. if longitudinal_bonds else 25.
         angle_force_constant = 10. * ActinUtil.DEFAULT_FORCE_CONSTANT
         dihedral_force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
-        repulsion_force_constant = 5. * ActinUtil.DEFAULT_FORCE_CONSTANT
+        repulsion_force_constant = 10. * ActinUtil.DEFAULT_FORCE_CONSTANT
         actin_angle_force_constant = angle_force_constant
         actin_dihedral_force_constant = dihedral_strength * dihedral_force_constant
-        # if accurate_force_constants:
-        #     actin_angle_force_constant *= 0.001
-        #     actin_dihedral_force_constant *= 0.001
+        if accurate_force_constants:
+            multiplier = 0.2
+            actin_angle_force_constant *= 0.1 * multiplier
+            actin_dihedral_force_constant *= multiplier
         # linear actin
         self.actin_util.add_bonds_between_actins(
             accurate_force_constants, self.system, util, longitudinal_bonds
         )
-        # self.actin_util.add_filament_twist_angles(
-        #     actin_angle_force_constant, self.system, util
-        # )
-        # self.actin_util.add_filament_twist_dihedrals(
-        #     actin_dihedral_force_constant, self.system, util
-        # )
-        # # branch junction
-        # self.actin_util.add_branch_bonds(self.system, util)
-        # self.actin_util.add_branch_angles(
-        #     angle_force_constant, self.system, util
-        # )
-        # self.actin_util.add_branch_dihedrals(
-        #     dihedral_force_constant, self.system, util
-        # )
-        # # capping protein
-        # self.actin_util.add_cap_bonds(self.system, util)
-        # self.actin_util.add_cap_angles(
-        #     angle_force_constant, self.system, util
-        # )
-        # self.actin_util.add_cap_dihedrals(
-        #     dihedral_force_constant, self.system, util
-        # )
+        self.actin_util.add_filament_twist_angles(
+            actin_angle_force_constant, self.system, util
+        )
+        self.actin_util.add_filament_twist_dihedrals(
+            actin_dihedral_force_constant, self.system, util
+        )
+        if not only_linear_actin:
+            # branch junction
+            self.actin_util.add_branch_bonds(self.system, util)
+            self.actin_util.add_branch_angles(
+                angle_force_constant, self.system, util
+            )
+            self.actin_util.add_branch_dihedrals(
+                dihedral_force_constant, self.system, util
+            )
+            # capping protein
+            self.actin_util.add_cap_bonds(self.system, util)
+            self.actin_util.add_cap_angles(
+                angle_force_constant, self.system, util
+            )
+            self.actin_util.add_cap_dihedrals(
+                dihedral_force_constant, self.system, util
+            )
         # repulsions
         self.actin_util.add_repulsions(
-            self.parameters["actin_radius"],
-            self.parameters["arp23_radius"],
-            self.parameters["cap_radius"],
-            self.parameters["obstacle_radius"],
+            self._parameter("arp23_radius"),
+            self._parameter("cap_radius"),
+            self._parameter("obstacle_radius"),
             repulsion_force_constant,
             self.system,
             util,
@@ -186,10 +201,10 @@ class ActinSimulation:
 
     def do_pointed_end_translation(self):
         result = (
-            self.parameters["displace_pointed_end_tangent"]
-            or self.parameters["displace_pointed_end_radial"]
+            self._parameter("displace_pointed_end_tangent")
+            or self._parameter("displace_pointed_end_radial")
         )
-        if result and (not self.parameters["orthogonal_seed"] or int(self.parameters["n_fixed_monomers_pointed"]) < 1):
+        if result and (not self._parameter("orthogonal_seed") or int(self._parameter("n_fixed_monomers_pointed")) < 1):
             raise Exception(
                 "Pointed end translation requires orthogonal seed "
                 "and non-zero number of fixed monomers at the pointed end."
@@ -203,37 +218,37 @@ class ActinSimulation:
         if not self.do_pointed_end_translation():
             return {}
         if (
-            self.parameters["displace_pointed_end_tangent"]
-            and self.parameters["displace_pointed_end_radial"]
+            self._parameter("displace_pointed_end_tangent")
+            and self._parameter("displace_pointed_end_radial")
         ):
             raise Exception(
                 "Cannot apply tangent and radial displacements simultaneously"
             )
-        if self.parameters["displace_pointed_end_tangent"]:
+        if self._parameter("displace_pointed_end_tangent"):
             displacement = {
                 "get_translation": ActinUtil.get_position_for_tangent_translation,
                 "parameters": {
                     "total_displacement_nm": np.array(
-                        [self.parameters["tangent_displacement_nm"], 0, 0]
+                        [self._parameter("tangent_displacement_nm"), 0, 0]
                     ),
-                    "total_steps": float(self.parameters["total_steps"]),
+                    "total_steps": float(self._parameter("total_steps")),
                 },
             }
-        if self.parameters["displace_pointed_end_radial"]:
+        if self._parameter("displace_pointed_end_radial"):
             displacement = {
                 "get_translation": ActinUtil.get_position_for_radial_translation,
                 "parameters": {
-                    "radius_nm": self.parameters["radial_displacement_radius_nm"],
+                    "radius_nm": self._parameter("radial_displacement_radius_nm"),
                     "theta_init_radians": np.pi,
                     "theta_final_radians": np.pi
-                    + np.deg2rad(self.parameters["radial_displacement_angle_deg"]),
-                    "total_steps": float(self.parameters["total_steps"]),
+                    + np.deg2rad(self._parameter("radial_displacement_angle_deg")),
+                    "total_steps": float(self._parameter("total_steps")),
                 },
             }
         result = {
-            "displace_stride": int(self.parameters["displace_stride"]),
+            "displace_stride": int(self._parameter("displace_stride")),
         }
-        for monomer_index in range(int(self.parameters["n_fixed_monomers_pointed"])):
+        for monomer_index in range(int(self._parameter("n_fixed_monomers_pointed"))):
             result[monomer_index] = displacement
         return result
 
@@ -242,21 +257,22 @@ class ActinSimulation:
         Add randomly distributed actin monomers, Arp2/3 dimers,
         and capping protein according to concentrations and box size
         """
+        box_size = self._parameter("box_size")
         self.actin_util.add_actin_monomers(
             ReaddyUtil.calculate_nParticles(
-                self.parameters["actin_concentration"], self.parameters["box_size"]
+                self._parameter("actin_concentration"), box_size
             ),
             self.simulation,
         )
         self.actin_util.add_arp23_dimers(
             ReaddyUtil.calculate_nParticles(
-                self.parameters["arp23_concentration"], self.parameters["box_size"]
+                self._parameter("arp23_concentration"), box_size
             ),
             self.simulation,
         )
         self.actin_util.add_capping_protein(
             ReaddyUtil.calculate_nParticles(
-                self.parameters["cap_concentration"], self.parameters["box_size"]
+                self._parameter("cap_concentration"), box_size
             ),
             self.simulation,
         )
@@ -267,8 +283,8 @@ class ActinSimulation:
         """
         self.actin_util.add_random_linear_fibers(
             self.simulation,
-            int(self.parameters["seed_n_fibers"]),
-            self.parameters["seed_fiber_length"],
+            int(self._parameter("seed_n_fibers")),
+            self._parameter("seed_fiber_length"),
             -1 if use_uuids else 0,
             longitudinal_bonds,
         )
@@ -316,9 +332,9 @@ class ActinSimulation:
             self.simulation.add_particle(
                 type="obstacle",
                 position=[
-                    float(self.parameters[f"obstacle{n}_position_x"]),
-                    float(self.parameters[f"obstacle{n}_position_y"]),
-                    float(self.parameters[f"obstacle{n}_position_z"]),
+                    float(self._parameter(f"obstacle{n}_position_x")),
+                    float(self._parameter(f"obstacle{n}_position_y")),
+                    float(self._parameter(f"obstacle{n}_position_z")),
                 ],
             )
             n += 1
@@ -390,7 +406,7 @@ class ActinSimulation:
             readdy_actions = self.simulation._actions
             init = readdy_actions.initialize_kernel()
             diffuse = readdy_actions.integrator_euler_brownian_dynamics(
-                self.parameters["internal_timestep"]
+                self._parameter("internal_timestep")
             )
             calculate_forces = readdy_actions.calculate_forces()
             create_nl = readdy_actions.create_neighbor_list(
@@ -398,7 +414,7 @@ class ActinSimulation:
             )
             update_nl = readdy_actions.update_neighbor_list()
             react = readdy_actions.reaction_handler_uncontrolled_approximation(
-                self.parameters["internal_timestep"]
+                self._parameter("internal_timestep")
             )
             observe = readdy_actions.evaluate_observables()
             init()
@@ -406,7 +422,7 @@ class ActinSimulation:
             calculate_forces()
             update_nl()
             observe(0)
-            n_steps = int(d_time * 1e9 / self.parameters["internal_timestep"])
+            n_steps = int(d_time * 1e9 / self._parameter("internal_timestep"))
             for t in range(1, n_steps + 1):
                 diffuse()
                 update_nl()

@@ -47,6 +47,73 @@ class ActinUtil:
         set_parameters(parameters)
         if displacements is not None:
             set_displacements(displacements)
+            
+    DEFAULT_PARAMETERS = {
+        "name": "actin",
+        "total_steps": 1e3,
+        "time_step": 0.0000001,  # s
+        "internal_timestep": 0.1,  # ns
+        "box_size": np.array([float(500.0)] * 3),  # nm
+        "periodic_boundary": True,
+        "accurate_force_constants": True,
+        "reaction_distance": 1.0,  # nm
+        "n_cpu": 4,
+        "actin_concentration": 200.0,  # uM
+        "arp23_concentration": 10.0,  # uM
+        "cap_concentration": 0.0,  # uM
+        "seed_n_fibers": 0,
+        "seed_fiber_length": 0.0,
+        "orthogonal_seed": False,
+        "branched_seed": False,
+        "only_linear_actin_constraints": False,
+        "reactions": True,
+        "dimerize_rate": 2.1e-2,  # 1/ns
+        "dimerize_reverse_rate": 1.4e-1,  # 1/ns
+        "trimerize_rate": 2.1e-2,  # 1/ns
+        "trimerize_reverse_rate": 1.4e-1,  # 1/ns
+        "pointed_growth_ATP_rate": 2.4e5,  # 1/ns
+        "pointed_growth_ADP_rate": 3.0e4,  # 1/ns
+        "pointed_shrink_ATP_rate": 8.0e-15,  # 1/ns
+        "pointed_shrink_ADP_rate": 3.0e-15,  # 1/ns
+        "barbed_growth_ATP_rate": 2.1e6,  # 1/ns
+        "barbed_growth_ADP_rate": 7.0e5,  # 1/ns
+        "nucleate_ATP_rate": 2.1e6,  # 1/ns
+        "nucleate_ADP_rate": 7.0e5,  # 1/ns
+        "barbed_shrink_ATP_rate": 1.4e-14,  # 1/ns
+        "barbed_shrink_ADP_rate": 8.0e-14,  # 1/ns
+        "arp_bind_ATP_rate": 2.1e6,  # 1/ns
+        "arp_bind_ADP_rate": 7.0e5,  # 1/ns
+        "arp_unbind_ATP_rate": 1.4e-14,  # 1/ns
+        "arp_unbind_ADP_rate": 8.0e-14,  # 1/ns
+        "barbed_growth_branch_ATP_rate": 2.1e6,  # 1/ns
+        "barbed_growth_branch_ADP_rate": 7.0e5,  # 1/ns
+        "debranching_ATP_rate": 1.4e-14,  # 1/ns
+        "debranching_ADP_rate": 8.0e-14,  # 1/ns
+        "cap_bind_rate": 2.1e6,  # 1/ns
+        "cap_unbind_rate": 1.4e-14,  # 1/ns
+        "hydrolysis_actin_rate": 3.5e-15,  # 1/ns
+        "hydrolysis_arp_rate": 3.5e-15,  # 1/ns
+        "nucleotide_exchange_actin_rate": 1e-10,  # 1/ns
+        "nucleotide_exchange_arp_rate": 1e-10,  # 1/ns
+        "verbose": False,
+        "use_box_actin": False,
+        "use_box_arp": False,
+        "use_box_cap": False,
+        "obstacle_radius": 35.0,
+        "n_fixed_monomers_pointed": 0,
+        "n_fixed_monomers_barbed": 0,
+        "displace_pointed_end_tangent": False,
+        "displace_pointed_end_radial": False,
+        "tangent_displacement_nm": 0.,
+        "radial_displacement_radius_nm": 0.,
+        "radial_displacement_angle_deg": 0.,
+        "plot_polymerization": False,
+        "plot_bend_twist": False,
+        "visualize_edges": False,
+        "visualize_normals": False,
+        "longitudinal_bonds": True,
+        "displace_stride": 1,    
+    }
 
     @staticmethod
     def get_new_vertex(topology):
@@ -1594,7 +1661,7 @@ class ActinUtil:
         lat_force_constant = force_constant
         long_force_constant = force_constant
         if accurate_force_constants:
-            multiplier = 0.25
+            multiplier = 0.01
             lat_force_constant = multiplier * 968.2  # kJ / mol / nm^2
             long_force_constant = multiplier * 1437.5  # kJ / mol / nm^2
         # lateral actin-actin bond
@@ -2621,7 +2688,6 @@ class ActinUtil:
 
     @staticmethod
     def add_repulsions(
-        actin_radius,
         arp23_radius,
         cap_radius,
         obstacle_radius,
@@ -2638,12 +2704,13 @@ class ActinUtil:
         )
         arp_types = ActinUtil.get_all_arp23_particle_types()
         cap_types = ActinUtil.get_all_cap_particle_types()
+        actin_radius = 0.5 * ActinStructure.actin_to_actin_repulsion_distance()
         # actin
         util.add_repulsion(
             actin_types,
             actin_types,
             force_constant,
-            ActinStructure.actin_to_actin_repulsion_distance(),
+            2. * actin_radius,
             system,
         )
         util.add_repulsion(

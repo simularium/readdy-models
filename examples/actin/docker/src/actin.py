@@ -58,13 +58,12 @@ def main():
     if not os.path.exists("outputs/"):
         os.mkdir("outputs/")
     parameters["name"] = "outputs/" + args.model_name + "_" + str(run_name)
-    # parameters["box_size"] = float(parameters["box_size"])
     actin_simulation = ActinSimulation(parameters, True, False)
     actin_simulation.add_obstacles()
     actin_simulation.add_random_monomers()
     actin_simulation.add_random_linear_fibers(use_uuids=False)
-    longitudinal_bonds = bool(parameters["longitudinal_bonds"])
-    if parameters["orthogonal_seed"]:
+    longitudinal_bonds = bool(parameters.get("longitudinal_bonds", True))
+    if bool(parameters.get("orthogonal_seed", False)):
         print("Starting with orthogonal seed")
         fiber_data = [
             FiberData(
@@ -84,7 +83,7 @@ def main():
         )
         monomers = ActinGenerator.setup_fixed_monomers(monomers, parameters)
         actin_simulation.add_monomers_from_data(monomers)
-    if parameters["branched_seed"]:
+    if bool(parameters.get("branched_seed", False)):
         print("Starting with branched seed")
         actin_simulation.add_monomers_from_data(
             ActinGenerator.get_monomers(
@@ -94,7 +93,7 @@ def main():
             )
         )
     actin_simulation.simulation.run(
-        int(parameters["total_steps"]), parameters["internal_timestep"]
+        int(parameters["total_steps"]), parameters.get("internal_timestep", 0.1)
     )
     report_hardware_usage()
     monomer_data = None
@@ -102,35 +101,36 @@ def main():
     reactions = None
     normals = None 
     axis_positions = None
-    if (
-        parameters["plot_polymerization"] 
-        or parameters["plot_bend_twist"] 
-        or parameters["visualize_edges"] 
-        or parameters["visualize_normals"]):
+    plot_polymerization = parameters.get("plot_polymerization", False) 
+    plot_bend_twist = parameters.get("plot_bend_twist", False) 
+    visualize_edges = parameters.get("visualize_edges", False) 
+    visualize_normals = parameters.get("visualize_normals", False) 
+    periodic_boundary = parameters.get("periodic_boundary", False) 
+    if plot_polymerization or plot_bend_twist or visualize_edges or visualize_normals:
         (
             monomer_data,
             times,
             reactions,
         ) = ActinVisualization.shape_readdy_data_for_analysis(
             h5_file_path=parameters["name"] + ".h5",
-            reactions=parameters["plot_polymerization"],
+            reactions=plot_polymerization,
         )
-        if parameters["plot_bend_twist"] or parameters["visualize_normals"]:
+        if plot_bend_twist or visualize_normals:
             normals, axis_positions = ActinAnalyzer.analyze_normals_and_axis_positions(
-                monomer_data, parameters["box_size"], parameters["periodic_boundary"]
+                monomer_data, parameters["box_size"], periodic_boundary
             )
     plots = None
-    if parameters["plot_polymerization"]:
+    if plot_polymerization:
         print("plot polymerization")
         plots = ActinVisualization.generate_polymerization_plots(
             monomer_data,
             times,
             reactions,
             parameters["box_size"],
-            parameters["periodic_boundary"],
+            periodic_boundary,
             plots,
         )
-    if parameters["plot_bend_twist"]:
+    if plot_bend_twist:
         print("plot bend twist")
         plots = ActinVisualization.generate_bend_twist_plots(
             monomer_data,
@@ -138,7 +138,7 @@ def main():
             parameters["box_size"],
             normals,
             axis_positions,
-            parameters["periodic_boundary"],
+            periodic_boundary,
             plots,
         )
     traj_data = ActinVisualization.visualize_actin(
@@ -146,8 +146,8 @@ def main():
         box_size=parameters["box_size"],
         total_steps=parameters["total_steps"],
         display_data=ACTIN_DISPLAY_DATA,
-        visualize_edges=parameters["visualize_edges"],
-        visualize_normals=parameters["visualize_normals"],
+        visualize_edges=visualize_edges,
+        visualize_normals=visualize_normals,
         monomer_data=monomer_data,
         normals=normals,
         axis_positions=axis_positions,
