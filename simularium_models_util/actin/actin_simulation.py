@@ -114,38 +114,38 @@ class ActinSimulation:
         dihedral_strength = 10. if longitudinal_bonds else 25.
         angle_force_constant = 10. * ActinUtil.DEFAULT_FORCE_CONSTANT
         dihedral_force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
-        repulsion_force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
+        repulsion_force_constant = 5. * ActinUtil.DEFAULT_FORCE_CONSTANT
         actin_angle_force_constant = angle_force_constant
         actin_dihedral_force_constant = dihedral_strength * dihedral_force_constant
-        if accurate_force_constants:
-            actin_angle_force_constant *= 1
-            actin_dihedral_force_constant *= 1
+        # if accurate_force_constants:
+        #     actin_angle_force_constant *= 0.001
+        #     actin_dihedral_force_constant *= 0.001
         # linear actin
         self.actin_util.add_bonds_between_actins(
             accurate_force_constants, self.system, util, longitudinal_bonds
         )
-        self.actin_util.add_filament_twist_angles(
-            actin_angle_force_constant, self.system, util
-        )
-        self.actin_util.add_filament_twist_dihedrals(
-            actin_dihedral_force_constant, self.system, util
-        )
-        # branch junction
-        self.actin_util.add_branch_bonds(self.system, util)
-        self.actin_util.add_branch_angles(
-            angle_force_constant, self.system, util
-        )
-        self.actin_util.add_branch_dihedrals(
-            dihedral_force_constant, self.system, util
-        )
-        # capping protein
-        self.actin_util.add_cap_bonds(self.system, util)
-        self.actin_util.add_cap_angles(
-            angle_force_constant, self.system, util
-        )
-        self.actin_util.add_cap_dihedrals(
-            dihedral_force_constant, self.system, util
-        )
+        # self.actin_util.add_filament_twist_angles(
+        #     actin_angle_force_constant, self.system, util
+        # )
+        # self.actin_util.add_filament_twist_dihedrals(
+        #     actin_dihedral_force_constant, self.system, util
+        # )
+        # # branch junction
+        # self.actin_util.add_branch_bonds(self.system, util)
+        # self.actin_util.add_branch_angles(
+        #     angle_force_constant, self.system, util
+        # )
+        # self.actin_util.add_branch_dihedrals(
+        #     dihedral_force_constant, self.system, util
+        # )
+        # # capping protein
+        # self.actin_util.add_cap_bonds(self.system, util)
+        # self.actin_util.add_cap_angles(
+        #     angle_force_constant, self.system, util
+        # )
+        # self.actin_util.add_cap_dihedrals(
+        #     dihedral_force_constant, self.system, util
+        # )
         # repulsions
         self.actin_util.add_repulsions(
             self.parameters["actin_radius"],

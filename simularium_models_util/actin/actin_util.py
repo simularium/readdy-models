@@ -1594,8 +1594,9 @@ class ActinUtil:
         lat_force_constant = force_constant
         long_force_constant = force_constant
         if accurate_force_constants:
-            lat_force_constant = 968.2  # kJ / mol / nm^2
-            long_force_constant = 1437.5  # kJ / mol / nm^2
+            multiplier = 0.25
+            lat_force_constant = multiplier * 968.2  # kJ / mol / nm^2
+            long_force_constant = multiplier * 1437.5  # kJ / mol / nm^2
         # lateral actin-actin bond
         util.add_polymer_bond_1D(
             [
