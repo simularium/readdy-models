@@ -76,13 +76,13 @@ class ActinAnalyzer:
         return result
 
     @staticmethod
-    def _actin_chain_types(actin_number_types):
+    def _actin_chain_types():
         """
         Get all the types for actins along a filament from pointed to barbed,
         not including pointed or branch actins that start a new filament
         """
         result = []
-        for i in ActinUtil.actin_number_range(actin_number_types):
+        for i in ActinUtil.polymer_number_range():
             result.append(
                 [
                     f"actin#{i}",
@@ -195,7 +195,7 @@ class ActinAnalyzer:
 
     @staticmethod
     def _get_frame_filaments_from_start_actins(
-        start_actin_ids, frame_particle_data, actin_number_types
+        start_actin_ids, frame_particle_data
     ):
         """
         Get a list of filaments in the given frame of data
@@ -204,7 +204,7 @@ class ActinAnalyzer:
         in order from pointed to barbed end
         """
         result = []
-        chain_types = ActinAnalyzer._actin_chain_types(actin_number_types)
+        chain_types = ActinAnalyzer._actin_chain_types()
         for start_actin_id in start_actin_ids:
             pointed_number = int(
                 frame_particle_data["particles"][start_actin_id]["type_name"][-1]
@@ -221,7 +221,7 @@ class ActinAnalyzer:
         return result
 
     @staticmethod
-    def _frame_mother_filaments(frame_particle_data, actin_number_types):
+    def _frame_mother_filaments(frame_particle_data):
         """
         Get a list of mother filaments in the given frame of data,
         each filament is a list of the actin ids in the filament
@@ -232,11 +232,10 @@ class ActinAnalyzer:
                 ActinAnalyzer._pointed_actin_types(), frame_particle_data
             ),
             frame_particle_data,
-            actin_number_types,
         )
 
     @staticmethod
-    def _frame_daughter_filaments(frame_particle_data, actin_number_types):
+    def _frame_daughter_filaments(frame_particle_data):
         """
         Get a list of daughter filaments in the given frame of data,
         each filament is a list of the actin ids in the filament
@@ -247,21 +246,19 @@ class ActinAnalyzer:
                 ActinAnalyzer._branch_actin_types(), frame_particle_data
             ),
             frame_particle_data,
-            actin_number_types,
         )
 
     @staticmethod
-    def _frame_all_filaments(frame_particle_data, actin_number_types):
+    def _frame_all_filaments(frame_particle_data):
         """
         Get a list of mother and daughter filaments
         in the given frame of data,
         each filament is a list of the actin ids in the filament
         in order from pointed to barbed end
         """
-        return ActinAnalyzer._frame_mother_filaments(
-            frame_particle_data, actin_number_types
-        ) + ActinAnalyzer._frame_daughter_filaments(
-            frame_particle_data, actin_number_types
+        return (
+            ActinAnalyzer._frame_mother_filaments(frame_particle_data) 
+            + ActinAnalyzer._frame_daughter_filaments(frame_particle_data)
         )
 
     @staticmethod
@@ -319,7 +316,7 @@ class ActinAnalyzer:
         return np.array(result)
 
     @staticmethod
-    def analyze_ratio_of_daughter_to_total_actin(monomer_data, actin_number_types):
+    def analyze_ratio_of_daughter_to_total_actin(monomer_data):
         """
         Get a list of the ratio
         [daughter filament actin] / [total actin] over time
@@ -328,7 +325,7 @@ class ActinAnalyzer:
         for t in range(len(monomer_data)):
             daughter_actin = 0
             daughter_filaments = ActinAnalyzer._frame_daughter_filaments(
-                monomer_data[t], actin_number_types
+                monomer_data[t]
             )
             for daughter_filament in daughter_filaments:
                 daughter_actin += len(daughter_filament)
@@ -350,7 +347,7 @@ class ActinAnalyzer:
         return np.array(result)
 
     @staticmethod
-    def analyze_mother_filament_lengths(monomer_data, actin_number_types):
+    def analyze_mother_filament_lengths(monomer_data):
         """
         Get a list of the number of monomers in each mother filament
         in each frame of the trajectory
@@ -358,7 +355,7 @@ class ActinAnalyzer:
         result = []
         for t in range(len(monomer_data)):
             mother_filaments = ActinAnalyzer._frame_mother_filaments(
-                monomer_data[t], actin_number_types
+                monomer_data[t]
             )
             result.append([])
             for filament in mother_filaments:
@@ -366,7 +363,7 @@ class ActinAnalyzer:
         return result
 
     @staticmethod
-    def analyze_daughter_filament_lengths(monomer_data, actin_number_types):
+    def analyze_daughter_filament_lengths(monomer_data):
         """
         Get a list of the number of monomers in each daughter filament
         in each frame of the trajectory
@@ -374,7 +371,7 @@ class ActinAnalyzer:
         result = []
         for t in range(len(monomer_data)):
             daughter_filaments = ActinAnalyzer._frame_daughter_filaments(
-                monomer_data[t], actin_number_types
+                monomer_data[t]
             )
             result.append([])
             for filament in daughter_filaments:
@@ -475,7 +472,7 @@ class ActinAnalyzer:
         return str(positions)
 
     @staticmethod
-    def _get_frame_branch_ids(frame_particle_data, actin_number_types):
+    def _get_frame_branch_ids(frame_particle_data):
         """
         for each branch point at a time frame, get list of ids for (in order):
         - [0,1,2,3] 4 actins after branch on main filament
@@ -491,7 +488,7 @@ class ActinAnalyzer:
             + ActinAnalyzer._middle_actin_types()
             + ActinAnalyzer._barbed_actin_types()
         )
-        chain_types = ActinAnalyzer._actin_chain_types(actin_number_types)
+        chain_types = ActinAnalyzer._actin_chain_types()
         result = []
         for arp2_id in arp2_ids:
             actin1_id = ReaddyUtil.analyze_frame_get_id_for_neighbor_of_types(
@@ -540,7 +537,7 @@ class ActinAnalyzer:
             n = ReaddyUtil.calculate_polymer_number(
                 int(frame_particle_data["particles"][actin_arp2_id]["type_name"][-1:]),
                 1,
-                actin_number_types,
+                ActinUtil.n_polymer_numbers(),
             )
             actin_arp3_types = [
                 f"actin#{n}",
@@ -591,16 +588,13 @@ class ActinAnalyzer:
 
     @staticmethod
     def _get_frame_branch_angles(
-        actin_number_types, frame_particle_data, box_size, periodic_boundary=True
+        frame_particle_data, box_size, periodic_boundary=True
     ):
         """
         get the angle between mother and daughter filament
         at each branch point in the given frame of the trajectory
         """
-        actin_number_types = int(actin_number_types)
-        branch_ids = ActinAnalyzer._get_frame_branch_ids(
-            frame_particle_data, actin_number_types
-        )
+        branch_ids = ActinAnalyzer._get_frame_branch_ids(frame_particle_data)
         result = []
         for branch in branch_ids:
             actin_ids = [branch[0], branch[1], branch[2]]
@@ -662,17 +656,16 @@ class ActinAnalyzer:
 
     @staticmethod
     def analyze_branch_angles(
-        actin_number_types, monomer_data, box_size, periodic_boundary
+        monomer_data, box_size, periodic_boundary
     ):
         """
         Get a list of the angles between mother and daughter filaments
         at each branch point in each frame of the trajectory
         """
-        actin_number_types = int(actin_number_types)
         result = []
         for t in range(len(monomer_data)):
             branch_angles = ActinAnalyzer._get_frame_branch_angles(
-                actin_number_types, monomer_data[t], box_size, periodic_boundary
+                monomer_data[t], box_size, periodic_boundary
             )
             result.append(branch_angles)
         return result
@@ -721,16 +714,14 @@ class ActinAnalyzer:
 
     @staticmethod
     def _get_frame_short_helix_pitches(
-        frame_particle_data, box_size, actin_number_types, periodic_boundary=True
+        frame_particle_data, box_size, periodic_boundary=True
     ):
         """
         Get the pitch of the short helix between all actins on each filament
         for a given frame of data
         """
         result = []
-        filaments = ActinAnalyzer._frame_all_filaments(
-            frame_particle_data, actin_number_types
-        )
+        filaments = ActinAnalyzer._frame_all_filaments(frame_particle_data)
         for filament in filaments:
             for i in range(1, len(filament) - 3):
                 short_pitch = ActinAnalyzer._calculate_pitch(
@@ -746,16 +737,14 @@ class ActinAnalyzer:
 
     @staticmethod
     def _get_frame_long_helix_pitches(
-        frame_particle_data, box_size, actin_number_types, periodic_boundary=True
+        frame_particle_data, box_size, periodic_boundary=True
     ):
         """
         Get the pitch of the long helix between all actins on each filament
         for a given frame of data
         """
         result = []
-        filaments = ActinAnalyzer._frame_all_filaments(
-            frame_particle_data, actin_number_types
-        )
+        filaments = ActinAnalyzer._frame_all_filaments(frame_particle_data)
         for filament in filaments:
             for i in range(1, len(filament) - 3):
                 long_pitch = ActinAnalyzer._calculate_pitch(
@@ -771,7 +760,7 @@ class ActinAnalyzer:
 
     @staticmethod
     def analyze_short_helix_pitches(
-        monomer_data, box_size, actin_number_types, periodic_boundary
+        monomer_data, box_size, periodic_boundary
     ):
         """
         Get a list of the pitch of short helices between all actins
@@ -780,14 +769,14 @@ class ActinAnalyzer:
         result = []
         for t in range(len(monomer_data)):
             helix_pitches = ActinAnalyzer._get_frame_short_helix_pitches(
-                monomer_data[t], box_size, actin_number_types, periodic_boundary
+                monomer_data[t], box_size, periodic_boundary
             )
             result.append(helix_pitches)
         return result
 
     @staticmethod
     def analyze_long_helix_pitches(
-        monomer_data, box_size, actin_number_types, periodic_boundary
+        monomer_data, box_size, periodic_boundary
     ):
         """
         Get a list of the pitch of long helices between all actins
@@ -796,7 +785,7 @@ class ActinAnalyzer:
         result = []
         for t in range(len(monomer_data)):
             helix_pitches = ActinAnalyzer._get_frame_long_helix_pitches(
-                monomer_data[t], box_size, actin_number_types, periodic_boundary
+                monomer_data[t], box_size, periodic_boundary
             )
             result.append(helix_pitches)
         return result
@@ -825,16 +814,14 @@ class ActinAnalyzer:
 
     @staticmethod
     def _get_frame_distance_from_straight(
-        frame_particle_data, box_size, actin_number_types, periodic_boundary=True
+        frame_particle_data, box_size, periodic_boundary=True
     ):
         """
         Get the distance from each actin axis position to the ideal axis position
         if the filament axis was a straight line
         """
         result = []
-        filaments = ActinAnalyzer._frame_all_filaments(
-            frame_particle_data, actin_number_types
-        )
+        filaments = ActinAnalyzer._frame_all_filaments(frame_particle_data)
         for filament in filaments:
             positions = []
             last_pos = frame_particle_data["particles"][filament[0]]["position"]
@@ -867,7 +854,7 @@ class ActinAnalyzer:
 
     @staticmethod
     def analyze_filament_straightness(
-        monomer_data, box_size, actin_number_types, periodic_boundary
+        monomer_data, box_size, periodic_boundary
     ):
         """
         Get a list of the distances from each actin axis position
@@ -876,7 +863,7 @@ class ActinAnalyzer:
         result = []
         for t in range(len(monomer_data)):
             straightness = ActinAnalyzer._get_frame_distance_from_straight(
-                monomer_data[t], box_size, actin_number_types, periodic_boundary
+                monomer_data[t], box_size, periodic_boundary
             )
             result.append(straightness)
         return result
@@ -927,7 +914,7 @@ class ActinAnalyzer:
 
     @staticmethod
     def analyze_normals_and_axis_positions(
-        monomer_data, box_size, actin_number_types, periodic_boundary
+        monomer_data, box_size, periodic_boundary
     ):
         """
         Get the normal vector and axis position
@@ -938,9 +925,7 @@ class ActinAnalyzer:
         normals = [[] for t in range(total_steps)]
         axis_positions = [[] for t in range(total_steps)]
         for time_index in range(total_steps):
-            filaments = ActinAnalyzer._frame_all_filaments(
-                monomer_data[time_index], actin_number_types
-            )
+            filaments = ActinAnalyzer._frame_all_filaments(monomer_data[time_index])
             for filament in filaments:
                 for index in range(1, len(filament) - 1):
                     position = monomer_data[time_index]["particles"][filament[index]][
@@ -1008,7 +993,7 @@ class ActinAnalyzer:
 
     @staticmethod
     def analyze_twist_planes(
-        monomer_data, box_size, actin_number_types, periodic_boundary, stride=1
+        monomer_data, box_size, periodic_boundary, stride=1
     ):
         """
         Get the twist in degrees between 
@@ -1024,9 +1009,7 @@ class ActinAnalyzer:
         for time_index in range(0, total_steps, stride):
             plane_normals.append([])
             new_time = math.floor(time_index / stride)
-            filaments = ActinAnalyzer._frame_all_filaments(
-                monomer_data[time_index], actin_number_types
-            )
+            filaments = ActinAnalyzer._frame_all_filaments(monomer_data[time_index])
             for filament in filaments:
                 filament_length = len(filament)
                 for index in range(1, filament_length - 1):
@@ -1068,7 +1051,7 @@ class ActinAnalyzer:
 
     @staticmethod
     def analyze_bond_energies(
-        monomer_data, box_size, actin_number_types, periodic_boundary, stride=1
+        monomer_data, box_size, periodic_boundary, stride=1
     ):
         """
         Get the strain energy using the harmonic spring equation 
@@ -1099,9 +1082,7 @@ class ActinAnalyzer:
             energies_long.append([])
             filament_positions.append([])
             new_time = math.floor(time_index / stride)
-            filament = ActinAnalyzer._frame_mother_filaments(
-                monomer_data[time_index], actin_number_types
-            )[0]
+            filament = ActinAnalyzer._frame_mother_filaments(monomer_data[time_index])[0]
             for index in range(len(filament) - 2):
                 particle = monomer_data[time_index]["particles"][filament[index]]
                 particle_lat = monomer_data[time_index]["particles"][filament[index + 1]]

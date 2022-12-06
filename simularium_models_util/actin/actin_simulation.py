@@ -66,9 +66,7 @@ class ActinSimulation:
         self.parameters["temperature_K"] = self.parameters["temperature_C"] + 273.15
         self.system.temperature = self.parameters["temperature_K"]
         self.add_particle_types()
-        ActinUtil.check_add_global_box_potential(
-            self.system, int(self.parameters["actin_number_types"])
-        )
+        ActinUtil.check_add_global_box_potential(self.system)
         self.add_constraints()
         self.add_reactions()
 
@@ -77,7 +75,6 @@ class ActinSimulation:
         Add particle and topology types for actin particles
         to the ReaDDy system
         """
-        actin_number_types = int(self.parameters["actin_number_types"])
         temperature = self.parameters["temperature_K"]
         viscosity = self.parameters["viscosity"]
         actin_diffCoeff = ReaddyUtil.calculate_diffusionCoefficient(
@@ -89,9 +86,7 @@ class ActinSimulation:
         cap_diffCoeff = ReaddyUtil.calculate_diffusionCoefficient(
             self.parameters["cap_radius"], viscosity, temperature
         )  # nm^2/s
-        self.actin_util.add_actin_types(
-            self.system, actin_diffCoeff, actin_number_types
-        )
+        self.actin_util.add_actin_types(self.system, actin_diffCoeff)
         self.actin_util.add_arp23_types(self.system, arp23_diffCoeff)
         self.actin_util.add_cap_types(self.system, cap_diffCoeff)
         self.system.add_species("obstacle", 0.0)
@@ -101,40 +96,43 @@ class ActinSimulation:
         Add geometric constraints for connected actin particles,
         including bonds, angles, and repulsions, to the ReaDDy system
         """
-        force_constant = self.parameters["force_constant"]
         util = ReaddyUtil()
-        actin_number_types = int(self.parameters["actin_number_types"])
-        dihedral_strength = float(self.parameters["dihedral_strength"])
+        accurate_force_constants = self.parameters["accurate_force_constants"]
         longitudinal_bonds = bool(self.parameters["longitudinal_bonds"])
+        dihedral_strength = 10. if longitudinal_bonds else 25.
+        angle_force_constant = 10. * ActinUtil.DEFAULT_FORCE_CONSTANT
+        dihedral_force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
+        repulsion_force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
+        actin_angle_force_constant = angle_force_constant
+        actin_dihedral_force_constant = dihedral_strength * dihedral_force_constant
+        if accurate_force_constants:
+            actin_angle_force_constant *= 1
+            actin_dihedral_force_constant *= 1
         # linear actin
         self.actin_util.add_bonds_between_actins(
-            force_constant, self.system, util, actin_number_types, longitudinal_bonds
+            accurate_force_constants, self.system, util, longitudinal_bonds
         )
         self.actin_util.add_filament_twist_angles(
-            10 * force_constant, self.system, util, actin_number_types
+            actin_angle_force_constant, self.system, util
         )
         self.actin_util.add_filament_twist_dihedrals(
-            dihedral_strength * force_constant, self.system, util, actin_number_types
+            actin_dihedral_force_constant, self.system, util
         )
         # branch junction
-        self.actin_util.add_branch_bonds(
-            force_constant, self.system, util, actin_number_types
-        )
+        self.actin_util.add_branch_bonds(self.system, util)
         self.actin_util.add_branch_angles(
-            10 * force_constant, self.system, util, actin_number_types
+            angle_force_constant, self.system, util
         )
         self.actin_util.add_branch_dihedrals(
-            force_constant, self.system, util, actin_number_types
+            dihedral_force_constant, self.system, util
         )
         # capping protein
-        self.actin_util.add_cap_bonds(
-            force_constant, self.system, util, actin_number_types
-        )
+        self.actin_util.add_cap_bonds(self.system, util)
         self.actin_util.add_cap_angles(
-            force_constant, self.system, util, actin_number_types
+            angle_force_constant, self.system, util
         )
         self.actin_util.add_cap_dihedrals(
-            force_constant, self.system, util, actin_number_types
+            dihedral_force_constant, self.system, util
         )
         # repulsions
         self.actin_util.add_repulsions(
@@ -142,10 +140,9 @@ class ActinSimulation:
             self.parameters["arp23_radius"],
             self.parameters["cap_radius"],
             self.parameters["obstacle_radius"],
-            force_constant,
+            repulsion_force_constant,
             self.system,
             util,
-            int(self.parameters["actin_number_types"]),
         )
         # box potentials
         self.actin_util.add_monomer_box_potentials(self.system)
@@ -154,15 +151,14 @@ class ActinSimulation:
         """
         Add reactions to the ReaDDy system
         """
-        actin_number_types = int(self.parameters["actin_number_types"])
         self.actin_util.add_dimerize_reaction(self.system)
-        self.actin_util.add_trimerize_reaction(self.system, actin_number_types)
-        self.actin_util.add_nucleate_reaction(self.system, actin_number_types)
-        self.actin_util.add_pointed_growth_reaction(self.system, actin_number_types)
-        self.actin_util.add_barbed_growth_reaction(self.system, actin_number_types)
+        self.actin_util.add_trimerize_reaction(self.system)
+        self.actin_util.add_nucleate_reaction(self.system)
+        self.actin_util.add_pointed_growth_reaction(self.system)
+        self.actin_util.add_barbed_growth_reaction(self.system)
         self.actin_util.add_nucleate_branch_reaction(self.system)
-        self.actin_util.add_arp23_bind_reaction(self.system, actin_number_types)
-        self.actin_util.add_cap_bind_reaction(self.system, actin_number_types)
+        self.actin_util.add_arp23_bind_reaction(self.system)
+        self.actin_util.add_cap_bind_reaction(self.system)
         self.actin_util.add_dimerize_reverse_reaction(self.system)
         self.actin_util.add_trimerize_reverse_reaction(self.system)
         self.actin_util.add_pointed_shrink_reaction(self.system)
@@ -249,16 +245,16 @@ class ActinSimulation:
             self.simulation,
         )
 
-    def add_random_linear_fibers(self, use_uuids=True):
+    def add_random_linear_fibers(self, use_uuids=True, longitudinal_bonds=True):
         """
         Add randomly distributed and oriented linear fibers
         """
         self.actin_util.add_random_linear_fibers(
             self.simulation,
             int(self.parameters["seed_n_fibers"]),
-            int(self.parameters["actin_number_types"]),
             self.parameters["seed_fiber_length"],
             -1 if use_uuids else 0,
+            longitudinal_bonds,
         )
 
     def add_fibers_from_data(self, fibers_data, use_uuids=True):

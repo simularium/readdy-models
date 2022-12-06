@@ -65,7 +65,6 @@ def main():
     actin_simulation.add_obstacles()
     actin_simulation.add_random_monomers()
     actin_simulation.add_random_linear_fibers(use_uuids=False)
-    actin_number_types = int(parameters["actin_number_types"])
     longitudinal_bonds = bool(parameters["longitudinal_bonds"])
     if parameters["orthogonal_seed"]:
         print("Starting with orthogonal seed")
@@ -79,26 +78,22 @@ def main():
                 "Actin-Polymer",
             )
         ]
-        print(
-            "starts w/ actin_number_types in actin.py =",
-            actin_number_types,
-        )
         monomers = ActinGenerator.get_monomers(
-            actin_number_types, fiber_data, use_uuids=False, start_normal=np.array([0., 1., 0.]), longitudinal_bonds=longitudinal_bonds
+            fiber_data, 
+            use_uuids=False, 
+            start_normal=np.array([0., 1., 0.]), 
+            longitudinal_bonds=longitudinal_bonds,
         )
         monomers = ActinGenerator.setup_fixed_monomers(monomers, parameters)
-        
-        # import ipdb; ipdb.set_trace()
-        
         actin_simulation.add_monomers_from_data(monomers)
     print("success orthogonal if loop")
     if parameters["branched_seed"]:
         print("Starting with branched seed")
         actin_simulation.add_monomers_from_data(
             ActinGenerator.get_monomers(
-                actin_number_types,
                 ActinTestData.simple_branched_actin_fiber(),
                 use_uuids=False,
+                longitudinal_bonds=longitudinal_bonds,
             )
         )
     actin_simulation.simulation.run(
@@ -125,7 +120,7 @@ def main():
         )
         if parameters["plot_bend_twist"] or parameters["visualize_normals"]:
             normals, axis_positions = ActinAnalyzer.analyze_normals_and_axis_positions(
-                monomer_data, parameters["box_size"], actin_number_types, parameters["periodic_boundary"]
+                monomer_data, parameters["box_size"], parameters["periodic_boundary"]
             )
     plots = None
     if parameters["plot_polymerization"]:
@@ -135,7 +130,6 @@ def main():
             times,
             reactions,
             parameters["box_size"],
-            actin_number_types,
             parameters["periodic_boundary"],
             plots,
         )
@@ -146,12 +140,10 @@ def main():
             parameters["box_size"],
             normals,
             axis_positions,
-            actin_number_types,
             parameters["periodic_boundary"],
             plots,
         )
     traj_data = ActinVisualization.visualize_actin(
-        actin_number_types=actin_number_types,
         path_to_readdy_h5=parameters["name"] + ".h5",
         box_size=parameters["box_size"],
         total_steps=parameters["total_steps"],
@@ -162,6 +154,7 @@ def main():
         normals=normals,
         axis_positions=axis_positions,
         plots=plots,
+        longitudinal_bonds=longitudinal_bonds,
     )
     ActinVisualization.save_actin(
         trajectory_datas=[traj_data],
