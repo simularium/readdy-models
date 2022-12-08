@@ -69,12 +69,13 @@ class ActinSimulation:
         """
         Safely get a parameter using defaults when possible.
         """
-        try:
-            return self.parameters.get(parameter_name, ActinUtil.DEFAULT_PARAMETERS[parameter_name])
-        except KeyError:
-            raise Exception(
-                f"Parameter {parameter_name} is required but was not provided."
-            )
+        if parameter_name in self.parameters:
+            return self.parameters[parameter_name]
+        if parameter_name in ActinUtil.DEFAULT_PARAMETERS:
+            return ActinUtil.DEFAULT_PARAMETERS[parameter_name]
+        raise Exception(
+            f"Parameter {parameter_name} is required but was not provided."
+        )
 
     def create_actin_system(self):
         """
@@ -91,8 +92,7 @@ class ActinSimulation:
         self.add_particle_types()
         ActinUtil.check_add_global_box_potential(self.system)
         self.add_constraints()
-        if bool(self._parameter("reactions")):
-            self.add_reactions()
+        self.add_reactions()
 
     def add_particle_types(self):
         """
@@ -132,9 +132,8 @@ class ActinSimulation:
         actin_angle_force_constant = angle_force_constant
         actin_dihedral_force_constant = dihedral_strength * dihedral_force_constant
         if accurate_force_constants:
-            multiplier = 0.2
-            actin_angle_force_constant *= 0.1 * multiplier
-            actin_dihedral_force_constant *= multiplier
+            actin_angle_force_constant = 5. * ActinUtil.DEFAULT_FORCE_CONSTANT  # max = 50
+            actin_dihedral_force_constant = 20. * ActinUtil.DEFAULT_FORCE_CONSTANT  # max = 18
         # linear actin
         self.actin_util.add_bonds_between_actins(
             accurate_force_constants, self.system, util, longitudinal_bonds
@@ -178,24 +177,25 @@ class ActinSimulation:
         """
         Add reactions to the ReaDDy system
         """
-        self.actin_util.add_dimerize_reaction(self.system)
-        self.actin_util.add_trimerize_reaction(self.system)
-        self.actin_util.add_nucleate_reaction(self.system)
-        self.actin_util.add_pointed_growth_reaction(self.system)
-        self.actin_util.add_barbed_growth_reaction(self.system)
-        self.actin_util.add_nucleate_branch_reaction(self.system)
-        self.actin_util.add_arp23_bind_reaction(self.system)
-        self.actin_util.add_cap_bind_reaction(self.system)
-        self.actin_util.add_dimerize_reverse_reaction(self.system)
-        self.actin_util.add_trimerize_reverse_reaction(self.system)
-        self.actin_util.add_pointed_shrink_reaction(self.system)
-        self.actin_util.add_barbed_shrink_reaction(self.system)
-        self.actin_util.add_hydrolyze_reaction(self.system)
-        self.actin_util.add_actin_nucleotide_exchange_reaction(self.system)
-        self.actin_util.add_arp23_nucleotide_exchange_reaction(self.system)
-        self.actin_util.add_arp23_unbind_reaction(self.system)
-        self.actin_util.add_debranch_reaction(self.system)
-        self.actin_util.add_cap_unbind_reaction(self.system)
+        if bool(self._parameter("reactions")):
+            self.actin_util.add_dimerize_reaction(self.system)
+            self.actin_util.add_trimerize_reaction(self.system)
+            self.actin_util.add_nucleate_reaction(self.system)
+            self.actin_util.add_pointed_growth_reaction(self.system)
+            self.actin_util.add_barbed_growth_reaction(self.system)
+            self.actin_util.add_nucleate_branch_reaction(self.system)
+            self.actin_util.add_arp23_bind_reaction(self.system)
+            self.actin_util.add_cap_bind_reaction(self.system)
+            self.actin_util.add_dimerize_reverse_reaction(self.system)
+            self.actin_util.add_trimerize_reverse_reaction(self.system)
+            self.actin_util.add_pointed_shrink_reaction(self.system)
+            self.actin_util.add_barbed_shrink_reaction(self.system)
+            self.actin_util.add_hydrolyze_reaction(self.system)
+            self.actin_util.add_actin_nucleotide_exchange_reaction(self.system)
+            self.actin_util.add_arp23_nucleotide_exchange_reaction(self.system)
+            self.actin_util.add_arp23_unbind_reaction(self.system)
+            self.actin_util.add_debranch_reaction(self.system)
+            self.actin_util.add_cap_unbind_reaction(self.system)
         if self.do_pointed_end_translation():
             self.actin_util.add_translate_reaction(self.system)
 
@@ -228,10 +228,7 @@ class ActinSimulation:
             displacement = {
                 "get_translation": ActinUtil.get_position_for_tangent_translation,
                 "parameters": {
-                    "total_displacement_nm": np.array(
-                        [self._parameter("tangent_displacement_nm"), 0, 0]
-                    ),
-                    "total_steps": float(self._parameter("total_steps")),
+                    "tangent_displace_speed_um_s": self._parameter("tangent_displace_speed_um_s"),
                 },
             }
         if self._parameter("displace_pointed_end_radial"):

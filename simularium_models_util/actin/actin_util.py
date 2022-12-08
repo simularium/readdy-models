@@ -1454,10 +1454,13 @@ class ActinUtil:
         global time_index
         recipe = readdy.StructuralReactionRecipe(topology)
         if time_index % displacements["displace_stride"] != 0:
+            time_index += 1
             return recipe
         if parameters["verbose"]:
             print("Translate particles")
         for vertex_id in displacements:
+            if vertex_id == "displace_stride":
+                continue
             v = ReaddyUtil.get_vertex_with_id(
                 topology,
                 vertex_id,
@@ -1661,7 +1664,7 @@ class ActinUtil:
         lat_force_constant = force_constant
         long_force_constant = force_constant
         if accurate_force_constants:
-            multiplier = 0.01
+            multiplier = 0.1  # max = 0.22
             lat_force_constant = multiplier * 968.2  # kJ / mol / nm^2
             long_force_constant = multiplier * 1437.5  # kJ / mol / nm^2
         # lateral actin-actin bond
@@ -3286,10 +3289,11 @@ class ActinUtil:
     def get_position_for_tangent_translation(
         time_index, displace_stride, monomer_id, monomer_pos, displacement_parameters
     ):
-        return monomer_pos + (displace_stride *
-            displacement_parameters["total_displacement_nm"]
-            / (displacement_parameters["total_steps"])
+        d_pos_x = (
+            displacement_parameters["tangent_displace_speed_um_s"] * 1e-6 
+            * displace_stride * ActinUtil.DEFAULT_PARAMETERS["internal_timestep"]
         )
+        return monomer_pos + np.array([d_pos_x, 0., 0.])
 
     @staticmethod
     def get_position_for_radial_translation(
