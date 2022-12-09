@@ -8,6 +8,8 @@ import numpy as np
 from simularium_models_util.microtubules import (
     MicrotubulesSimulation
 )
+from simularium_models_util import ReaddyUtil
+from ..conftest import monomer_state_to_str
 
 
 default_microtubule_parameters = {
@@ -99,7 +101,7 @@ def add_init_microtubule_state(readdy_simulation, ring_connections, topology_typ
     positions = []
     site_positions = []
     edges = []
-    d_ring = np.array([4., 0., 0.])
+    d_ring = np.array([-4., 0., 0.])
     d_filament = np.array([0., 0., 4.])
     out_string = "\n"
     new_edge_site_ix = [0, 0]
@@ -193,3 +195,13 @@ def create_microtubules_simulation(parameters, ring_connections, topology_type, 
     mt_simulation = MicrotubulesSimulation(parameters, just_bonds=True)
     add_init_microtubule_state(mt_simulation.simulation, ring_connections, topology_type, new_edge_tub_ix)
     return mt_simulation
+
+def check_for_attach_spatial_reaction(expected_n_GTP_site_tags, simulation):
+    test_monomers = ReaddyUtil.get_current_monomers(simulation.simulation.current_topologies)
+    # raise Exception(monomer_state_to_str(test_monomers))
+    n_GTP_site_tags = 0
+    for particle_id in test_monomers["particles"]:
+        particle = test_monomers["particles"][particle_id]
+        if "site" in particle["type_name"]:
+            n_GTP_site_tags += 1 if "_G" in particle["type_name"] else 0
+    assert n_GTP_site_tags == expected_n_GTP_site_tags, monomer_state_to_str(test_monomers)

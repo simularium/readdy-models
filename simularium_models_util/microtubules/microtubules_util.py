@@ -1249,8 +1249,7 @@ class MicrotubulesUtil:
                 MicrotubulesUtil.check_remove_tubulin_sites(
                     topology, recipe, tubulins[i], True
                 )
-            else:
-                ReaddyUtil.set_flags(topology, recipe, tubulins[i], [], ["bent"])
+            ReaddyUtil.set_flags(topology, recipe, tubulins[i], [], ["bent"])
             prev_tubulin[i] = MicrotubulesUtil.get_neighboring_tubulin(
                 topology, tubulins[i], [-1, 0]
             )
@@ -2421,25 +2420,25 @@ class MicrotubulesUtil:
         """
         system.topologies.add_spatial_reaction(
             "Start_Attach_GTP1: Microtubule(site#1_GTP) + Microtubule(site#2_GTP) -> "
-            "SpatialRxnResult(site#1--site#2) [self=true]",
+            "Microtubule#Attaching(site#1--site#2) [self=true]",
             rate=rate_GTP,
             radius=1.0 + reaction_distance,
         )
         system.topologies.add_spatial_reaction(
             "Start_Attach_GTP2: Microtubule(site#1_GTP) + Microtubule(site#2_GDP) -> "
-            "SpatialRxnResult(site#1--site#2) [self=true]",
+            "Microtubule#Attaching(site#1--site#2) [self=true]",
             rate=rate_GTP,
             radius=1.0 + reaction_distance,
         )
         system.topologies.add_spatial_reaction(
             "Start_Attach_GTP3: Microtubule(site#1_GDP) + Microtubule(site#2_GTP) -> "
-            "SpatialRxnResult(site#1--site#2) [self=true]",
+            "Microtubule#Attaching(site#1--site#2) [self=true]",
             rate=rate_GTP,
             radius=1.0 + reaction_distance,
         )
         system.topologies.add_spatial_reaction(
             "Start_Attach_GDP: Microtubule(site#1_GDP) + Microtubule(site#2_GDP) -> "
-            "SpatialRxnResult(site#1--site#2) [self=true]",
+            "Microtubule#Attaching(site#1--site#2) [self=true]",
             rate=rate_GDP,
             radius=1.0 + reaction_distance,
         )
@@ -2449,16 +2448,16 @@ class MicrotubulesUtil:
             reaction_function=MicrotubulesUtil.reaction_function_attach,
             rate_function=ReaddyUtil.rate_function_infinity,
         )
-        system.topologies.add_structural_reaction(
-            "Test",
-            topology_type="SpatialRxnResult",
-            reaction_function=MicrotubulesUtil.reaction_function_test,
-            rate_function=ReaddyUtil.rate_function_infinity,
-        )
+    #     system.topologies.add_structural_reaction(
+    #         "Test",
+    #         topology_type="SpatialRxnResult",
+    #         reaction_function=MicrotubulesUtil.reaction_function_test,
+    #         rate_function=ReaddyUtil.rate_function_infinity,
+    #     )
 
-    @staticmethod
-    def reaction_function_test(topology):
-        raise Exception("Attach spatial rxn happened.")
+    # @staticmethod
+    # def reaction_function_test(topology):
+    #     raise Exception("Attach spatial rxn happened.")
 
     @staticmethod
     def add_detach_reaction(system):

@@ -11,21 +11,21 @@ def run_readdy(total_steps, system, simulation):
     timestep = 0.1
     readdy_actions = simulation._actions
     init = readdy_actions.initialize_kernel()
-    # diffuse = readdy_actions.integrator_euler_brownian_dynamics(timestep)
+    diffuse = readdy_actions.integrator_euler_brownian_dynamics(timestep)
     calculate_forces = readdy_actions.calculate_forces()
     create_nl = readdy_actions.create_neighbor_list(system.calculate_max_cutoff().magnitude)
     update_nl = readdy_actions.update_neighbor_list()
     react = readdy_actions.reaction_handler_uncontrolled_approximation(timestep)
     react_top = readdy_actions.topology_reaction_handler(timestep)
     observe = readdy_actions.evaluate_observables()
-    integrate = readdy_actions.integrator_euler_brownian_dynamics(timestep)
     # init simulation
     init()
     create_nl()
     calculate_forces()
     observe(0)
     for t in range(total_steps):
-        integrate()
+        print(f"Running timestep t = {t}")
+        diffuse()  # results in NaN positions (???)
         update_nl()
         react()
         react_top()
@@ -59,14 +59,16 @@ def monomer_state_to_str(monomers):
     for particle_id in particle_ids:
         particle = monomers["particles"][particle_id]
         type_name = particle["type_name"]
+        position = particle["position"]
         neighbor_ids = [nid - min_id for nid in particle["neighbor_ids"]]
-        result += f"  {particle_id - min_id} : {type_name}, {neighbor_ids}\n"
+        result += f"  {particle_id - min_id} : {type_name}, {position}, {neighbor_ids}\n"
     return result
     
     
 def check_readdy_state(simulation, expected_monomers, ignore_extra_spatial_rxn=False):
     test_monomers = ReaddyUtil.get_current_monomers(simulation.simulation.current_topologies)
-    raise Exception(monomer_state_to_str(test_monomers))
+    # if ignore_extra_spatial_rxn:
+    # raise Exception(monomer_state_to_str(test_monomers))
     assert_monomers_equal(test_monomers, expected_monomers, ignore_extra_spatial_rxn=ignore_extra_spatial_rxn, test_position=False)
 
 

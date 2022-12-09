@@ -9,11 +9,12 @@ from simularium_models_util.tests.conftest import run_readdy, check_readdy_state
 from simularium_models_util.tests.microtubules.microtubules_conftest import (
     create_microtubules_simulation,
     default_microtubule_parameters,
+    check_for_attach_spatial_reaction,
 )
 
 
 @pytest.mark.parametrize(
-    "ring_connections, topology_type, new_edge_tub_ix, expected_monomers",
+    "ring_connections, topology_type, new_edge_tub_ix, expected_monomers, n_GTP_site_tags_after_spatial",
     [
         # # 5 rings x 4 filaments, fully crosslinked, no reaction
         # (
@@ -259,8 +260,8 @@ from simularium_models_util.tests.microtubules.microtubules_conftest import (
                     43: {"unique_id": 43, "type_name": "site#3", "position": np.zeros(3), "neighbor_ids": [6, 40, 41, 42]},
                     44: {"unique_id": 44, "type_name": "site#4", "position": np.zeros(3), "neighbor_ids": [6, 40, 41, 42, 48]},
                     45: {"unique_id": 45, "type_name": "site#out", "position": np.zeros(3), "neighbor_ids": [7, 40, 46, 47, 48, 49, 50]},
-                    46: {"unique_id": 46, "type_name": "site#1", "position": np.zeros(3), "neighbor_ids": [7, 41, 45, 48, 49, 51]},
-                    47: {"unique_id": 47, "type_name": "site#2_GTP", "position": np.zeros(3), "neighbor_ids": [7, 42, 45, 48, 49, 52]},
+                    46: {"unique_id": 46, "type_name": "site#1_GTP", "position": np.zeros(3), "neighbor_ids": [7, 41, 45, 48, 49, 51]},
+                    47: {"unique_id": 47, "type_name": "site#2", "position": np.zeros(3), "neighbor_ids": [7, 42, 45, 48, 49, 52]},
                     48: {"unique_id": 48, "type_name": "site#3", "position": np.zeros(3), "neighbor_ids": [7, 44, 45, 46, 47]},
                     49: {"unique_id": 49, "type_name": "site#4", "position": np.zeros(3), "neighbor_ids": [7, 45, 46, 47, 53]},
                     50: {"unique_id": 50, "type_name": "site#out", "position": np.zeros(3), "neighbor_ids": [8, 45, 51, 52, 53, 54, 55]},
@@ -279,8 +280,8 @@ from simularium_models_util.tests.microtubules.microtubules_conftest import (
                     63: {"unique_id": 63, "type_name": "site#3", "position": np.zeros(3), "neighbor_ids": [11, 60, 61, 62]},
                     64: {"unique_id": 64, "type_name": "site#4", "position": np.zeros(3), "neighbor_ids": [11, 60, 61, 62, 68]},
                     65: {"unique_id": 65, "type_name": "site#out", "position": np.zeros(3), "neighbor_ids": [12, 60, 66, 67, 68, 69, 70]},
-                    66: {"unique_id": 66, "type_name": "site#1_GTP", "position": np.zeros(3), "neighbor_ids": [12, 61, 65, 68, 69, 71]},
-                    67: {"unique_id": 67, "type_name": "site#2", "position": np.zeros(3), "neighbor_ids": [12, 62, 65, 68, 69, 72]},
+                    66: {"unique_id": 66, "type_name": "site#1", "position": np.zeros(3), "neighbor_ids": [12, 61, 65, 68, 69, 71]},
+                    67: {"unique_id": 67, "type_name": "site#2_GTP", "position": np.zeros(3), "neighbor_ids": [12, 62, 65, 68, 69, 72]},
                     68: {"unique_id": 68, "type_name": "site#3", "position": np.zeros(3), "neighbor_ids": [12, 64, 65, 66, 67]},
                     69: {"unique_id": 69, "type_name": "site#4", "position": np.zeros(3), "neighbor_ids": [12, 65, 66, 67, 73]},
                     70: {"unique_id": 70, "type_name": "site#out", "position": np.zeros(3), "neighbor_ids": [13, 65, 71, 72, 73, 74, 75]},
@@ -314,7 +315,8 @@ from simularium_models_util.tests.microtubules.microtubules_conftest import (
                     98: {"unique_id": 98, "type_name": "site#3", "position": np.zeros(3), "neighbor_ids": [19, 94, 95, 96, 97]},
                     99: {"unique_id": 99, "type_name": "site#4", "position": np.zeros(3), "neighbor_ids": [19, 95, 96, 97]},
                 },
-            }
+            },
+            20,
         ),
         # # 5 rings x 4 filaments, at uneven border of frayed end, react to attach next to border
         # (
@@ -664,13 +666,14 @@ from simularium_models_util.tests.microtubules.microtubules_conftest import (
         # #
     ],
 )
-def test_attach(ring_connections, topology_type, new_edge_tub_ix, expected_monomers):
+def test_attach(ring_connections, topology_type, new_edge_tub_ix, expected_monomers, n_GTP_site_tags_after_spatial):
     parameters = default_microtubule_parameters
     parameters["ring_attach_GTP_rate"] = 1e30
-    parameters["attach_reaction_distance"] = 2.
+    parameters["attach_reaction_distance"] = 5.
     mt_simulation = create_microtubules_simulation(parameters, ring_connections, topology_type, new_edge_tub_ix)
     run_readdy(1, mt_simulation.system, mt_simulation.simulation)
     check_readdy_state(mt_simulation, expected_monomers)
-    run_readdy(10, mt_simulation.system, mt_simulation.simulation)
-    check_readdy_state(mt_simulation, expected_monomers, ignore_extra_spatial_rxn=False)
+    run_readdy(1, mt_simulation.system, mt_simulation.simulation)
+    check_readdy_state(mt_simulation, expected_monomers, ignore_extra_spatial_rxn=True)
+    check_for_attach_spatial_reaction(n_GTP_site_tags_after_spatial, mt_simulation)
     del mt_simulation
