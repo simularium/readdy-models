@@ -125,15 +125,19 @@ class ActinSimulation:
         longitudinal_bonds = bool(self._parameter("longitudinal_bonds"))
         only_linear_actin = bool(self._parameter("only_linear_actin_constraints"))
         # force constants
-        dihedral_strength = 10. if longitudinal_bonds else 25.
-        angle_force_constant = 10. * ActinUtil.DEFAULT_FORCE_CONSTANT
-        dihedral_force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
-        repulsion_force_constant = 10. * ActinUtil.DEFAULT_FORCE_CONSTANT
+        angle_force_constant = 2. * ActinUtil.DEFAULT_FORCE_CONSTANT
         actin_angle_force_constant = angle_force_constant
-        actin_dihedral_force_constant = dihedral_strength * dihedral_force_constant
+        dihedral_force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
+        actin_dihedral_force_constant = (2. if longitudinal_bonds else 5.) * dihedral_force_constant
         if accurate_force_constants:
-            actin_angle_force_constant = 5. * ActinUtil.DEFAULT_FORCE_CONSTANT  # max = 50
-            actin_dihedral_force_constant = 20. * ActinUtil.DEFAULT_FORCE_CONSTANT  # max = 18
+            actin_angle_force_constant = (
+                float(self._parameter("angles_force_multiplier")) 
+                * ActinUtil.DEFAULT_FORCE_CONSTANT
+            )
+            actin_dihedral_force_constant = (
+                float(self._parameter("dihedrals_force_multiplier")) 
+                * ActinUtil.DEFAULT_FORCE_CONSTANT
+            )
         # linear actin
         self.actin_util.add_bonds_between_actins(
             accurate_force_constants, self.system, util, longitudinal_bonds
@@ -166,7 +170,7 @@ class ActinSimulation:
             self._parameter("arp23_radius"),
             self._parameter("cap_radius"),
             self._parameter("obstacle_radius"),
-            repulsion_force_constant,
+            ActinUtil.DEFAULT_FORCE_CONSTANT,
             self.system,
             util,
         )

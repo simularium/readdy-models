@@ -35,7 +35,7 @@ pointed_monomer_positions = []
 
 
 class ActinUtil:
-    DEFAULT_FORCE_CONSTANT = 250.
+    DEFAULT_FORCE_CONSTANT = 5 * 250.
     
     def __init__(self, parameters, displacements=None):
         """
@@ -113,6 +113,9 @@ class ActinUtil:
         "visualize_normals": False,
         "longitudinal_bonds": True,
         "displace_stride": 1,    
+        "bonds_force_multiplier": 0.1,   
+        "angles_force_multiplier": 4.,   
+        "dihedrals_force_multiplier": 1.,   
     }
 
     @staticmethod
@@ -1664,7 +1667,7 @@ class ActinUtil:
         lat_force_constant = force_constant
         long_force_constant = force_constant
         if accurate_force_constants:
-            multiplier = 0.1  # max = 0.22
+            multiplier = float(parameters["bonds_force_multiplier"])
             lat_force_constant = multiplier * 968.2  # kJ / mol / nm^2
             long_force_constant = multiplier * 1437.5  # kJ / mol / nm^2
         # lateral actin-actin bond
