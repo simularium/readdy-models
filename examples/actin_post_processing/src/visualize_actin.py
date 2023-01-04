@@ -110,7 +110,6 @@ def visualize_actin(
     dir_path: str,
     box_size: float,
     total_steps: float,
-    actin_number_types: int,
     experiment_name: str,
     condition_name: str,
     periodic_boundary: bool,
@@ -148,18 +147,18 @@ def visualize_actin(
             )
             if visualize_normals or plot_bend_twist:
                 normals, axis_positions = ActinAnalyzer.analyze_normals_and_axis_positions(
-                    monomer_data, box_size, actin_number_types, periodic_boundary
+                    monomer_data, box_size, periodic_boundary
                 )
         traj_plots = None
         if plot_polymerization:
             print("plot polymerization")
             traj_plots = ActinVisualization.generate_polymerization_plots(
-                monomer_data, times, reactions, box_size, actin_number_types, periodic_boundary, traj_plots
+                monomer_data, times, reactions, box_size, periodic_boundary, traj_plots
             )
         if plot_bend_twist:
             print("plot bend twist")
             traj_plots = ActinVisualization.generate_bend_twist_plots(
-                monomer_data, times, box_size, actin_number_types, normals, axis_positions, periodic_boundary, traj_plots
+                monomer_data, times, box_size, normals, axis_positions, periodic_boundary, traj_plots
             )
         color = COLORS[color_index] if color_by_run else ""
         suffix, display_data = get_suffix_and_display_data(
@@ -176,7 +175,6 @@ def visualize_actin(
         )
         trajectory_datas.append(
             ActinVisualization.visualize_actin(
-                actin_number_types=actin_number_types,
                 path_to_readdy_h5=file_path,
                 box_size=box_size,
                 total_steps=total_steps,
@@ -189,6 +187,7 @@ def visualize_actin(
                 normals=normals, 
                 axis_positions=axis_positions,
                 plots=traj_plots if not save_in_one_file else None,
+                longitudinal_bonds=True,
             )
         )
         if save_in_one_file:
