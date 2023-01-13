@@ -130,14 +130,8 @@ class ActinSimulation:
         dihedral_force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
         actin_dihedral_force_constant = (2. if longitudinal_bonds else 5.) * dihedral_force_constant
         if accurate_force_constants:
-            actin_angle_force_constant = (
-                float(self._parameter("angles_force_multiplier")) 
-                * ActinUtil.DEFAULT_FORCE_CONSTANT
-            )
-            actin_dihedral_force_constant = (
-                float(self._parameter("dihedrals_force_multiplier")) 
-                * ActinUtil.DEFAULT_FORCE_CONSTANT
-            )
+            actin_angle_force_constant = float(self._parameter("angles_force_multiplier"))
+            actin_dihedral_force_constant = float(self._parameter("dihedrals_force_multiplier"))
         # linear actin
         self.actin_util.add_bonds_between_actins(
             accurate_force_constants, self.system, util, longitudinal_bonds
