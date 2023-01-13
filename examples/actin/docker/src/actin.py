@@ -42,6 +42,9 @@ def main():
     parser.add_argument(
         "model_name", help="prefix for output file names", nargs="?", default=""
     )
+    parser.add_argument(
+        "replicate", help="which replicate?", nargs="?", default=""
+    )
     args = parser.parse_args()
     parameters = pandas.read_excel(
         args.params_path,
@@ -57,7 +60,12 @@ def main():
     parameters["box_size"] = ReaddyUtil.get_box_size(parameters["box_size"])
     if not os.path.exists("outputs/"):
         os.mkdir("outputs/")
-    parameters["name"] = "outputs/" + args.model_name + "_" + str(run_name)
+    parameters["name"] = (
+        "outputs/" + 
+        args.model_name + "_" + 
+        str(run_name) + 
+        ("_" + args.replicate if args.replicate else "")
+    )
     actin_simulation = ActinSimulation(parameters, True, False)
     actin_simulation.add_obstacles()
     actin_simulation.add_random_monomers()

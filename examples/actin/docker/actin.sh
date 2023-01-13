@@ -23,7 +23,7 @@ touch $LOCAL_LOGS_PATH
 PARAMS_COL_INDEX=$((${PARAMS_COL_INDEX} + 1))
 
 # Run the model
-python actin.py input.xlsx $PARAMS_COL_INDEX $PARAM_SET_NAME > $LOCAL_LOGS_PATH
+python actin.py input.xlsx $PARAMS_COL_INDEX $PARAM_SET_NAME $REPLICATE > $LOCAL_LOGS_PATH
 EXIT_CODE=$?
 
 echo $EXIT_CODE

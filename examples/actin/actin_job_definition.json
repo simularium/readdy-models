@@ -1,5 +1,5 @@
 {
-    "jobDefinitionName": "blairl_readdy-actin-v1-PARAM_SET_NAME",
+    "jobDefinitionName": "blairl_readdy-actin-v1-PARAM_SET_NAME_0",
     "type": "container",
     "containerProperties": {
         "image": "108503617402.dkr.ecr.us-west-2.amazonaws.com/blairl/readdy-actin",
@@ -8,7 +8,8 @@
         "environment": [
             {"name": "SIMULATION_TYPE", "value": "AWS"},
             {"name": "S3_INPUT_URL", "value": "s3://readdy-working-bucket/"},
-            {"name": "PARAM_SET_NAME", "value": "PARAM_SET_NAME"}
+            {"name": "PARAM_SET_NAME", "value": "PARAM_SET_NAME"},
+            {"name": "REPLICATE", "value": "0"}
         ],
         "jobRoleArn": "arn:aws:iam::108503617402:role/BatchJobRole"
     }
