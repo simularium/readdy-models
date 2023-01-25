@@ -140,7 +140,7 @@ class ActinSimulation:
             actin_angle_force_constant, self.system, util
         )
         self.actin_util.add_filament_twist_dihedrals(
-            actin_dihedral_force_constant, self.system, util
+            actin_dihedral_force_constant, self.system, util, only_linear_actin
         )
         if not only_linear_actin:
             # branch junction
@@ -276,9 +276,12 @@ class ActinSimulation:
         """
         Add randomly distributed and oriented linear fibers
         """
+        seed_n_fibers = int(self._parameter("seed_n_fibers"))
+        if seed_n_fibers < 1:
+            return
         self.actin_util.add_random_linear_fibers(
             self.simulation,
-            int(self._parameter("seed_n_fibers")),
+            seed_n_fibers,
             self._parameter("seed_fiber_length"),
             -1 if use_uuids else 0,
             longitudinal_bonds,
@@ -333,7 +336,8 @@ class ActinSimulation:
                 ],
             )
             n += 1
-        print(f"Added {n} obstacle(s).")
+        if n > 0:
+            print(f"Added {n} obstacle(s).")
 
     def add_crystal_structure_monomers(self):
         """

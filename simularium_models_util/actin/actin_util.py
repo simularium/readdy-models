@@ -736,14 +736,10 @@ class ActinUtil:
             topology = monomer_data["topologies"][topology_id]
             types = []
             positions = []
-            print(topology)
-
             for particle_id in topology["particle_ids"]:
                 particle = monomer_data["particles"][particle_id]
-                print(f"particles:{particle}")
                 types.append(particle["type_name"])
                 positions.append(particle["position"])
-            print(f"types:{types}")
             top = simulation.add_topology(
                 topology["type_name"], types, np.array(positions)
             )
@@ -1707,6 +1703,7 @@ class ActinUtil:
             system,
             n_polymer_numbers,
         )
+        print(f"Added lat bonds with fc = {lat_force_constant}")
         if longitudinal_bonds:
             print("Adding longitudinal bonds...")
             util.add_polymer_bond_1D(
@@ -1745,6 +1742,7 @@ class ActinUtil:
                 system,
                 n_polymer_numbers,
             )
+            print(f"Added long bonds with fc = {long_force_constant}")
         # branch actin-actin bond
         util.add_bond(
             [
@@ -1899,9 +1897,10 @@ class ActinUtil:
             angle,
             system,
         )
+        print(f"Added angles with fc = {force_constant}")
 
     @staticmethod
-    def add_filament_twist_dihedrals(force_constant, system, util):
+    def add_filament_twist_dihedrals(force_constant, system, util, only_linear_actin):
         """
         add dihedrals for filament twist and cohesiveness
         """
@@ -1964,49 +1963,51 @@ class ActinUtil:
             system,
             ActinUtil.n_polymer_numbers(),
         )
-        util.add_dihedral(
-            [
-                "actin#branch_1",
-                "actin#branch_ATP_1",
-            ],
-            [
-                "actin#2",
-                "actin#ATP_2",
-                "actin#mid_2",
-                "actin#mid_ATP_2",
-                "actin#fixed_2",
-                "actin#fixed_ATP_2",
-                "actin#mid_fixed_2",
-                "actin#mid_fixed_ATP_2",
-            ],
-            [
-                "actin#3",
-                "actin#ATP_3",
-                "actin#mid_3",
-                "actin#mid_ATP_3",
-                "actin#fixed_3",
-                "actin#fixed_ATP_3",
-                "actin#mid_fixed_3",
-                "actin#mid_fixed_ATP_3",
-            ],
-            [
-                "actin#1",
-                "actin#ATP_1",
-                "actin#mid_1",
-                "actin#mid_ATP_1",
-                "actin#barbed_1",
-                "actin#barbed_ATP_1",
-                "actin#fixed_1",
-                "actin#fixed_ATP_1",
-                "actin#mid_fixed_1",
-                "actin#mid_fixed_ATP_1",
-                "actin#fixed_barbed_1",
-                "actin#fixed_barbed_ATP_1",
-            ],
-            force_constant,
-            angle,
-            system,
-        )
+        if not only_linear_actin:
+            util.add_dihedral(
+                [
+                    "actin#branch_1",
+                    "actin#branch_ATP_1",
+                ],
+                [
+                    "actin#2",
+                    "actin#ATP_2",
+                    "actin#mid_2",
+                    "actin#mid_ATP_2",
+                    "actin#fixed_2",
+                    "actin#fixed_ATP_2",
+                    "actin#mid_fixed_2",
+                    "actin#mid_fixed_ATP_2",
+                ],
+                [
+                    "actin#3",
+                    "actin#ATP_3",
+                    "actin#mid_3",
+                    "actin#mid_ATP_3",
+                    "actin#fixed_3",
+                    "actin#fixed_ATP_3",
+                    "actin#mid_fixed_3",
+                    "actin#mid_fixed_ATP_3",
+                ],
+                [
+                    "actin#1",
+                    "actin#ATP_1",
+                    "actin#mid_1",
+                    "actin#mid_ATP_1",
+                    "actin#barbed_1",
+                    "actin#barbed_ATP_1",
+                    "actin#fixed_1",
+                    "actin#fixed_ATP_1",
+                    "actin#mid_fixed_1",
+                    "actin#mid_fixed_ATP_1",
+                    "actin#fixed_barbed_1",
+                    "actin#fixed_barbed_ATP_1",
+                ],
+                force_constant,
+                angle,
+                system,
+            )
+        print(f"Added dihedrals with fc = {force_constant}")
 
     @staticmethod
     def add_branch_bonds(system, util):
