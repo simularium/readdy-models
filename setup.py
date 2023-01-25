@@ -9,8 +9,7 @@ with open("README.md") as readme_file:
     readme = readme_file.read()
 
 viz_requirements = [
-    # "simulariumio>=1.4.0",
-    "simulariumio @ git+https://github.com/allen-cell-animated/simulariumio.git@fix/append-agents-with-subpoints"
+    "simulariumio"
 ]
 
 setup_requirements = [

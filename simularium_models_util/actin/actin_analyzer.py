@@ -922,9 +922,12 @@ class ActinAnalyzer:
         at each timestep
         """
         total_steps = len(monomer_data)
-        normals = [[] for t in range(total_steps)]
-        axis_positions = [[] for t in range(total_steps)]
+        normals = []
+        axis_positions = []
+        warned = False
         for time_index in range(total_steps):
+            normals.append([])
+            axis_positions.append([])
             filaments = ActinAnalyzer._frame_all_filaments(monomer_data[time_index])
             for filament in filaments:
                 for index in range(1, len(filament) - 1):
@@ -940,10 +943,15 @@ class ActinAnalyzer:
                         monomer_data[time_index], actin_ids, box_size, periodic_boundary
                     )
                     if ReaddyUtil.vector_is_invalid(axis_pos):
-                        raise Exception(
-                            "Failed normal calculation: something is wrong with "
-                            f"actin structure at monomer {filament[index]}"
-                        )
+                        if not warned:
+                            print(
+                                "WARNING: Failed normal calculation: something is wrong with "
+                                f"actin structure starting at time index = {time_index}"
+                            )
+                            warned = True
+                        axis_positions[time_index].append(None)
+                        normals[time_index].append(None)
+                        continue
                     if periodic_boundary:
                         axis_pos = ReaddyUtil.get_non_periodic_boundary_position(
                             position, axis_pos, box_size
@@ -955,6 +963,18 @@ class ActinAnalyzer:
         return normals, axis_positions
 
     @staticmethod
+    def _normal_vectors_are_none(normals, axis_positions, time_i, normal_i):
+        """
+        Are the normals or axis positions None?
+        """
+        return (
+            normals[time_i][normal_i] is None or 
+            normals[time_i][normal_i + 2] is None or
+            axis_positions[time_i][normal_i] is None or 
+            axis_positions[time_i][normal_i + 2] is None
+        )
+
+    @staticmethod
     def analyze_twist_axis(normals, axis_positions, stride=1):
         """
         Get the angles in degrees from monomer normal to monomer normal
@@ -963,28 +983,39 @@ class ActinAnalyzer:
         total_twist = []
         total_twist_tangent_proj = []
         filament_positions = []
-        for time_index in range(0, len(normals), stride):
+        total_steps = len(normals)
+        for time_i in range(0, total_steps, stride):
             total_twist.append([])
             total_twist_tangent_proj.append([])
             filament_positions.append([])
-            new_time = math.floor(time_index / stride)
-            for index in range(len(normals[time_index]) - 2):
-                tangent = axis_positions[time_index][index + 2] - axis_positions[time_index][index]
+            new_time = math.floor(time_i / stride)
+            max_normals = len(normals[time_i])
+            for normal_i in range(max_normals - 2):
+                if ActinAnalyzer._normal_vectors_are_none(normals, axis_positions, time_i, normal_i):
+                    total_twist[new_time].append(0.0)
+                    total_twist_tangent_proj[new_time].append(0.0)
+                    filament_positions[new_time].append(normal_i)
+                    continue
+                tangent = axis_positions[time_i][normal_i + 2] - axis_positions[time_i][normal_i]
                 normal1 = ReaddyUtil.get_perpendicular_components_of_vector(
-                    normals[time_index][index], tangent
+                    normals[time_i][normal_i], tangent
                 )
                 normal2 = ReaddyUtil.get_perpendicular_components_of_vector(
-                    normals[time_index][index + 2], tangent
+                    normals[time_i][normal_i + 2], tangent
                 )
                 total_angle_no_bend = ReaddyUtil.get_angle_between_vectors(
                     normal1, normal2, in_degrees=True
                 )
                 total_angle = ReaddyUtil.get_angle_between_vectors(
-                    normals[time_index][index], normals[time_index][index + 2], in_degrees=True
+                    normals[time_i][normal_i], normals[time_i][normal_i + 2], in_degrees=True
                 )
+                if math.isnan(total_angle):
+                    total_angle = 0.0
+                if math.isnan(total_angle_no_bend):
+                    total_angle_no_bend = 0.0
                 total_twist[new_time].append(total_angle / 360.0)
                 total_twist_tangent_proj[new_time].append(total_angle_no_bend / 360.0)
-                filament_positions[new_time].append(index)
+                filament_positions[new_time].append(normal_i)
         return (
             np.array(total_twist),
             np.array(total_twist_tangent_proj),
@@ -1045,6 +1076,8 @@ class ActinAnalyzer:
                 total_angle = ReaddyUtil.get_angle_between_vectors(
                     plane_normals[time_index][index], plane_normals[time_index][index + 1], in_degrees=True
                 )
+                if math.isnan(total_angle):
+                    total_angle = 0.0
                 twist_angles[time_index].append(total_angle)
                 filament_positions[time_index].append(index)
         return np.array(twist_angles), np.array(filament_positions)
@@ -1103,13 +1136,15 @@ class ActinAnalyzer:
                         pos, pos_long, box_size
                     )
                 bond_stretch_lat = np.linalg.norm(pos_lat - pos) - ideal_length_lat
-                energies_lat[new_time].append(
-                    0.5 * k_long * bond_stretch_lat * bond_stretch_lat
-                )
+                energy_lat = 0.5 * k_long * bond_stretch_lat * bond_stretch_lat
+                if math.isnan(energy_lat):
+                    energy_lat = 0.0
                 bond_stretch_long = np.linalg.norm(pos_long - pos) - ideal_length_long
-                energies_long[new_time].append(
-                    0.5 * k_lat * bond_stretch_long * bond_stretch_long
-                )
+                energy_long = 0.5 * k_lat * bond_stretch_long * bond_stretch_long
+                if math.isnan(energy_long):
+                    energy_long = 0.0
+                energies_lat[new_time].append(energy_lat)
+                energies_long[new_time].append(energy_long)
                 filament_positions[new_time].append(index)
             new_time += 1
         return np.array(energies_lat), np.array(energies_long), np.array(filament_positions)

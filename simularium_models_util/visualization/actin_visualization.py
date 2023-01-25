@@ -15,6 +15,7 @@ from simulariumio import (
     TrajectoryData,
     DimensionData,
     CameraData,
+    BinaryWriter,
 )
 from simulariumio.filters import MultiplyTimeFilter, AddAgentsFilter
 from simulariumio.constants import VIZ_TYPE
@@ -925,15 +926,15 @@ class ActinVisualization:
         return DimensionData(
             total_steps=0,
             max_agents=max_agents,
-            max_subpoints=2 - current_dimensions.max_subpoints,
+            max_subpoints=6 - current_dimensions.max_subpoints,
         )
 
     @staticmethod
     def _add_normal_agents(
         traj_data: TrajectoryData,
         monomer_data: List[Dict[str, Any]],
-        normals,
-        axis_positions,
+        normals: List[List[Any]],
+        axis_positions: List[List[Any]],
         type_name: str,
         color: str = "",
     ) -> TrajectoryData:
@@ -945,12 +946,12 @@ class ActinVisualization:
         # get dimensions of data
         total_steps = len(monomer_data)
         max_normals = 0
-        for time_index in range(total_steps):
-            n_normals = len(normals[time_index])
+        for time_i in range(total_steps):
+            n_normals = len(normals[time_i])
             if n_normals > max_normals:
                 max_normals = n_normals
-        dimensions = traj_data._get_added_dimensions(
-            DimensionData(total_steps, max_normals, 2)
+        dimensions = ActinVisualization._get_added_dimensions_for_lines(
+            traj_data, max_normals
         )
         new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(
             dimensions
@@ -959,29 +960,33 @@ class ActinVisualization:
         # add new agents
         print("Processing normals...")
         max_used_uid = max(list(np.unique(traj_data.agent_data.unique_ids)))
-        for time_index in range(total_steps):
-            start_i = int(traj_data.agent_data.n_agents[time_index])
-            n_normals = len(normals[time_index])
-            for index in range(n_normals):
-                agent_index = start_i + index
-                new_agent_data.unique_ids[time_index][agent_index] = (
-                    max_used_uid + index + 1
+        for time_i in range(total_steps):
+            start_i = int(traj_data.agent_data.n_agents[time_i])
+            max_normals = len(normals[time_i])
+            n_normals = 0
+            for normal_i in range(max_normals):
+                if axis_positions[time_i][normal_i] is None or normals[time_i][normal_i] is None:
+                    continue
+                agent_i = start_i + n_normals
+                new_agent_data.unique_ids[time_i][agent_i] = (
+                    max_used_uid + normal_i + 1
                 )
-                new_agent_data.subpoints[time_index][agent_index] = np.array(
+                new_agent_data.subpoints[time_i][agent_i] = np.array(
                     [
-                        axis_positions[time_index][index],
-                        axis_positions[time_index][index]
-                        + 10 * normals[time_index][index],
+                        axis_positions[time_i][normal_i],
+                        axis_positions[time_i][normal_i]
+                        + 10 * normals[time_i][normal_i],
                     ]
-                )
+                ).flatten()
+                n_normals += 1
             end_i = start_i + n_normals
-            new_agent_data.n_agents[time_index] += n_normals
-            new_agent_data.viz_types[time_index][start_i:end_i] = n_normals * [
+            new_agent_data.n_agents[time_i] += n_normals
+            new_agent_data.viz_types[time_i][start_i:end_i] = n_normals * [
                 VIZ_TYPE.FIBER
             ]
-            new_agent_data.types[time_index] += n_normals * [new_type_name]
-            new_agent_data.radii[time_index][start_i:end_i] = n_normals * [0.5]
-            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_normals * [2.0]
+            new_agent_data.types[time_i] += n_normals * [new_type_name]
+            new_agent_data.radii[time_i][start_i:end_i] = n_normals * [0.5]
+            new_agent_data.n_subpoints[time_i][start_i:end_i] = n_normals * [6.0]
         new_agent_data.display_data[new_type_name] = DisplayData(
             name=new_type_name,
             display_type=DISPLAY_TYPE.FIBER,
@@ -1032,7 +1037,7 @@ class ActinVisualization:
                     if (particle_id, neighbor_id) in existing_edges:
                         continue
                     neighbor = monomer_data[time_index]["particles"][neighbor_id]
-                    positions = np.array([particle["position"], neighbor["position"]])
+                    positions = np.array([particle["position"], neighbor["position"]]).flatten()
                     agent_index = start_i + n_edges
                     new_agent_data.unique_ids[time_index][agent_index] = (
                         max_used_uid + n_edges
@@ -1047,7 +1052,7 @@ class ActinVisualization:
             ]
             new_agent_data.types[time_index] += n_edges * [new_type_name]
             new_agent_data.radii[time_index][start_i:end_i] = n_edges * [0.5]
-            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_edges * [2.0]
+            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_edges * [6.0]
         new_agent_data.display_data[new_type_name] = DisplayData(
             name=new_type_name,
             display_type=DISPLAY_TYPE.FIBER,
@@ -1067,8 +1072,8 @@ class ActinVisualization:
         visualize_edges: bool = False,
         visualize_normals: bool = False,
         monomer_data: List[Dict[str, Any]] = None,
-        normals: List[np.ndarray] = None,
-        axis_positions: List[np.ndarray] = None,
+        normals: List[List[Any]] = None,
+        axis_positions: List[List[Any]] = None,
         plots: List[Dict[str, Any]] = None,
         longitudinal_bonds: bool = True
     ) -> TrajectoryData:

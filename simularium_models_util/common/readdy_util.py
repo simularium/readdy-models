@@ -24,10 +24,19 @@ class ReaddyUtil:
         self.repulse_pairs = []
 
     @staticmethod
+    def is_zero_vector(v):
+        """
+        are all the vector's 3 components zero?
+        """
+        return v[0] == 0 and v[1] == 0 and v[2] == 0
+
+    @staticmethod
     def normalize(v):
         """
         normalize a vector
         """
+        if ReaddyUtil.is_zero_vector(v):
+            return v
         return v / np.linalg.norm(v)
 
     @staticmethod
@@ -46,6 +55,8 @@ class ReaddyUtil:
         """
         Get the components of v that are perpendicular to v_perpendicular
         """
+        if ReaddyUtil.is_zero_vector(v) or ReaddyUtil.is_zero_vector(v_perpendicular):
+            return np.zeros(3)
         return (
             v
             - (np.dot(v, v_perpendicular) / pow(np.linalg.norm(v_perpendicular), 2))
