@@ -110,11 +110,12 @@ def main():
     normals = None 
     axis_positions = None
     plot_polymerization = parameters.get("plot_polymerization", False) 
+    plot_filament_structure = parameters.get("plot_filament_structure", False) 
     plot_bend_twist = parameters.get("plot_bend_twist", False) 
     visualize_edges = parameters.get("visualize_edges", False) 
     visualize_normals = parameters.get("visualize_normals", False) 
     periodic_boundary = parameters.get("periodic_boundary", False) 
-    if plot_polymerization or plot_bend_twist or visualize_edges or visualize_normals:
+    if plot_polymerization or plot_filament_structure or plot_bend_twist or visualize_edges or visualize_normals:
         (
             monomer_data,
             times,
@@ -123,7 +124,7 @@ def main():
             h5_file_path=parameters["name"] + ".h5",
             reactions=plot_polymerization,
         )
-        if plot_bend_twist or visualize_normals:
+        if plot_filament_structure or plot_bend_twist or visualize_normals:
             normals, axis_positions = ActinAnalyzer.analyze_normals_and_axis_positions(
                 monomer_data, parameters["box_size"], periodic_boundary
             )
@@ -135,6 +136,17 @@ def main():
             times,
             reactions,
             parameters["box_size"],
+            periodic_boundary,
+            plots,
+        )
+    if plot_filament_structure:
+        print("plot filament structure")
+        plots = ActinVisualization.generate_filament_structure_plots(
+            monomer_data,
+            times,
+            parameters["box_size"],
+            normals,
+            axis_positions,
             periodic_boundary,
             plots,
         )

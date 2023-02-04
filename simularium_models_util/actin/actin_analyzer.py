@@ -969,9 +969,7 @@ class ActinAnalyzer:
         """
         return (
             normals[time_i][normal_i] is None or 
-            normals[time_i][normal_i + 2] is None or
-            axis_positions[time_i][normal_i] is None or 
-            axis_positions[time_i][normal_i + 2] is None
+            axis_positions[time_i][normal_i] is None
         )
 
     @staticmethod
@@ -984,6 +982,7 @@ class ActinAnalyzer:
         total_twist_tangent_proj = []
         filament_positions = []
         total_steps = len(normals)
+        print("Analyzing twist (axis)...")
         for time_i in range(0, total_steps, stride):
             total_twist.append([])
             total_twist_tangent_proj.append([])
@@ -991,7 +990,10 @@ class ActinAnalyzer:
             new_time = math.floor(time_i / stride)
             max_normals = len(normals[time_i])
             for normal_i in range(max_normals - 2):
-                if ActinAnalyzer._normal_vectors_are_none(normals, axis_positions, time_i, normal_i):
+                if (
+                    ActinAnalyzer._normal_vectors_are_none(normals, axis_positions, time_i, normal_i) or
+                    ActinAnalyzer._normal_vectors_are_none(normals, axis_positions, time_i, normal_i + 2)
+                ):
                     total_twist[new_time].append(0.0)
                     total_twist_tangent_proj[new_time].append(0.0)
                     filament_positions[new_time].append(normal_i)
@@ -1036,7 +1038,7 @@ class ActinAnalyzer:
         total_steps = len(monomer_data)
         plane_normals = []
         filament_positions = []
-        print("Analyzing twist...")
+        print("Analyzing twist (planes)...")
         for time_index in range(0, total_steps, stride):
             plane_normals.append([])
             new_time = math.floor(time_index / stride)
@@ -1081,6 +1083,222 @@ class ActinAnalyzer:
                 twist_angles[time_index].append(total_angle)
                 filament_positions[time_index].append(index)
         return np.array(twist_angles), np.array(filament_positions)
+
+    @staticmethod
+    def analyze_filament_length(
+        normals, axis_positions, box_size, periodic_boundary, stride=1
+    ):
+        """
+        Get the distance in 3D space from the first to last particle 
+        of the first topology at each timestep
+        """
+        filament_length = []
+        total_steps = len(axis_positions)
+        print("Analyzing filament length...")
+        for time_ix in range(0, total_steps, stride):
+            pointed_ix = 0
+            barbed_ix = len(axis_positions[time_ix]) - 1
+            if (
+                ActinAnalyzer._normal_vectors_are_none(normals, axis_positions, time_ix, pointed_ix) or 
+                ActinAnalyzer._normal_vectors_are_none(normals, axis_positions, time_ix, barbed_ix)
+                
+            ):
+                filament_length.append(0.0)
+                continue
+            pointed_pos = axis_positions[time_ix][pointed_ix]
+            barbed_pos = axis_positions[time_ix][barbed_ix]
+            if periodic_boundary:
+                barbed_pos = ReaddyUtil.get_non_periodic_boundary_position(
+                    pointed_pos, barbed_pos, box_size
+                )
+            filament_length.append(
+                np.linalg.norm(barbed_pos - pointed_pos) + 
+                ActinStructure.actin_to_actin_axis_distance
+            )
+        return np.array(filament_length)
+
+    @staticmethod
+    def analyze_bond_stretch(
+        monomer_data, box_size, periodic_boundary, stride=1
+    ):
+        """
+        Get the difference in bond length from ideal 
+        for lateral and longitudinal actin bonds
+        """
+        stretch_lat = []
+        stretch_long = []
+        ideal_length_lat = np.linalg.norm(
+            ActinStructure.mother_positions[1] - ActinStructure.mother_positions[0]
+        )
+        ideal_length_long = np.linalg.norm(
+            ActinStructure.mother_positions[2] - ActinStructure.mother_positions[0]
+        )
+        print("Analyzing bond stretch...")
+        for time_index in range(0, len(monomer_data), stride):
+            stretch_lat.append([])
+            stretch_long.append([])
+            new_time_index = math.floor(time_index / stride)
+            filament = monomer_data[time_index]["topologies"][0]["particle_ids"]
+            for index in range(len(filament) - 2):
+                particle = monomer_data[time_index]["particles"][filament[index]]
+                particle_lat = monomer_data[time_index]["particles"][filament[index + 1]]
+                particle_long = monomer_data[time_index]["particles"][filament[index + 2]]
+                type_name = particle["type_name"]
+                type_name_lat = particle_lat["type_name"]
+                type_name_long = particle_long["type_name"]
+                if "fixed" in type_name or "fixed" in type_name_lat or "fixed" in type_name_long:
+                    stretch_lat[new_time_index].append(0.0)
+                    stretch_long[new_time_index].append(0.0)
+                    continue
+                pos = particle["position"]
+                pos_lat = particle_lat["position"]
+                pos_long = particle_long["position"]
+                if periodic_boundary:
+                    pos_lat = ReaddyUtil.get_non_periodic_boundary_position(
+                        pos, pos_lat, box_size
+                    )
+                    pos_long = ReaddyUtil.get_non_periodic_boundary_position(
+                        pos, pos_long, box_size
+                    )
+                bond_stretch_lat = np.linalg.norm(pos_lat - pos) - ideal_length_lat
+                bond_stretch_long = np.linalg.norm(pos_long - pos) - ideal_length_long
+                if math.isnan(bond_stretch_lat) or math.isnan(bond_stretch_long):
+                    stretch_lat[new_time_index].append(0.0)
+                    stretch_long[new_time_index].append(0.0)
+                    continue
+                stretch_lat[new_time_index].append(bond_stretch_lat)
+                stretch_long[new_time_index].append(bond_stretch_long)
+        return np.array(stretch_lat), np.array(stretch_long)
+
+    @staticmethod
+    def analyze_angle_stretch(
+        monomer_data, box_size, periodic_boundary, stride=1
+    ):
+        """
+        Get the difference in angles (degrees) from ideal 
+        for actin angles between:
+        - lateral bonds and lateral bonds
+        - lateral bonds and longitudinal bonds
+        - longitudinal bonds and longitudinal bonds
+        """
+        result_lat_lat = []
+        result_lat_long = []
+        result_long_long = []
+        ideal_angle_lat_lat = ActinStructure.actin_to_actin_angle(True, True, True)
+        ideal_angle_lat_long = ActinStructure.actin_to_actin_angle(True, False, True)
+        ideal_angle_long_long = ActinStructure.actin_to_actin_angle(False, False, True)
+        print("Analyzing angle stretch...")
+        for time_index in range(0, len(monomer_data), stride):
+            result_lat_lat.append([])
+            result_lat_long.append([])
+            result_long_long.append([])
+            new_time_index = math.floor(time_index / stride)
+            filament = monomer_data[time_index]["topologies"][0]["particle_ids"]
+            for index in range(len(filament) - 4):
+                particles = []
+                positions = []
+                fixed = False
+                for d in range(5):
+                    particles.append(monomer_data[time_index]["particles"][filament[index + d]])
+                    if "fixed" in particles[d]["type_name"]:
+                        fixed = True
+                        break
+                    positions.append(particles[d]["position"])
+                    if d > 0 and periodic_boundary:
+                        positions[d] = ReaddyUtil.get_non_periodic_boundary_position(
+                            positions[d - 1], positions[d], box_size
+                        )
+                if fixed:
+                    result_lat_lat[new_time_index].append(0.0)
+                    result_lat_long[new_time_index].append(0.0)
+                    result_long_long[new_time_index].append(0.0)
+                    continue
+                stretch_lat_lat = ReaddyUtil.get_angle_between_vectors(
+                    positions[0] - positions[1], positions[2] - positions[1], True
+                ) - ideal_angle_lat_lat
+                stretch_lat_long = ReaddyUtil.get_angle_between_vectors(
+                    positions[0] - positions[1], positions[3] - positions[1], True
+                ) - ideal_angle_lat_long
+                stretch_long_long = ReaddyUtil.get_angle_between_vectors(
+                    positions[0] - positions[2], positions[4] - positions[2], True
+                ) - ideal_angle_long_long
+                if (
+                    math.isnan(stretch_lat_lat) or 
+                    math.isnan(stretch_lat_long) or 
+                    math.isnan(stretch_long_long)
+                ):
+                    result_lat_lat[new_time_index].append(0.0)
+                    result_lat_long[new_time_index].append(0.0)
+                    result_long_long[new_time_index].append(0.0)
+                    continue
+                result_lat_lat[new_time_index].append(stretch_lat_lat)
+                result_lat_long[new_time_index].append(stretch_lat_long)
+                result_long_long[new_time_index].append(stretch_long_long)
+        return (
+            np.array(result_lat_lat), 
+            np.array(result_lat_long), 
+            np.array(result_long_long)
+        )
+
+    @staticmethod
+    def analyze_dihedral_stretch(
+        monomer_data, box_size, periodic_boundary, stride=1
+    ):
+        """
+        Get the difference in dihedral angles (degrees) from ideal 
+        for actin angles between:
+        - lateral bonds to lateral bonds to lateral bonds
+        - lateral bonds to lateral bonds to longitudinal bonds
+        - lateral bonds to longitudinal bonds to longitudinal bonds
+        - longitudinal bonds to longitudinal bonds to longitudinal bonds
+        """
+        result_lat_lat_lat = []
+        result_long_long_long = []
+        ideal_angle_lat_lat_lat = ActinStructure.actin_to_actin_dihedral_angle(True, True, True, True)
+        ideal_angle_long_long_long = ActinStructure.actin_to_actin_dihedral_angle(False, False, False, True)
+        print("Analyzing dihedral stretch...")
+        for time_index in range(0, len(monomer_data), stride):
+            result_lat_lat_lat.append([])
+            result_long_long_long.append([])
+            new_time_index = math.floor(time_index / stride)
+            filament = monomer_data[time_index]["topologies"][0]["particle_ids"]
+            for index in range(len(filament) - 6):
+                particles = []
+                positions = []
+                fixed = False
+                for d in range(7):
+                    particles.append(monomer_data[time_index]["particles"][filament[index + d]])
+                    if "fixed" in particles[d]["type_name"]:
+                        fixed = True
+                        break
+                    positions.append(particles[d]["position"])
+                    if d > 0 and periodic_boundary:
+                        positions[d] = ReaddyUtil.get_non_periodic_boundary_position(
+                            positions[d - 1], positions[d], box_size
+                        )
+                if fixed:
+                    result_lat_lat_lat[new_time_index].append(0.0)
+                    result_long_long_long[new_time_index].append(0.0)
+                    continue
+                stretch_lat_lat_lat = ReaddyUtil.get_angle_between_vectors(
+                    positions[0] - positions[1], positions[3] - positions[2], True
+                ) - ideal_angle_lat_lat_lat
+                stretch_long_long_long = ReaddyUtil.get_angle_between_vectors(
+                    positions[0] - positions[2], positions[6] - positions[4], True
+                ) - ideal_angle_long_long_long
+                if (
+                    math.isnan(stretch_lat_lat_lat) or 
+                    math.isnan(stretch_long_long_long)
+                ):
+                    result_lat_lat_lat[new_time_index].append(0.0)
+                    result_long_long_long[new_time_index].append(0.0)
+                    continue
+                result_lat_lat_lat[new_time_index].append(stretch_lat_lat_lat)
+                result_long_long_long[new_time_index].append(stretch_long_long_long)
+        return (
+            np.array(result_lat_lat_lat),
+            np.array(result_long_long_long)
+        )
 
     @staticmethod
     def analyze_bond_energies(
