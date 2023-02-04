@@ -124,6 +124,8 @@ class ActinSimulation:
         accurate_force_constants = self._parameter("accurate_force_constants")
         longitudinal_bonds = bool(self._parameter("longitudinal_bonds"))
         only_linear_actin = bool(self._parameter("only_linear_actin_constraints"))
+        actin_actin_angle_potentials = bool(self._parameter("actin_actin_angle_potentials"))
+        actin_actin_dihedral_potentials = bool(self._parameter("actin_actin_dihedral_potentials"))
         # force constants
         angle_force_constant = 2. * ActinUtil.DEFAULT_FORCE_CONSTANT
         actin_angle_force_constant = angle_force_constant
@@ -136,12 +138,14 @@ class ActinSimulation:
         self.actin_util.add_bonds_between_actins(
             accurate_force_constants, self.system, util, longitudinal_bonds
         )
-        self.actin_util.add_filament_twist_angles(
-            actin_angle_force_constant, self.system, util
-        )
-        self.actin_util.add_filament_twist_dihedrals(
-            actin_dihedral_force_constant, self.system, util, only_linear_actin
-        )
+        if actin_actin_angle_potentials:
+            self.actin_util.add_filament_twist_angles(
+                actin_angle_force_constant, self.system, util, longitudinal_bonds
+            )
+        if actin_actin_dihedral_potentials:
+            self.actin_util.add_filament_twist_dihedrals(
+                actin_dihedral_force_constant, self.system, util, longitudinal_bonds, only_linear_actin
+            )
         if not only_linear_actin:
             # branch junction
             self.actin_util.add_branch_bonds(self.system, util)
@@ -167,6 +171,8 @@ class ActinSimulation:
             ActinUtil.DEFAULT_FORCE_CONSTANT,
             self.system,
             util,
+            bool(self._parameter("actin_actin_repulsion_potentials")),
+            longitudinal_bonds,
         )
         # box potentials
         self.actin_util.add_monomer_box_potentials(self.system)

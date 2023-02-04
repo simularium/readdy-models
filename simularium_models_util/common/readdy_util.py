@@ -486,9 +486,12 @@ class ReaddyUtil:
         """
         calculates the polymer number
             from number
-            by offset in [-2, 2]
-
-            returns number in [1,5]
+            by offset in [
+                -2 * polymer_number_types + 1, 
+                2 * polymer_number_types - 1
+            ]
+        
+        returns number in [1, polymer_number_types]
         """
         n = number + offset
         if n > polymer_number_types:
@@ -746,6 +749,41 @@ class ReaddyUtil:
                     )
                     self.repulse_pairs.append((t1, t2))
                     self.repulse_pairs.append((t2, t1))
+
+    def add_polymer_repulsions_1D(
+        self,
+        particle_types1,
+        polymer_offset1,
+        particle_types2,
+        polymer_offset2,
+        force_const,
+        repulsion_distance,
+        system,
+        polymer_number_types,
+    ):
+        """
+        """
+        polymer_number_types = int(polymer_number_types)
+        for x in range(1, polymer_number_types + 1):
+            self.add_repulsion(
+                (
+                    ReaddyUtil.get_types_with_polymer_numbers_1D(
+                        particle_types1, x, polymer_offset1, polymer_number_types
+                    )
+                    if polymer_offset1 is not None
+                    else particle_types1
+                ),
+                (
+                    ReaddyUtil.get_types_with_polymer_numbers_1D(
+                        particle_types2, x, polymer_offset2, polymer_number_types
+                    )
+                    if polymer_offset2 is not None
+                    else particle_types2
+                ),
+                force_const,
+                repulsion_distance,
+                system,
+            )
 
     def add_polymer_bond_1D(
         self,
