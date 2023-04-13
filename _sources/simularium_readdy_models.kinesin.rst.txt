@@ -1,0 +1,29 @@
+simularium\_readdy\_models.kinesin package
+==========================================
+
+Submodules
+----------
+
+simularium\_readdy\_models.kinesin.kinesin\_simulation module
+-------------------------------------------------------------
+
+.. automodule:: simularium_readdy_models.kinesin.kinesin_simulation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+simularium\_readdy\_models.kinesin.kinesin\_util module
+-------------------------------------------------------
+
+.. automodule:: simularium_readdy_models.kinesin.kinesin_util
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: simularium_readdy_models.kinesin
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Overview: module code &mdash; Simularium Models Util 0.0.0 documentation</title>
+  <title>simularium_readdy_models &mdash; Simularium Models Util 0.0.0 documentation</title>
   
 
   
@@ -167,7 +167,9 @@
     
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Overview: module code</li>
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>simularium_readdy_models</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -182,28 +184,25 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>All modules for which code is available</h1>
-<ul><li><a href="simularium_readdy_models.html">simularium_readdy_models</a></li>
-<ul><li><a href="simularium_readdy_models/actin/actin_analyzer.html">simularium_readdy_models.actin.actin_analyzer</a></li>
-<li><a href="simularium_readdy_models/actin/actin_generator.html">simularium_readdy_models.actin.actin_generator</a></li>
-<li><a href="simularium_readdy_models/actin/actin_simulation.html">simularium_readdy_models.actin.actin_simulation</a></li>
-<li><a href="simularium_readdy_models/actin/actin_structure.html">simularium_readdy_models.actin.actin_structure</a></li>
-<li><a href="simularium_readdy_models/actin/actin_test_data.html">simularium_readdy_models.actin.actin_test_data</a></li>
-<li><a href="simularium_readdy_models/actin/actin_util.html">simularium_readdy_models.actin.actin_util</a></li>
-<li><a href="simularium_readdy_models/actin/arp_data.html">simularium_readdy_models.actin.arp_data</a></li>
-<li><a href="simularium_readdy_models/actin/fiber_data.html">simularium_readdy_models.actin.fiber_data</a></li>
-<li><a href="simularium_readdy_models/common/particle_data.html">simularium_readdy_models.common.particle_data</a></li>
-<li><a href="simularium_readdy_models/common/readdy_util.html">simularium_readdy_models.common.readdy_util</a></li>
-<li><a href="simularium_readdy_models/common/repeated_timer.html">simularium_readdy_models.common.repeated_timer</a></li>
-<li><a href="simularium_readdy_models/kinesin/kinesin_simulation.html">simularium_readdy_models.kinesin.kinesin_simulation</a></li>
-<li><a href="simularium_readdy_models/kinesin/kinesin_util.html">simularium_readdy_models.kinesin.kinesin_util</a></li>
-<li><a href="simularium_readdy_models/microtubules/microtubules_analyzer.html">simularium_readdy_models.microtubules.microtubules_analyzer</a></li>
-<li><a href="simularium_readdy_models/microtubules/microtubules_simulation.html">simularium_readdy_models.microtubules.microtubules_simulation</a></li>
-<li><a href="simularium_readdy_models/microtubules/microtubules_util.html">simularium_readdy_models.microtubules.microtubules_util</a></li>
-<li><a href="simularium_readdy_models/visualization/actin_visualization.html">simularium_readdy_models.visualization.actin_visualization</a></li>
-<li><a href="simularium_readdy_models/visualization/kinesin_visualization.html">simularium_readdy_models.visualization.kinesin_visualization</a></li>
-<li><a href="simularium_readdy_models/visualization/microtubules_visualization.html">simularium_readdy_models.visualization.microtubules_visualization</a></li>
-</ul></ul>
+  <h1>Source code for simularium_readdy_models</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;Top-level package for Simularium Models Util.&quot;&quot;&quot;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Blair Lyons&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;blairl@alleninstitute.org&quot;</span>
+<span class="c1"># Do not edit this string manually, always use bumpversion</span>
+<span class="c1"># Details in CONTRIBUTING.md</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.0.0&quot;</span>
+
+
+<div class="viewcode-block" id="get_module_version"><a class="viewcode-back" href="../simularium_readdy_models.html#simularium_readdy_models.get_module_version">[docs]</a><span class="k">def</span> <span class="nf">get_module_version</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">__version__</span></div>
+
+
+<span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="n">ReaddyUtil</span>  <span class="c1"># noqa: F401</span>
+<span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="n">RepeatedTimer</span>  <span class="c1"># noqa: F401</span>
+</pre></div>
 
            </div>
            

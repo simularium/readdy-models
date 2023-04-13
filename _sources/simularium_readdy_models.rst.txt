@@ -1,0 +1,22 @@
+simularium\_readdy\_models package
+==================================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   simularium_readdy_models.actin
+   simularium_readdy_models.common
+   simularium_readdy_models.kinesin
+   simularium_readdy_models.microtubules
+   simularium_readdy_models.visualization
+
+Module contents
+---------------
+
+.. automodule:: simularium_readdy_models
+   :members:
+   :undoc-members:
+   :show-inheritance:
