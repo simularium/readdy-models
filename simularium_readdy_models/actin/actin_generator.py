@@ -511,7 +511,11 @@ class ActinGenerator:
             particle_ids = pointed_particle_ids + [actin_arp2_id] + barbed_particle_ids
             actin_arp_ids = [actin_arp2_id, actin_arp3_id]
         else:
-            (particles, particle_ids, _,) = ActinGenerator.get_actins_for_linear_fiber(
+            (
+                particles,
+                particle_ids,
+                _,
+            ) = ActinGenerator.get_actins_for_linear_fiber(
                 fiber,
                 start_normal,
                 start_axis_pos,

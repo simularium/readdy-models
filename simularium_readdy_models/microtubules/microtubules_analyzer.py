@@ -18,7 +18,6 @@ class MicrotubulesAnalyzer:
         protofilaments = []
 
         for particle_id in frame_particle_data["particles"]:
-
             (
                 plus_end_neighbor_id,
                 minus_end_neighbor_id,

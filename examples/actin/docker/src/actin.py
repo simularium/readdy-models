@@ -11,15 +11,15 @@ import numpy as np
 import pandas
 import psutil
 
-from simularium_models_util.actin import (
+from simularium_readdy_models.actin import (
     FiberData,
     ArpData,
     ActinSimulation,
     ActinGenerator,
     ActinTestData,
 )
-from simularium_models_util.visualization import ActinVisualization
-from simularium_models_util import RepeatedTimer, ReaddyUtil
+from simularium_readdy_models.visualization import ActinVisualization
+from simularium_readdy_models import RepeatedTimer, ReaddyUtil
 
 
 def report_hardware_usage():

@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.9]
         os: [ubuntu-latest]
 
     steps:
@@ -38,9 +38,9 @@ jobs:
     - name: Test with pytest
       shell: bash -l {0}
       run: |
-        pytest --cov-report xml --cov=simularium_models_util simularium_models_util/tests/
-    - name: Upload codecov
-      uses: codecov/codecov-action@v1
+        pytest --cov-report xml --cov=simularium_readdy_models simularium_readdy_models/tests/
+    - name: Upload Codecov
+      uses: codecov/codecov-action@v3
 
   lint:
     runs-on: ubuntu-latest
@@ -51,7 +51,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
-        python-version: 3.8
+        python-version: 3.9
         channels: readdy/label/dev,conda-forge
     - name: Install Conda Deps
       shell: bash -l {0}
@@ -65,11 +65,11 @@ jobs:
     - name: Lint with flake8
       shell: bash -l {0}
       run: |
-        flake8 simularium_models_util --count --verbose --show-source --statistics
+        flake8 simularium_readdy_models --count --verbose --show-source --statistics
     - name: Check with black
       shell: bash -l {0}
       run: |
-        black --check simularium_models_util
+        black --check simularium_readdy_models
 
   publish:
     if: "contains(github.event.head_commit.message, 'Bump version')"
@@ -82,7 +82,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
-        python-version: 3.8
+        python-version: 3.9
         channels: readdy/label/dev,conda-forge
     - name: Install Conda Deps
       shell: bash -l {0}

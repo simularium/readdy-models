@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = python -msphinx
-SPHINXPROJ    = simularium_models_util
+SPHINXPROJ    = simularium_readdy_models
 SOURCEDIR     = .
 BUILDDIR      = _build
 

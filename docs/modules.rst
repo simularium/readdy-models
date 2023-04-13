@@ -1,7 +1,7 @@
-simularium_models_util
+simularium_readdy_models
 ======================
 
 .. toctree::
    :maxdepth: 4
 
-   simularium_models_util
+   simularium_readdy_models
