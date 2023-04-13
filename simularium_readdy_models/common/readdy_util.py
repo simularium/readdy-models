@@ -125,7 +125,7 @@ class ReaddyUtil:
             return np.array([0, 1, 0])
         u = ReaddyUtil.normalize(np.array([-v[1], v[0], 0]))
         return ReaddyUtil.rotate(u, v, 2 * np.pi * random.random())
-    
+
     def monomer_state_to_str(monomers):
         result = "topologies:\n"
         for top_id in monomers["topologies"]:
@@ -487,10 +487,10 @@ class ReaddyUtil:
         calculates the polymer number
             from number
             by offset in [
-                -2 * polymer_number_types + 1, 
+                -2 * polymer_number_types + 1,
                 2 * polymer_number_types - 1
             ]
-        
+
         returns number in [1, polymer_number_types]
         """
         n = number + offset
@@ -761,8 +761,7 @@ class ReaddyUtil:
         system,
         polymer_number_types,
     ):
-        """
-        """
+        """ """
         polymer_number_types = int(polymer_number_types)
         for x in range(1, polymer_number_types + 1):
             self.add_repulsion(

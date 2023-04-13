@@ -7,9 +7,9 @@ import pandas
 import argparse
 import psutil
 
-from simularium_models_util.kinesin import KinesinSimulation
-from simularium_models_util.visualization import KinesinVisualization
-from simularium_models_util import RepeatedTimer
+from simularium_readdy_models.kinesin import KinesinSimulation
+from simularium_readdy_models.visualization import KinesinVisualization
+from simularium_readdy_models import RepeatedTimer
 
 
 def report_memory_usage():

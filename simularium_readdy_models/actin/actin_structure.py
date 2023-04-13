@@ -55,7 +55,7 @@ class ActinStructure:
     actin_to_actin_axis_distance = (2.795019154 + 2.811178372) / 2.0
 
     @staticmethod
-    def actin_to_actin_axis_angle(): 
+    def actin_to_actin_axis_angle():
         return np.deg2rad(ActinStructure.actin_to_actin_angle_degrees)
 
     @staticmethod
@@ -89,7 +89,7 @@ class ActinStructure:
         return axis_position - ActinStructure.mother_positions[3]
 
     @staticmethod
-    def actin_distance_from_axis(): 
+    def actin_distance_from_axis():
         return np.linalg.norm(ActinStructure.vector_to_axis())
 
     @staticmethod
@@ -124,7 +124,7 @@ class ActinStructure:
         return ActinStructure.branch_positions()[0]
 
     @staticmethod
-    def branch_shift(): 
+    def branch_shift():
         branch_positions = ActinStructure.branch_positions()
         return np.linalg.norm(branch_positions[1] - branch_positions[0])
 
@@ -143,7 +143,7 @@ class ActinStructure:
             return ActinStructure.daughter_positions[0]
 
     @staticmethod
-    def branch_angle(): 
+    def branch_angle():
         return ReaddyUtil.get_angle_between_vectors(
             ActinStructure.mother_axis_direction, ActinStructure.daughter_axis_direction
         )
@@ -166,7 +166,7 @@ class ActinStructure:
         )
 
     @staticmethod
-    def actin_to_actin_distance_lateral():  
+    def actin_to_actin_distance_lateral():
         distances = []
         for i in range(len(ActinStructure.mother_positions) - 1):
             distances.append(
@@ -178,7 +178,7 @@ class ActinStructure:
         return np.mean(np.array(distances))
 
     @staticmethod
-    def actin_to_actin_distance_longitudinal():  
+    def actin_to_actin_distance_longitudinal():
         distances = []
         for i in range(len(ActinStructure.mother_positions) - 2):
             distances.append(
@@ -196,7 +196,7 @@ class ActinStructure:
         )
 
     @staticmethod
-    def arp3_to_mother_distance(): 
+    def arp3_to_mother_distance():
         return np.linalg.norm(
             ActinStructure.mother_positions[4] - ActinStructure.arp3_position
         )
@@ -208,7 +208,7 @@ class ActinStructure:
         )
 
     @staticmethod
-    def arp2_to_daughter_distance(): 
+    def arp2_to_daughter_distance():
         return np.linalg.norm(
             ActinStructure.daughter_positions[0] - ActinStructure.arp2_position
         )
@@ -265,98 +265,98 @@ class ActinStructure:
         return np.mean(np.array(angles))
 
     @staticmethod
-    def arp3_arp2_daughter1_angle(): 
+    def arp3_arp2_daughter1_angle():
         v1 = ActinStructure.arp3_position - ActinStructure.arp2_position
         v2 = ActinStructure.daughter_positions[0] - ActinStructure.arp2_position
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def arp2_daughter1_daughter2_angle(): 
+    def arp2_daughter1_daughter2_angle():
         v1 = ActinStructure.arp2_position - ActinStructure.daughter_positions[0]
         v2 = ActinStructure.daughter_positions[1] - ActinStructure.daughter_positions[0]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother1_mother2_arp3_angle(): 
+    def mother1_mother2_arp3_angle():
         v1 = ActinStructure.mother_positions[3] - ActinStructure.mother_positions[4]
         v2 = ActinStructure.arp3_position - ActinStructure.mother_positions[4]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother3_mother2_arp3_angle(): 
+    def mother3_mother2_arp3_angle():
         v1 = ActinStructure.mother_positions[5] - ActinStructure.mother_positions[4]
         v2 = ActinStructure.arp3_position - ActinStructure.mother_positions[4]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother0_mother1_arp2_angle(): 
+    def mother0_mother1_arp2_angle():
         v1 = ActinStructure.mother_positions[2] - ActinStructure.mother_positions[3]
         v2 = ActinStructure.arp2_position - ActinStructure.mother_positions[3]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def actin_to_actin_repulsion_distance(isLateral): 
+    def actin_to_actin_repulsion_distance(isLateral):
         if isLateral:
             return 0.95 * ActinStructure.actin_to_actin_distance_lateral()
         else:
             return 0.95 * ActinStructure.actin_to_actin_distance_longitudinal()
 
     @staticmethod
-    def arp3_arp2_daughter1_daughter2_dihedral_angle(): 
+    def arp3_arp2_daughter1_daughter2_dihedral_angle():
         v1 = ActinStructure.arp3_position - ActinStructure.arp2_position
         v2 = ActinStructure.daughter_positions[1] - ActinStructure.daughter_positions[0]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def arp2_daughter1_daughter2_daughter3_dihedral_angle(): 
+    def arp2_daughter1_daughter2_daughter3_dihedral_angle():
         v1 = ActinStructure.arp2_position - ActinStructure.daughter_positions[0]
         v2 = ActinStructure.daughter_positions[2] - ActinStructure.daughter_positions[1]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother1_arp2_daughter1_daughter2_dihedral_angle(): 
+    def mother1_arp2_daughter1_daughter2_dihedral_angle():
         v1 = ActinStructure.mother_positions[3] - ActinStructure.arp2_position
         v2 = ActinStructure.daughter_positions[1] - ActinStructure.daughter_positions[0]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother1_mother2_arp3_arp2_dihedral_angle(): 
+    def mother1_mother2_arp3_arp2_dihedral_angle():
         v1 = ActinStructure.mother_positions[3] - ActinStructure.mother_positions[4]
         v2 = ActinStructure.arp2_position - ActinStructure.arp3_position
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother0_mother1_arp2_daughter1_dihedral_angle(): 
+    def mother0_mother1_arp2_daughter1_dihedral_angle():
         v1 = ActinStructure.mother_positions[2] - ActinStructure.mother_positions[3]
         v2 = ActinStructure.daughter_positions[0] - ActinStructure.arp2_position
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother3_mother2_arp3_arp2_dihedral_angle(): 
+    def mother3_mother2_arp3_arp2_dihedral_angle():
         v1 = ActinStructure.mother_positions[5] - ActinStructure.mother_positions[4]
         v2 = ActinStructure.arp2_position - ActinStructure.arp3_position
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother2_arp3_arp2_daughter1_dihedral_angle(): 
+    def mother2_arp3_arp2_daughter1_dihedral_angle():
         v1 = ActinStructure.mother_positions[4] - ActinStructure.arp3_position
         v2 = ActinStructure.daughter_positions[0] - ActinStructure.arp2_position
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother_mother0_mother1_arp2_dihedral_angle(): 
+    def mother_mother0_mother1_arp2_dihedral_angle():
         v1 = ActinStructure.mother_positions[1] - ActinStructure.mother_positions[2]
         v2 = ActinStructure.arp2_position - ActinStructure.mother_positions[3]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def arp2_mother1_mother2_arp3_dihedral_angle(): 
+    def arp2_mother1_mother2_arp3_dihedral_angle():
         v1 = ActinStructure.arp2_position - ActinStructure.mother_positions[3]
         v2 = ActinStructure.arp3_position - ActinStructure.mother_positions[4]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)
 
     @staticmethod
-    def mother4_mother3_mother2_arp3_dihedral_angle(): 
+    def mother4_mother3_mother2_arp3_dihedral_angle():
         v1 = ActinStructure.mother_positions[6] - ActinStructure.mother_positions[5]
         v2 = ActinStructure.arp3_position - ActinStructure.mother_positions[4]
         return ReaddyUtil.get_angle_between_vectors(v1, v2)

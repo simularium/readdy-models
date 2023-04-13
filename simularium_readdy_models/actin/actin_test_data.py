@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from simularium_models_util.actin import FiberData, ArpData
+from simularium_readdy_models.actin import FiberData, ArpData
 
 
 class ActinTestData:

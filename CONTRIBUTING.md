@@ -5,20 +5,20 @@ helps, and credit will always be given.
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `simularium_models_util` for local development.
+Ready to contribute? Here's how to set up `simularium_readdy_models` for local development.
 
-1. Fork the `simularium_models_util` repo on GitHub.
+1. Fork the `simularium_readdy_models` repo on GitHub.
 
 2. Clone your fork locally:
 
     ```bash
-    git clone git@github.com:{your_name_here}/simularium_models_util.git
+    git clone git@github.com:{your_name_here}/simularium_readdy_models.git
     ```
 
 3. Install the project in editable mode. (It is also recommended to work in a virtualenv or anaconda environment):
 
     ```bash
-    cd simularium_models_util/
+    cd simularium_readdy_models/
     pip install -e .[dev]
     ```
 

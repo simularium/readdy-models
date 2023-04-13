@@ -18,7 +18,6 @@ setup_requirements = [
 
 test_requirements = [
     "black>=19.10b0",
-    "codecov>=2.1.4",
     "flake8>=3.8.3",
     "flake8-debugger>=3.2.1",
     "pytest>=5.4.3",
@@ -79,22 +78,22 @@ setup(
     ],
     description="Tools for building computational biology models and example models from the Simularium project.",
     entry_points={
-        "console_scripts": ["my_example=simularium_models_util.bin.my_example:main"],
+        "console_scripts": ["my_example=simularium_readdy_models.bin.my_example:main"],
     },
     install_requires=requirements,
     license="Allen Institute Software License",
     long_description=readme,
     long_description_content_type="text/markdown",
     include_package_data=True,
-    keywords="simularium_models_util",
-    name="simularium_models_util",
+    keywords="simularium_readdy_models",
+    name="simularium_readdy_models",
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*"]),
     python_requires=">=3.7",
     setup_requires=setup_requirements,
-    test_suite="simularium_models_util/tests",
+    test_suite="simularium_readdy_models/tests",
     tests_require=test_requirements,
     extras_require=extra_requirements,
-    url="https://github.com/allen-cell-animated/simularium_models_util",
+    url="https://github.com/simularium/simularium_readdy_models",
     # Do not edit this string manually, always use bumpversion
     # Details in CONTRIBUTING.rst
     version="0.0.0",

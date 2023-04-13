@@ -35,8 +35,8 @@ pointed_monomer_positions = []
 
 
 class ActinUtil:
-    DEFAULT_FORCE_CONSTANT = 250.
-    
+    DEFAULT_FORCE_CONSTANT = 250.0
+
     def __init__(self, parameters, displacements=None):
         """
         Utility functions for ReaDDy branched actin models
@@ -47,7 +47,7 @@ class ActinUtil:
         set_parameters(parameters)
         if displacements is not None:
             set_displacements(displacements)
-            
+
     DEFAULT_PARAMETERS = {
         "name": "actin",
         "total_steps": 1e3,
@@ -104,19 +104,19 @@ class ActinUtil:
         "n_fixed_monomers_barbed": 0,
         "displace_pointed_end_tangent": False,
         "displace_pointed_end_radial": False,
-        "tangent_displacement_nm": 0.,
-        "radial_displacement_radius_nm": 0.,
-        "radial_displacement_angle_deg": 0.,
+        "tangent_displacement_nm": 0.0,
+        "radial_displacement_radius_nm": 0.0,
+        "radial_displacement_angle_deg": 0.0,
         "plot_polymerization": False,
         "plot_filament_structure": False,
         "plot_bend_twist": False,
         "visualize_edges": False,
         "visualize_normals": False,
         "longitudinal_bonds": True,
-        "displace_stride": 1,    
-        "bonds_force_multiplier": 0.1,   
-        "angles_force_multiplier": 4.,   
-        "dihedrals_force_multiplier": 1.,  
+        "displace_stride": 1,
+        "bonds_force_multiplier": 0.1,
+        "angles_force_multiplier": 4.0,
+        "dihedrals_force_multiplier": 1.0,
         "actin_actin_repulsion_potentials": True,
         "actin_actin_angle_potentials": True,
         "actin_actin_dihedral_potentials": True,
@@ -190,7 +190,9 @@ class ActinUtil:
         spacer = "_"
         if "#" not in vertex_type:
             spacer = "#"
-        return [f"{vertex_type}{spacer}{i + 1}" for i in ActinUtil.polymer_number_range()]
+        return [
+            f"{vertex_type}{spacer}{i + 1}" for i in ActinUtil.polymer_number_range()
+        ]
 
     @staticmethod
     def get_actin_rotation(positions, box_size, periodic_boundary=True):
@@ -700,7 +702,10 @@ class ActinUtil:
 
     @staticmethod
     def add_fibers_from_data(
-        simulation, fibers_data, use_uuids=True, longitudinal_bonds=True,
+        simulation,
+        fibers_data,
+        use_uuids=True,
+        longitudinal_bonds=True,
     ):
         """
         add (branched) actin fiber(s)
@@ -708,7 +713,7 @@ class ActinUtil:
         fibers_data : List[FiberData]
         """
         fiber_monomers = ActinGenerator.get_monomers(
-            fibers_data, 
+            fibers_data,
             use_uuids=use_uuids,
             longitudinal_bonds=longitudinal_bonds,
         )
@@ -2861,7 +2866,7 @@ class ActinUtil:
             ActinStructure.arp3_arp2_daughter1_daughter2_dihedral_angle(),
             system,
         )
-        
+
     @staticmethod
     def add_actin_actin_repulsions(
         force_constant,
@@ -2955,8 +2960,8 @@ class ActinUtil:
         force_constant,
         system,
         util,
-        actin_actin_repulsion_potentials = True,
-        longitudinal_bonds = True,
+        actin_actin_repulsion_potentials=True,
+        longitudinal_bonds=True,
     ):
         """
         add repulsions
@@ -3547,10 +3552,12 @@ class ActinUtil:
         time_index, displace_stride, monomer_id, monomer_pos, displacement_parameters
     ):
         d_pos_x = (
-            displacement_parameters["tangent_displace_speed_um_s"] * 1e-6 
-            * displace_stride * ActinUtil.DEFAULT_PARAMETERS["internal_timestep"]
+            displacement_parameters["tangent_displace_speed_um_s"]
+            * 1e-6
+            * displace_stride
+            * ActinUtil.DEFAULT_PARAMETERS["internal_timestep"]
         )
-        return monomer_pos + np.array([d_pos_x, 0., 0.])
+        return monomer_pos + np.array([d_pos_x, 0.0, 0.0])
 
     @staticmethod
     def get_position_for_radial_translation(
@@ -3558,7 +3565,9 @@ class ActinUtil:
     ):
         global init_monomer_positions, pointed_monomer_positions
         if displace_stride != 1:
-            raise Exception("Displacement stride is not implemented for radial translation.")
+            raise Exception(
+                "Displacement stride is not implemented for radial translation."
+            )
         if time_index == 0 and monomer_id > 0:
             init_monomer_positions[monomer_id] = monomer_pos
         if monomer_id == 0:

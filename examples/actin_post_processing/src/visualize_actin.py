@@ -7,8 +7,8 @@ import numpy as np
 import copy
 from typing import Dict, Any, List
 
-from simularium_models_util.visualization import ActinVisualization, ACTIN_DISPLAY_DATA
-from simularium_models_util.actin import ActinAnalyzer
+from simularium_readdy_models.visualization import ActinVisualization, ACTIN_DISPLAY_DATA
+from simularium_readdy_models.actin import ActinAnalyzer
 
 
 COLORS = [

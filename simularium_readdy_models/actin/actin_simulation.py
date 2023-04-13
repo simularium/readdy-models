@@ -59,11 +59,11 @@ class ActinSimulation:
         Set values for "parameters" that never change.
         """
         self.parameters["internal_timestep"] = 0.1
-        self.parameters["temperature_C"] = 22.
+        self.parameters["temperature_C"] = 22.0
         self.parameters["viscosity"] = 8.1  # cP
-        self.parameters["actin_radius"] = 2.
-        self.parameters["arp23_radius"] = 2.
-        self.parameters["cap_radius"] = 3.
+        self.parameters["actin_radius"] = 2.0
+        self.parameters["arp23_radius"] = 2.0
+        self.parameters["cap_radius"] = 3.0
 
     def _parameter(self, parameter_name):
         """
@@ -73,9 +73,7 @@ class ActinSimulation:
             return self.parameters[parameter_name]
         if parameter_name in ActinUtil.DEFAULT_PARAMETERS:
             return ActinUtil.DEFAULT_PARAMETERS[parameter_name]
-        raise Exception(
-            f"Parameter {parameter_name} is required but was not provided."
-        )
+        raise Exception(f"Parameter {parameter_name} is required but was not provided.")
 
     def create_actin_system(self):
         """
@@ -124,16 +122,26 @@ class ActinSimulation:
         accurate_force_constants = self._parameter("accurate_force_constants")
         longitudinal_bonds = bool(self._parameter("longitudinal_bonds"))
         only_linear_actin = bool(self._parameter("only_linear_actin_constraints"))
-        actin_actin_angle_potentials = bool(self._parameter("actin_actin_angle_potentials"))
-        actin_actin_dihedral_potentials = bool(self._parameter("actin_actin_dihedral_potentials"))
+        actin_actin_angle_potentials = bool(
+            self._parameter("actin_actin_angle_potentials")
+        )
+        actin_actin_dihedral_potentials = bool(
+            self._parameter("actin_actin_dihedral_potentials")
+        )
         # force constants
-        angle_force_constant = 2. * ActinUtil.DEFAULT_FORCE_CONSTANT
+        angle_force_constant = 2.0 * ActinUtil.DEFAULT_FORCE_CONSTANT
         actin_angle_force_constant = angle_force_constant
         dihedral_force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
-        actin_dihedral_force_constant = (2. if longitudinal_bonds else 5.) * dihedral_force_constant
+        actin_dihedral_force_constant = (
+            2.0 if longitudinal_bonds else 5.0
+        ) * dihedral_force_constant
         if accurate_force_constants:
-            actin_angle_force_constant = float(self._parameter("angles_force_multiplier"))
-            actin_dihedral_force_constant = float(self._parameter("dihedrals_force_multiplier"))
+            actin_angle_force_constant = float(
+                self._parameter("angles_force_multiplier")
+            )
+            actin_dihedral_force_constant = float(
+                self._parameter("dihedrals_force_multiplier")
+            )
         # linear actin
         self.actin_util.add_bonds_between_actins(
             accurate_force_constants, self.system, util, longitudinal_bonds
@@ -144,22 +152,22 @@ class ActinSimulation:
             )
         if actin_actin_dihedral_potentials:
             self.actin_util.add_filament_twist_dihedrals(
-                actin_dihedral_force_constant, self.system, util, longitudinal_bonds, only_linear_actin
+                actin_dihedral_force_constant,
+                self.system,
+                util,
+                longitudinal_bonds,
+                only_linear_actin,
             )
         if not only_linear_actin:
             # branch junction
             self.actin_util.add_branch_bonds(self.system, util)
-            self.actin_util.add_branch_angles(
-                angle_force_constant, self.system, util
-            )
+            self.actin_util.add_branch_angles(angle_force_constant, self.system, util)
             self.actin_util.add_branch_dihedrals(
                 dihedral_force_constant, self.system, util
             )
             # capping protein
             self.actin_util.add_cap_bonds(self.system, util)
-            self.actin_util.add_cap_angles(
-                angle_force_constant, self.system, util
-            )
+            self.actin_util.add_cap_angles(angle_force_constant, self.system, util)
             self.actin_util.add_cap_dihedrals(
                 dihedral_force_constant, self.system, util
             )
@@ -204,11 +212,13 @@ class ActinSimulation:
             self.actin_util.add_translate_reaction(self.system)
 
     def do_pointed_end_translation(self):
-        result = (
-            self._parameter("displace_pointed_end_tangent")
-            or self._parameter("displace_pointed_end_radial")
+        result = self._parameter("displace_pointed_end_tangent") or self._parameter(
+            "displace_pointed_end_radial"
         )
-        if result and (not self._parameter("orthogonal_seed") or int(self._parameter("n_fixed_monomers_pointed")) < 1):
+        if result and (
+            not self._parameter("orthogonal_seed")
+            or int(self._parameter("n_fixed_monomers_pointed")) < 1
+        ):
             raise Exception(
                 "Pointed end translation requires orthogonal seed "
                 "and non-zero number of fixed monomers at the pointed end."
@@ -221,9 +231,8 @@ class ActinSimulation:
         """
         if not self.do_pointed_end_translation():
             return {}
-        if (
-            self._parameter("displace_pointed_end_tangent")
-            and self._parameter("displace_pointed_end_radial")
+        if self._parameter("displace_pointed_end_tangent") and self._parameter(
+            "displace_pointed_end_radial"
         ):
             raise Exception(
                 "Cannot apply tangent and radial displacements simultaneously"
@@ -232,7 +241,9 @@ class ActinSimulation:
             displacement = {
                 "get_translation": ActinUtil.get_position_for_tangent_translation,
                 "parameters": {
-                    "tangent_displace_speed_um_s": self._parameter("tangent_displace_speed_um_s"),
+                    "tangent_displace_speed_um_s": self._parameter(
+                        "tangent_displace_speed_um_s"
+                    ),
                 },
             }
         if self._parameter("displace_pointed_end_radial"):

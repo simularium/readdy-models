@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=simularium_models_util
+set SPHINXPROJ=simularium_readdy_models
 
 if "%1" == "" goto help
 

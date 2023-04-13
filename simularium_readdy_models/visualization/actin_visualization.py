@@ -15,7 +15,6 @@ from simulariumio import (
     TrajectoryData,
     DimensionData,
     CameraData,
-    BinaryWriter,
 )
 from simulariumio.filters import MultiplyTimeFilter, AddAgentsFilter
 from simulariumio.constants import VIZ_TYPE
@@ -56,7 +55,7 @@ STRUCTURAL_RXNS = [
 ]
 
 extra_radius = 0.0
-actin_radius =  1.0  # 2.0 + extra_radius
+actin_radius = 1.0  # 2.0 + extra_radius
 arp23_radius = 2.0 + extra_radius
 cap_radius = 3.0 + extra_radius
 obstacle_radius = 35.0
@@ -509,7 +508,9 @@ class ActinVisualization:
             xtrace=times,
             ytraces={
                 "Actin in filaments": 100.0
-                * ActinAnalyzer.analyze_ratio_of_filamentous_to_total_actin(monomer_data),
+                * ActinAnalyzer.analyze_ratio_of_filamentous_to_total_actin(
+                    monomer_data
+                ),
                 "Arp2/3 in filaments": 100.0
                 * ActinAnalyzer.analyze_ratio_of_bound_to_total_arp23(monomer_data),
                 "Actin in daughter filaments": 100.0
@@ -635,9 +636,7 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_branch_angle_plot(
-        monomer_data, box_size, periodic_boundary, times
-    ):
+    def get_branch_angle_plot(monomer_data, box_size, periodic_boundary, times):
         """
         Add a plot of branch angle mean and std dev
         """
@@ -661,9 +660,7 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_helix_pitch_plot(
-        monomer_data, box_size, periodic_boundary, times
-    ):
+    def get_helix_pitch_plot(monomer_data, box_size, periodic_boundary, times):
         """
         Add a plot of average helix pitch
         for both the short and long helices
@@ -796,9 +793,7 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_twist_per_monomer_plot(
-        twist_angles, filament_positions
-    ):
+    def get_twist_per_monomer_plot(twist_angles, filament_positions):
         """
         Add a plot of twist vs position of the monomer in filament
         """
@@ -860,7 +855,7 @@ class ActinVisualization:
         normals, axis_positions, box_size, periodic_boundary, stride, times
     ):
         """
-        Add a plot of distance from first to last particle 
+        Add a plot of distance from first to last particle
         in the first filament vs time
         """
         filament_length = ActinAnalyzer.analyze_filament_length(
@@ -872,8 +867,8 @@ class ActinVisualization:
             yaxis_title="Length of filament (nm)",
             xtrace=times[::stride],
             ytraces={
-                "<<<": 450. * np.ones(filament_length.shape),
-                ">>>": 550. * np.ones(filament_length.shape),
+                "<<<": 450.0 * np.ones(filament_length.shape),
+                ">>>": 550.0 * np.ones(filament_length.shape),
                 "Ideal": filament_length[0] * np.ones(filament_length.shape),
                 "Filament length": filament_length,
             },
@@ -881,11 +876,9 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def get_bond_stretch_plot(
-        monomer_data, box_size, periodic_boundary, stride, times
-    ):
+    def get_bond_stretch_plot(monomer_data, box_size, periodic_boundary, stride, times):
         """
-        Add a scatter plot of difference in bond length from ideal 
+        Add a scatter plot of difference in bond length from ideal
         for lateral and longitudinal actin bonds vs time
         """
         (
@@ -895,17 +888,17 @@ class ActinVisualization:
             monomer_data, box_size, periodic_boundary, stride
         )
         mean_lat = np.mean(stretch_lat, axis=1)
-        stddev_lat = np.std(stretch_lat, axis=1)
+        # stddev_lat = np.std(stretch_lat, axis=1)
         mean_long = np.mean(stretch_long, axis=1)
-        stddev_long = np.std(stretch_long, axis=1)
+        # stddev_long = np.std(stretch_long, axis=1)
         return ScatterPlotData(
             title="Bond stretch",
             xaxis_title="T (μs)",
             yaxis_title="Bond stretch (nm)",
             xtrace=times[::stride],
             ytraces={
-                "<<<": -1. * np.ones(mean_lat.shape),
-                ">>>": 1. * np.ones(mean_lat.shape),
+                "<<<": -1.0 * np.ones(mean_lat.shape),
+                ">>>": 1.0 * np.ones(mean_lat.shape),
                 "Lateral mean": mean_lat,
                 "Longitudinal mean": mean_long,
             },
@@ -917,7 +910,7 @@ class ActinVisualization:
         monomer_data, box_size, periodic_boundary, stride, times
     ):
         """
-        Add a scatter plot of difference in angles from ideal 
+        Add a scatter plot of difference in angles from ideal
         for lateral and longitudinal actin bonds vs time
         """
         (
@@ -936,8 +929,8 @@ class ActinVisualization:
             yaxis_title="Angle stretch (degrees)",
             xtrace=times[::stride],
             ytraces={
-                "<<<": -10. * np.ones(mean_lat_lat.shape),
-                ">>>": 10. * np.ones(mean_lat_lat.shape),
+                "<<<": -10.0 * np.ones(mean_lat_lat.shape),
+                ">>>": 10.0 * np.ones(mean_lat_lat.shape),
                 "Lat to lat mean": mean_lat_lat,
                 "Lat to long mean": mean_lat_long,
                 "Long to long mean": mean_long_long,
@@ -950,7 +943,7 @@ class ActinVisualization:
         monomer_data, box_size, periodic_boundary, stride, times
     ):
         """
-        Add a scatter plot of difference in angles from ideal 
+        Add a scatter plot of difference in angles from ideal
         for lateral and longitudinal actin bonds vs time
         """
         (
@@ -967,8 +960,8 @@ class ActinVisualization:
             yaxis_title="Angle stretch (degrees)",
             xtrace=times[::stride],
             ytraces={
-                "<<<": -10. * np.ones(mean_lat_lat_lat.shape),
-                ">>>": 10. * np.ones(mean_lat_lat_lat.shape),
+                "<<<": -10.0 * np.ones(mean_lat_lat_lat.shape),
+                ">>>": 10.0 * np.ones(mean_lat_lat_lat.shape),
                 "Lat to lat to lat mean": mean_lat_lat_lat,
                 "Long to long to long mean": mean_long_long_long,
             },
@@ -980,7 +973,7 @@ class ActinVisualization:
         monomer_data,
         times,
         box_size,
-        normals, 
+        normals,
         axis_positions,
         periodic_boundary=True,
         plots=None,
@@ -999,9 +992,7 @@ class ActinVisualization:
             normals, axis_positions, STRIDE
         )
         plots["scatter"] += [
-            ActinVisualization.get_total_axis_twist_plot(
-                axis_twist, times[::STRIDE]
-            ),
+            ActinVisualization.get_total_axis_twist_plot(axis_twist, times[::STRIDE]),
             ActinVisualization.get_filament_length_plot(
                 normals, axis_positions, box_size, periodic_boundary, STRIDE, times
             ),
@@ -1013,17 +1004,16 @@ class ActinVisualization:
             ),
             ActinVisualization.get_dihedral_stretch_plot(
                 monomer_data, box_size, periodic_boundary, STRIDE, times
-            )
+            ),
         ]
         return plots
-        
 
     @staticmethod
     def generate_bend_twist_plots(
         monomer_data,
         times,
         box_size,
-        normals, 
+        normals,
         axis_positions,
         periodic_boundary=True,
         plots=None,
@@ -1038,17 +1028,10 @@ class ActinVisualization:
                 "histogram": [],
             }
         STRIDE = 10
-        (
-            axis_twist, 
-            _, 
-            _
-        ) = ActinAnalyzer.analyze_twist_axis(
+        (axis_twist, _, _) = ActinAnalyzer.analyze_twist_axis(
             normals, axis_positions, STRIDE
         )
-        (
-            twist_angles, 
-            filament_positions1
-        ) = ActinAnalyzer.analyze_twist_planes(
+        (twist_angles, filament_positions1) = ActinAnalyzer.analyze_twist_planes(
             monomer_data, box_size, periodic_boundary, STRIDE
         )
         (
@@ -1059,9 +1042,7 @@ class ActinVisualization:
             monomer_data, box_size, periodic_boundary, STRIDE
         )
         plots["scatter"] += [
-            ActinVisualization.get_total_axis_twist_plot(
-                axis_twist, times[::STRIDE]
-            ),
+            ActinVisualization.get_total_axis_twist_plot(axis_twist, times[::STRIDE]),
             ActinVisualization.get_total_plane_twist_plot(
                 twist_angles, times[::STRIDE]
             ),
@@ -1129,12 +1110,13 @@ class ActinVisualization:
             max_normals = len(normals[time_i])
             n_normals = 0
             for normal_i in range(max_normals):
-                if axis_positions[time_i][normal_i] is None or normals[time_i][normal_i] is None:
+                if (
+                    axis_positions[time_i][normal_i] is None
+                    or normals[time_i][normal_i] is None
+                ):
                     continue
                 agent_i = start_i + n_normals
-                new_agent_data.unique_ids[time_i][agent_i] = (
-                    max_used_uid + normal_i + 1
-                )
+                new_agent_data.unique_ids[time_i][agent_i] = max_used_uid + normal_i + 1
                 new_agent_data.subpoints[time_i][agent_i] = np.array(
                     [
                         axis_positions[time_i][normal_i],
@@ -1201,7 +1183,9 @@ class ActinVisualization:
                     if (particle_id, neighbor_id) in existing_edges:
                         continue
                     neighbor = monomer_data[time_index]["particles"][neighbor_id]
-                    positions = np.array([particle["position"], neighbor["position"]]).flatten()
+                    positions = np.array(
+                        [particle["position"], neighbor["position"]]
+                    ).flatten()
                     agent_index = start_i + n_edges
                     new_agent_data.unique_ids[time_index][agent_index] = (
                         max_used_uid + n_edges
@@ -1239,7 +1223,7 @@ class ActinVisualization:
         normals: List[List[Any]] = None,
         axis_positions: List[List[Any]] = None,
         plots: List[Dict[str, Any]] = None,
-        longitudinal_bonds: bool = True
+        longitudinal_bonds: bool = True,
     ) -> TrajectoryData:
         """
         visualize an actin trajectory in Simularium

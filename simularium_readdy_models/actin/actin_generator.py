@@ -80,7 +80,9 @@ class ActinGenerator:
         return int(n)
 
     @staticmethod
-    def _get_neighbor_actin_id(particle_id, direction, particles, longitudinal_bonds=True):
+    def _get_neighbor_actin_id(
+        particle_id, direction, particles, longitudinal_bonds=True
+    ):
         """
         get the id for an actin's actin neighbor in the given direction
         """
@@ -132,7 +134,9 @@ class ActinGenerator:
         return particles
 
     @staticmethod
-    def _remove_mother_mid_at_junction(actin_arp_ids, particles={}, longitudinal_bonds=True):
+    def _remove_mother_mid_at_junction(
+        actin_arp_ids, particles={}, longitudinal_bonds=True
+    ):
         """
         remove "mid" flags from actins near a branch junction,
         including the actin bound to arp2, the actin bound to arp3,
@@ -524,7 +528,11 @@ class ActinGenerator:
             particle_ids = pointed_particle_ids + [actin_arp2_id] + barbed_particle_ids
             actin_arp_ids = [actin_arp2_id, actin_arp3_id]
         else:
-            (particles, particle_ids, _,) = ActinGenerator._get_actins_for_linear_fiber(
+            (
+                particles,
+                particle_ids,
+                _,
+            ) = ActinGenerator._get_actins_for_linear_fiber(
                 fiber,
                 start_normal,
                 start_axis_pos,
@@ -606,7 +614,7 @@ class ActinGenerator:
                 particle_ids[0] if len(particle_ids) > 0 else None,
                 fiber,
                 particles,
-                longitudinal_bonds
+                longitudinal_bonds,
             )
             daughter_particle_ids += junction_ids + particle_ids
             all_actin_arp_ids += actin_arp_ids

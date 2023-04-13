@@ -12,7 +12,7 @@ To install Simularium Models Util, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install simularium_models_util
+    $ pip install simularium_readdy_models
 
 This is the preferred method to install Simularium Models Util, as it will always install the most recent stable release.
 
@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/allen-cell-animated/simularium_models_util
+    $ git clone git://github.com/simularium/readdy-models
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/allen-cell-animated/simularium_models_util/tarball/main
+    $ curl  -OL https://github.com/simularium/readdy-models/tarball/main
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/allen-cell-animated/simularium_models_util
-.. _tarball: https://github.com/allen-cell-animated/simularium_models_util/tarball/main
+.. _Github repo: https://github.com/simularium/readdy-models
+.. _tarball: https://github.com/simularium/readdy-models/tarball/main
