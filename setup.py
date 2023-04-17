@@ -9,7 +9,8 @@ with open("README.md") as readme_file:
     readme = readme_file.read()
 
 viz_requirements = [
-    "simulariumio"
+    "simulariumio",
+    "subcell_analysis @ git+https://github.com/simularium/subcell-analysis.git@feature/readdy-analysis",
 ]
 
 setup_requirements = [
@@ -26,9 +27,18 @@ test_requirements = [
     *viz_requirements,
 ]
 
+example_requirements = [
+    "psutil",
+    "awscli",
+    "boto3",
+    "openpyxl>=3.0",
+    *viz_requirements,
+]
+
 dev_requirements = [
     *setup_requirements,
     *test_requirements,
+    *example_requirements,
     "bump2version>=1.0.1",
     "coverage>=5.1",
     "ipython>=7.15.0",
@@ -39,14 +49,6 @@ dev_requirements = [
     "tox>=3.15.2",
     "twine>=3.1.1",
     "wheel>=0.34.2",
-]
-
-example_requirements = [
-    "psutil",
-    "awscli",
-    "boto3",
-    "openpyxl>=3.0",
-    *viz_requirements,
 ]
 
 requirements = [

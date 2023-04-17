@@ -13,488 +13,254 @@ from simulariumio import (
     DisplayData,
     DISPLAY_TYPE,
     TrajectoryData,
-    DimensionData,
     CameraData,
 )
-from simulariumio.filters import MultiplyTimeFilter, AddAgentsFilter
-from simulariumio.constants import VIZ_TYPE
+from simulariumio.plot_readers import ScatterPlotReader
+from simulariumio.filters import AddAgentsFilter, MultiplyTimeFilter
+from subcell_analysis.readdy import ReaddyPostProcessor
+from subcell_analysis import (
+    SpatialVisualizer
+)
 
 from ..actin import ActinAnalyzer, ACTIN_REACTIONS
 from ..common import ReaddyUtil
-from tqdm import tqdm
-
-
-TIMESTEP = 0.1  # ns
-GROWTH_RXNS = [
-    "Dimerize",
-    "Trimerize",
-    "Grow Pointed",
-    "Grow Barbed",
-    "Bind Arp2/3",
-    "Start Branch",
-    "Bind Cap",
-]
-GROUPED_GROWTH_RXNS = {
-    "Dimerize Actin": ["Dimerize"],
-    "Polymerize Actin": ["Trimerize", "Grow Pointed", "Grow Barbed", "Start Branch"],
-    "Bind Arp2/3": ["Bind Arp2/3"],
-    "Bind Cap": ["Bind Cap"],
-}
-STRUCTURAL_RXNS = [
-    "Reverse Dimerize",
-    "Reverse Trimerize",
-    "Shrink Pointed",
-    "Shrink Barbed",
-    "Unbind Arp2/3",
-    "Debranch",
-    "Unbind Cap",
-    "Hydrolyze Actin",
-    "Hydrolyze Arp2/3",
-    "Bind ATP (actin)",
-    "Bind ATP (arp2/3)",
-]
-
-extra_radius = 0.0
-actin_radius = 1.0  # 2.0 + extra_radius
-arp23_radius = 2.0 + extra_radius
-cap_radius = 3.0 + extra_radius
-obstacle_radius = 35.0
-
-ACTIN_DISPLAY_DATA = {
-    "arp2": DisplayData(
-        name="arp2",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=arp23_radius,
-        color="#c9df8a",
-    ),
-    "arp2#branched": DisplayData(
-        name="arp2#branched",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=arp23_radius,
-        color="#c9df8a",
-    ),
-    "arp2#free": DisplayData(
-        name="arp2#free",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=arp23_radius,
-        color="#234d20",
-    ),
-    "arp3": DisplayData(
-        name="arp3",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=arp23_radius,
-        color="#36802d",
-    ),
-    "arp3#new": DisplayData(
-        name="arp3",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=arp23_radius,
-        color="#36802d",
-    ),
-    "arp3#ATP": DisplayData(
-        name="arp3#ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=arp23_radius,
-        color="#77ab59",
-    ),
-    "arp3#new_ATP": DisplayData(
-        name="arp3#ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=arp23_radius,
-        color="#77ab59",
-    ),
-    "cap": DisplayData(
-        name="cap",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=cap_radius,
-        color="#005073",
-    ),
-    "cap#new": DisplayData(
-        name="cap",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=cap_radius,
-        color="#189ad3",
-    ),
-    "cap#bound": DisplayData(
-        name="cap#bound",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=cap_radius,
-        color="#189ad3",
-    ),
-    "actin#free": DisplayData(
-        name="actin#free",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#8d5524",
-    ),
-    "actin#free_ATP": DisplayData(
-        name="actin#free_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#cd8500",
-    ),
-    "actin#new": DisplayData(
-        name="actin",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#new_ATP": DisplayData(
-        name="actin#ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#1": DisplayData(
-        name="actin",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#2": DisplayData(
-        name="actin",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#3": DisplayData(
-        name="actin",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#ATP_1": DisplayData(
-        name="actin#ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#ATP_2": DisplayData(
-        name="actin#ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#ATP_3": DisplayData(
-        name="actin#ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#mid_1": DisplayData(
-        name="actin#mid",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#mid_2": DisplayData(
-        name="actin#mid",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#mid_3": DisplayData(
-        name="actin#mid",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#mid_ATP_1": DisplayData(
-        name="actin#mid_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#mid_ATP_2": DisplayData(
-        name="actin#mid_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#mid_ATP_3": DisplayData(
-        name="actin#mid_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#pointed_1": DisplayData(
-        name="actin#pointed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_2": DisplayData(
-        name="actin#pointed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_3": DisplayData(
-        name="actin#pointed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_ATP_1": DisplayData(
-        name="actin#pointed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_ATP_2": DisplayData(
-        name="actin#pointed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_ATP_3": DisplayData(
-        name="actin#pointed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#barbed_1": DisplayData(
-        name="actin#barbed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#barbed_2": DisplayData(
-        name="actin#barbed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#barbed_3": DisplayData(
-        name="actin#barbed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#barbed_ATP_1": DisplayData(
-        name="actin#barbed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#barbed_ATP_2": DisplayData(
-        name="actin#barbed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#barbed_ATP_3": DisplayData(
-        name="actin#barbed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#fixed_1": DisplayData(
-        name="actin#fixed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#fixed_2": DisplayData(
-        name="actin#fixed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#fixed_3": DisplayData(
-        name="actin#fixed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#fixed_ATP_1": DisplayData(
-        name="actin#fixed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#fixed_ATP_2": DisplayData(
-        name="actin#fixed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#fixed_ATP_3": DisplayData(
-        name="actin#fixed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#mid_fixed_1": DisplayData(
-        name="actin#mid_fixed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#mid_fixed_2": DisplayData(
-        name="actin#mid_fixed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#mid_fixed_3": DisplayData(
-        name="actin#mid_fixed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#bf9b30",
-    ),
-    "actin#mid_fixed_ATP_1": DisplayData(
-        name="actin#mid_fixed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#mid_fixed_ATP_2": DisplayData(
-        name="actin#mid_fixed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#mid_fixed_ATP_3": DisplayData(
-        name="actin#mid_fixed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffbf00",
-    ),
-    "actin#pointed_fixed_1": DisplayData(
-        name="actin#pointed_fixed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_fixed_2": DisplayData(
-        name="actin#pointed_fixed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_fixed_3": DisplayData(
-        name="actin#pointed_fixed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_fixed_ATP_1": DisplayData(
-        name="actin#pointed_fixed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_fixed_ATP_2": DisplayData(
-        name="actin#pointed_fixed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#pointed_fixed_ATP_3": DisplayData(
-        name="actin#pointed_fixed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#fixed_barbed_1": DisplayData(
-        name="actin#fixed_barbed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#fixed_barbed_2": DisplayData(
-        name="actin#fixed_barbed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#fixed_barbed_3": DisplayData(
-        name="actin#fixed_barbed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#fixed_barbed_ATP_1": DisplayData(
-        name="actin#fixed_barbed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#fixed_barbed_ATP_2": DisplayData(
-        name="actin#fixed_barbed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#fixed_barbed_ATP_3": DisplayData(
-        name="actin#fixed_barbed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#branch_1": DisplayData(
-        name="actin#branch",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#branch_ATP_1": DisplayData(
-        name="actin#branch_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#a67c00",
-    ),
-    "actin#branch_barbed_1": DisplayData(
-        name="actin#branch_barbed",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "actin#branch_barbed_ATP_1": DisplayData(
-        name="actin#branch_barbed_ATP",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=actin_radius,
-        color="#ffdc73",
-    ),
-    "obstacle": DisplayData(
-        name="obstacle",
-        display_type=DISPLAY_TYPE.SPHERE,
-        radius=obstacle_radius,
-        color="#666666",
-    ),
-}
 
 
 class ActinVisualization:
     """
-    visualize an actin trajectory in Simularium
+    Actin-specific visualization functions to create plots, 
+    annotate spatial data, and save simularium files.
     """
-
+    
     @staticmethod
-    def shape_readdy_data_for_analysis(
-        h5_file_path,
-        stride=1,
-        reactions=False,
-    ):
-        """
-        Load a file from ReaDDy
-        and shape monomer and reactions data from it
-        """
-        (
-            monomer_data,
-            reactions,
-            times,
-            _,
-        ) = ReaddyUtil.monomer_data_and_reactions_from_file(
-            h5_file_path=h5_file_path,
-            stride=stride,
-            timestep=0.1,
-            reaction_names=ACTIN_REACTIONS if reactions else None,
-            pickle_file_path=f"{h5_file_path}.dat",
-            save_pickle_file=True,
-        )
-        return monomer_data, times, reactions
+    def ACTIN_DISPLAY_DATA(longitudinal_bonds: bool) -> Dict[str,DisplayData]:
+        # radii
+        extra_radius = 1.5
+        actin_radius = 2.0 + extra_radius
+        arp23_radius = 2.0 + extra_radius
+        cap_radius = 3.0 + extra_radius
+        obstacle_radius = 35.0
+        # non-polymer types
+        display_data = {
+            "arp2": DisplayData(
+                name="arp2",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=arp23_radius,
+                color="#c9df8a",
+            ),
+            "arp2#branched": DisplayData(
+                name="arp2#branched",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=arp23_radius,
+                color="#c9df8a",
+            ),
+            "arp2#free": DisplayData(
+                name="arp2#free",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=arp23_radius,
+                color="#234d20",
+            ),
+            "arp3": DisplayData(
+                name="arp3",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=arp23_radius,
+                color="#36802d",
+            ),
+            "arp3#new": DisplayData(
+                name="arp3",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=arp23_radius,
+                color="#36802d",
+            ),
+            "arp3#ATP": DisplayData(
+                name="arp3#ATP",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=arp23_radius,
+                color="#77ab59",
+            ),
+            "arp3#new_ATP": DisplayData(
+                name="arp3#ATP",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=arp23_radius,
+                color="#77ab59",
+            ),
+            "cap": DisplayData(
+                name="cap",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=cap_radius,
+                color="#005073",
+            ),
+            "cap#new": DisplayData(
+                name="cap",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=cap_radius,
+                color="#189ad3",
+            ),
+            "cap#bound": DisplayData(
+                name="cap#bound",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=cap_radius,
+                color="#189ad3",
+            ),
+            "actin#free": DisplayData(
+                name="actin#free",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=actin_radius,
+                color="#8d5524",
+            ),
+            "actin#free_ATP": DisplayData(
+                name="actin#free_ATP",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=actin_radius,
+                color="#cd8500",
+            ),
+            "actin#new": DisplayData(
+                name="actin",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=actin_radius,
+                color="#bf9b30",
+            ),
+            "actin#new_ATP": DisplayData(
+                name="actin#ATP",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=actin_radius,
+                color="#ffbf00",
+            ),
+            "actin#branch_1": DisplayData(
+                name="actin#branch",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=actin_radius,
+                color="#a67c00",
+            ),
+            "actin#branch_ATP_1": DisplayData(
+                name="actin#branch_ATP",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=actin_radius,
+                color="#a67c00",
+            ),
+            "actin#branch_barbed_1": DisplayData(
+                name="actin#branch_barbed",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=actin_radius,
+                color="#ffdc73",
+            ),
+            "actin#branch_barbed_ATP_1": DisplayData(
+                name="actin#branch_barbed_ATP",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=actin_radius,
+                color="#ffdc73",
+            ),
+            "obstacle": DisplayData(
+                name="obstacle",
+                display_type=DISPLAY_TYPE.SPHERE,
+                radius=obstacle_radius,
+                color="#666666",
+            ),
+        }
+        # polymer types
+        n_polymer_numbers = 3 if not longitudinal_bonds else 5
+        for i in range(1, n_polymer_numbers + 1):
+            display_data.update(
+                {
+                    f"actin#{i}": DisplayData(
+                        name="actin",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#bf9b30",
+                    ),
+                    f"actin#mid_{i}": DisplayData(
+                        name="actin#mid",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#bf9b30",
+                    ),
+                    f"actin#fixed_{i}": DisplayData(
+                        name="actin#fixed",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#bf9b30",
+                    ),
+                    f"actin#mid_fixed_{i}": DisplayData(
+                        name="actin#mid_fixed",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#bf9b30",
+                    ),
+                    f"actin#ATP_{i}": DisplayData(
+                        name="actin#ATP",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#ffbf00",
+                    ),
+                    f"actin#mid_ATP_{i}": DisplayData(
+                        name="actin#mid_ATP",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#ffbf00",
+                    ),
+                    f"actin#fixed_ATP_{i}": DisplayData(
+                        name="actin#fixed_ATP",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#ffbf00",
+                    ),
+                    f"actin#mid_fixed_ATP_{i}": DisplayData(
+                        name="actin#mid_fixed_ATP",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#ffbf00",
+                    ),
+                    f"actin#barbed_{i}": DisplayData(
+                        name="actin#barbed",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#ffdc73",
+                    ),
+                    f"actin#barbed_ATP_{i}": DisplayData(
+                        name="actin#barbed_ATP",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#ffdc73",
+                    ),
+                    f"actin#fixed_barbed_{i}": DisplayData(
+                        name="actin#fixed_barbed",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#ffdc73",
+                    ),
+                    f"actin#fixed_barbed_ATP_{i}": DisplayData(
+                        name="actin#fixed_barbed_ATP",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#ffdc73",
+                    ),
+                    f"actin#pointed_{i}": DisplayData(
+                        name="actin#pointed",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#a67c00",
+                    ),
+                    f"actin#pointed_ATP_{i}": DisplayData(
+                        name="actin#pointed_ATP",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#a67c00",
+                    ),
+                    f"actin#pointed_fixed_{i}": DisplayData(
+                        name="actin#pointed_fixed",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#a67c00",
+                    ),
+                    f"actin#pointed_fixed_ATP_{i}": DisplayData(
+                        name="actin#pointed_fixed_ATP",
+                        display_type=DISPLAY_TYPE.SPHERE,
+                        radius=actin_radius,
+                        color="#a67c00",
+                    ),
+                },
+            )
+        return display_data
 
     @staticmethod
     def get_bound_monomers_plot(monomer_data, times):
@@ -547,7 +313,7 @@ class ActinVisualization:
         for each total growth reaction
         """
         ytraces = {}
-        for total_rxn_name in GROWTH_RXNS:
+        for total_rxn_name in ACTIN_REACTIONS.GROWTH_RXNS:
             rxn_events = ReaddyUtil.analyze_reaction_count_over_time(
                 reactions, total_rxn_name
             )
@@ -571,7 +337,7 @@ class ActinVisualization:
         to find the required reactants
         """
         ytraces = {}
-        for total_rxn_name in STRUCTURAL_RXNS:
+        for total_rxn_name in ACTIN_REACTIONS.STRUCTURAL_RXNS:
             rxn_events = ReaddyUtil.analyze_reaction_count_over_time(
                 reactions, total_rxn_name
             )
@@ -593,9 +359,9 @@ class ActinVisualization:
         for each total growth reaction
         """
         ytraces = {}
-        for rxn_group_name in GROUPED_GROWTH_RXNS:
+        for rxn_group_name in ACTIN_REACTIONS.GROUPED_GROWTH_RXNS:
             group_reaction_events = []
-            for total_rxn_name in GROUPED_GROWTH_RXNS[rxn_group_name]:
+            for total_rxn_name in ACTIN_REACTIONS.GROUPED_GROWTH_RXNS[rxn_group_name]:
                 group_reaction_events.append(
                     ReaddyUtil.analyze_reaction_count_over_time(
                         reactions, total_rxn_name
@@ -1059,403 +825,131 @@ class ActinVisualization:
         return plots
 
     @staticmethod
-    def _get_added_dimensions_for_lines(
-        traj_data: TrajectoryData,
-        max_agents: int,
-    ) -> DimensionData:
+    def generate_actin_compression_plots(
+        post_processor: ReaddyPostProcessor,
+        fiber_chain_ids: List[List[List[int]]],
+        temperature_c: float,
+        plots: List[ScatterPlotData] = None,
+    ) -> List[Dict[str, Any]]:
         """
-        Get a DimensionData with the deltas for each dimension
-        of AgentData when adding fibers with 2 points each
+        Use an ActinAnalyzer to generate plots of observables
+        for actin being compressed
         """
-        current_dimensions = traj_data.agent_data.get_dimensions()
-        return DimensionData(
-            total_steps=0,
-            max_agents=max_agents,
-            max_subpoints=6 - current_dimensions.max_subpoints,
+        if plots is None:
+            plots = []
+        times = []
+        for frame in post_processor.trajectory:
+            times.append(frame.time)
+        bond_energies = post_processor.fiber_bond_energies(
+            fiber_chain_ids=fiber_chain_ids,
+            ideal_lengths=ActinAnalyzer.ideal_bond_lengths(),
+            k=ActinAnalyzer.bond_energy_constants(
+                temp_c=temperature_c
+            ),
+            stride=10,
         )
+        sum_lat = np.sum(bond_energies[1], axis=1)
+        sum_long = np.sum(bond_energies[2], axis=1)
+        plots.append(
+            ScatterPlotData(
+                title="Total bond energy",
+                xaxis_title="T (μs)",
+                yaxis_title="Strain energy (KT)",
+                xtrace=times[::10],
+                ytraces={
+                    "Lateral": sum_lat,
+                    "Longitudinal": sum_long,
+                },
+                render_mode="lines",
+            )
+        )
+        formatted_plots = []
+        for plot_type in plots:
+            for plot in plots[plot_type]:
+                formatted_plots.append(ScatterPlotReader.read(plot))
+        return formatted_plots
 
     @staticmethod
-    def _add_normal_agents(
+    def add_spatial_annotations(
         traj_data: TrajectoryData,
-        monomer_data: List[Dict[str, Any]],
-        normals: List[List[Any]],
-        axis_positions: List[List[Any]],
-        type_name: str,
-        color: str = "",
+        post_processor: ReaddyPostProcessor,
+        visualize_edges: bool,
+        visualize_normals: bool,
+        visualize_control_pts: bool,
+        fiber_chain_ids: List[List[List[int]]] = None,
+        axis_positions: List[List[np.ndarray]] = None,
     ) -> TrajectoryData:
         """
-        Add agent data for fibers to draw normals for each actin in a filament
+        Use an ActinAnalyzer to generate plots of observables
+        for actin being compressed
         """
-        if monomer_data is None:
-            raise Exception("Normal visualization requires monomer_data")
-        # get dimensions of data
-        total_steps = len(monomer_data)
-        max_normals = 0
-        for time_i in range(total_steps):
-            n_normals = len(normals[time_i])
-            if n_normals > max_normals:
-                max_normals = n_normals
-        dimensions = ActinVisualization._get_added_dimensions_for_lines(
-            traj_data, max_normals
-        )
-        new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(
-            dimensions
-        )
-        new_type_name = f"{type_name}#normal" if type_name else "normal"
-        # add new agents
-        print("Processing normals...")
-        max_used_uid = max(list(np.unique(traj_data.agent_data.unique_ids)))
-        for time_i in range(total_steps):
-            start_i = int(traj_data.agent_data.n_agents[time_i])
-            max_normals = len(normals[time_i])
-            n_normals = 0
-            for normal_i in range(max_normals):
-                if (
-                    axis_positions[time_i][normal_i] is None
-                    or normals[time_i][normal_i] is None
-                ):
-                    continue
-                agent_i = start_i + n_normals
-                new_agent_data.unique_ids[time_i][agent_i] = max_used_uid + normal_i + 1
-                new_agent_data.subpoints[time_i][agent_i] = np.array(
-                    [
-                        axis_positions[time_i][normal_i],
-                        axis_positions[time_i][normal_i]
-                        + 10 * normals[time_i][normal_i],
-                    ]
-                ).flatten()
-                n_normals += 1
-            end_i = start_i + n_normals
-            new_agent_data.n_agents[time_i] += n_normals
-            new_agent_data.viz_types[time_i][start_i:end_i] = n_normals * [
-                VIZ_TYPE.FIBER
-            ]
-            new_agent_data.types[time_i] += n_normals * [new_type_name]
-            new_agent_data.radii[time_i][start_i:end_i] = n_normals * [0.5]
-            new_agent_data.n_subpoints[time_i][start_i:end_i] = n_normals * [6.0]
-        new_agent_data.display_data[new_type_name] = DisplayData(
-            name=new_type_name,
-            display_type=DISPLAY_TYPE.FIBER,
-            color="#685bf3" if not color else color,  # default to blue
-        )
-        traj_data.agent_data = new_agent_data
+        if visualize_edges:
+            edges = post_processor.edge_positions()
+            traj_data = SpatialVisualizer.add_fiber_agents(
+                traj_data=traj_data,
+                fiber_points=edges,
+                type_name="edge",
+                fiber_width=0.5,
+                color="#eaeaea",
+            )
+        if visualize_normals:
+            if fiber_chain_ids is None:
+                raise Exception(
+                    "In add_spatial_annotations(), fiber_chain_ids "
+                    "are required to visualize normals."
+                )
+            if axis_positions is None:
+                raise Exception(
+                    "In add_spatial_annotations(), axis_positions "
+                    "are required to visualize normals."
+                )
+            normals = post_processor.linear_fiber_normals(
+                fiber_chain_ids=fiber_chain_ids,
+                axis_positions=axis_positions,
+                normal_length=5.,
+            )
+            traj_data = SpatialVisualizer.add_fiber_agents(
+                traj_data=traj_data,
+                fiber_points=normals,
+                type_name="normal",
+                fiber_width=0.5,
+                color="#685bf3",
+            )
+        if visualize_control_pts:
+            if axis_positions is None:
+                raise Exception(
+                    "In add_spatial_annotations(), axis_positions "
+                    "are required to visualize control points."
+                )
+            control_points = post_processor.linear_fiber_control_points(
+                axis_positions=axis_positions,
+                segment_length=0.1,
+            )
+            traj_data = SpatialVisualizer.add_sphere_agents(
+                traj_data=traj_data,
+                sphere_positions=control_points,
+                type_name="fiber point",
+                radius=1.,
+                color="#eaeaea",
+            )
         return traj_data
 
     @staticmethod
-    def _add_edge_agents(
-        traj_data: TrajectoryData,
-        monomer_data: List[Dict[str, Any]],
-        type_name: str,
-        color: str = "",
-    ) -> TrajectoryData:
-        """
-        Add agent data for fibers to draw along the edges between particles
-        """
-        if monomer_data is None:
-            raise Exception("Edge visualization requires monomer_data")
-        # get dimensions of data
-        total_steps = len(monomer_data)
-        max_edges = 0
-        for time_index in range(total_steps):
-            n_edges = 0
-            for particle_id in monomer_data[time_index]["particles"]:
-                particle = monomer_data[time_index]["particles"][particle_id]
-                n_edges += len(particle["neighbor_ids"])
-            if n_edges > max_edges:
-                max_edges = n_edges
-        dimensions = ActinVisualization._get_added_dimensions_for_lines(
-            traj_data, max_edges
-        )
-        new_agent_data = traj_data.agent_data.get_copy_with_increased_buffer_size(
-            dimensions
-        )
-        new_type_name = f"{type_name}#edge" if type_name else "edge"
-        # add new agents
-        print("Processing edges...")
-        max_used_uid = max(list(np.unique(traj_data.agent_data.unique_ids)))
-        for time_index in tqdm(range(total_steps)):
-            n_edges = 0
-            start_i = int(traj_data.agent_data.n_agents[time_index])
-            existing_edges = []
-            for particle_id in monomer_data[time_index]["particles"]:
-                particle = monomer_data[time_index]["particles"][particle_id]
-                for neighbor_id in particle["neighbor_ids"]:
-                    if (particle_id, neighbor_id) in existing_edges:
-                        continue
-                    neighbor = monomer_data[time_index]["particles"][neighbor_id]
-                    positions = np.array(
-                        [particle["position"], neighbor["position"]]
-                    ).flatten()
-                    agent_index = start_i + n_edges
-                    new_agent_data.unique_ids[time_index][agent_index] = (
-                        max_used_uid + n_edges
-                    )
-                    new_agent_data.subpoints[time_index][agent_index] = positions
-                    existing_edges.append((neighbor_id, particle_id))
-                    n_edges += 1
-            end_i = start_i + n_edges
-            new_agent_data.n_agents[time_index] += n_edges
-            new_agent_data.viz_types[time_index][start_i:end_i] = n_edges * [
-                VIZ_TYPE.FIBER
-            ]
-            new_agent_data.types[time_index] += n_edges * [new_type_name]
-            new_agent_data.radii[time_index][start_i:end_i] = n_edges * [0.5]
-            new_agent_data.n_subpoints[time_index][start_i:end_i] = n_edges * [6.0]
-        new_agent_data.display_data[new_type_name] = DisplayData(
-            name=new_type_name,
-            display_type=DISPLAY_TYPE.FIBER,
-            color="#eaeaea" if not color else color,  # default to light gray
-        )
-        traj_data.agent_data = new_agent_data
-        return traj_data
-
-    @staticmethod
-    def visualize_actin(
+    def simularium_trajectory(
         path_to_readdy_h5: str,
         box_size: np.ndarray,
         total_steps: int,
-        suffix: str = "",
-        display_data: Dict[str, DisplayData] = None,
-        color: str = "",
-        visualize_edges: bool = False,
-        visualize_normals: bool = False,
-        monomer_data: List[Dict[str, Any]] = None,
-        normals: List[List[Any]] = None,
-        axis_positions: List[List[Any]] = None,
-        plots: List[Dict[str, Any]] = None,
+        time_multiplier: float,
         longitudinal_bonds: bool = True,
     ) -> TrajectoryData:
         """
-        visualize an actin trajectory in Simularium
+        Get a TrajectoryData to visualize an actin trajectory in Simularium
         """
-        # radii
-        extra_radius = 1.5
-        actin_radius = 2.0 + extra_radius
-        arp23_radius = 2.0 + extra_radius
-        cap_radius = 3.0 + extra_radius
-        obstacle_radius = 35.0
-        display_data = {
-            "arp2": DisplayData(
-                name="arp2",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=arp23_radius,
-                color="#c9df8a",
-            ),
-            "arp2#branched": DisplayData(
-                name="arp2#branched",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=arp23_radius,
-                color="#c9df8a",
-            ),
-            "arp2#free": DisplayData(
-                name="arp2#free",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=arp23_radius,
-                color="#234d20",
-            ),
-            "arp3": DisplayData(
-                name="arp3",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=arp23_radius,
-                color="#36802d",
-            ),
-            "arp3#new": DisplayData(
-                name="arp3",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=arp23_radius,
-                color="#36802d",
-            ),
-            "arp3#ATP": DisplayData(
-                name="arp3#ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=arp23_radius,
-                color="#77ab59",
-            ),
-            "arp3#new_ATP": DisplayData(
-                name="arp3#ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=arp23_radius,
-                color="#77ab59",
-            ),
-            "cap": DisplayData(
-                name="cap",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=cap_radius,
-                color="#005073",
-            ),
-            "cap#new": DisplayData(
-                name="cap",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=cap_radius,
-                color="#189ad3",
-            ),
-            "cap#bound": DisplayData(
-                name="cap#bound",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=cap_radius,
-                color="#189ad3",
-            ),
-            "actin#free": DisplayData(
-                name="actin#free",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=actin_radius,
-                color="#8d5524",
-            ),
-            "actin#free_ATP": DisplayData(
-                name="actin#free_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=actin_radius,
-                color="#cd8500",
-            ),
-            "actin#new": DisplayData(
-                name="actin",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=actin_radius,
-                color="#bf9b30",
-            ),
-            "actin#new_ATP": DisplayData(
-                name="actin#ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=actin_radius,
-                color="#ffbf00",
-            ),
-            "actin#branch_1": DisplayData(
-                name="actin#branch",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=actin_radius,
-                color="#a67c00",
-            ),
-            "actin#branch_ATP_1": DisplayData(
-                name="actin#branch_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=actin_radius,
-                color="#a67c00",
-            ),
-            "actin#branch_barbed_1": DisplayData(
-                name="actin#branch_barbed",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=actin_radius,
-                color="#ffdc73",
-            ),
-            "actin#branch_barbed_ATP_1": DisplayData(
-                name="actin#branch_barbed_ATP",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=actin_radius,
-                color="#ffdc73",
-            ),
-            "obstacle": DisplayData(
-                name="obstacle",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=obstacle_radius,
-                color="#666666",
-            ),
-        }
-        n_polymer_numbers = 3 if not longitudinal_bonds else 5
-        for i in range(1, n_polymer_numbers + 1):
-            display_data.update(
-                {
-                    f"actin#{i}": DisplayData(
-                        name="actin",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#bf9b30",
-                    ),
-                    f"actin#mid_{i}": DisplayData(
-                        name="actin#mid",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#bf9b30",
-                    ),
-                    f"actin#fixed_{i}": DisplayData(
-                        name="actin#fixed",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#bf9b30",
-                    ),
-                    f"actin#mid_fixed_{i}": DisplayData(
-                        name="actin#mid_fixed",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#bf9b30",
-                    ),
-                    f"actin#ATP_{i}": DisplayData(
-                        name="actin#ATP",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#ffbf00",
-                    ),
-                    f"actin#mid_ATP_{i}": DisplayData(
-                        name="actin#mid_ATP",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#ffbf00",
-                    ),
-                    f"actin#fixed_ATP_{i}": DisplayData(
-                        name="actin#fixed_ATP",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#ffbf00",
-                    ),
-                    f"actin#mid_fixed_ATP_{i}": DisplayData(
-                        name="actin#mid_fixed_ATP",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#ffbf00",
-                    ),
-                    f"actin#barbed_{i}": DisplayData(
-                        name="actin#barbed",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#ffdc73",
-                    ),
-                    f"actin#barbed_ATP_{i}": DisplayData(
-                        name="actin#barbed_ATP",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#ffdc73",
-                    ),
-                    f"actin#fixed_barbed_{i}": DisplayData(
-                        name="actin#fixed_barbed",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#ffdc73",
-                    ),
-                    f"actin#fixed_barbed_ATP_{i}": DisplayData(
-                        name="actin#fixed_barbed_ATP",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#ffdc73",
-                    ),
-                    f"actin#pointed_{i}": DisplayData(
-                        name="actin#pointed",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#a67c00",
-                    ),
-                    f"actin#pointed_ATP_{i}": DisplayData(
-                        name="actin#pointed_ATP",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#a67c00",
-                    ),
-                    f"actin#pointed_fixed_{i}": DisplayData(
-                        name="actin#pointed_fixed",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#a67c00",
-                    ),
-                    f"actin#pointed_fixed_ATP_{i}": DisplayData(
-                        name="actin#pointed_fixed_ATP",
-                        display_type=DISPLAY_TYPE.SPHERE,
-                        radius=actin_radius,
-                        color="#a67c00",
-                    ),
-                },
-            )
-        # convert
         data = ReaddyData(
-            # assume 1e3 recorded steps
-            timestep=TIMESTEP * total_steps * 1e-3,
+            timestep=(
+                ActinVisualization.TIMESTEP * total_steps
+                * time_multiplier
+            ),
             path_to_readdy_h5=path_to_readdy_h5,
             meta_data=MetaData(
                 box_size=box_size,
@@ -1466,32 +960,20 @@ class ActinVisualization:
                     fov_degrees=120.0,
                 ),
             ),
-            display_data=display_data,
+            display_data=ActinVisualization.ACTIN_DISPLAY_DATA(longitudinal_bonds),
             time_units=UnitData("µs"),
             spatial_units=UnitData("nm"),
         )
         converter = ReaddyConverter(data)
-        if plots is not None:
-            for plot_type in plots:
-                for plot in plots[plot_type]:
-                    converter.add_plot(plot, plot_type)
-        filtered_data = converter.filter_data(
+        traj_data = converter.filter_data(
             [
                 MultiplyTimeFilter(
-                    multiplier=1e-3,
+                    multiplier=time_multiplier,
                     apply_to_plots=False,
                 )
             ]
         )
-        if visualize_edges:
-            filtered_data = ActinVisualization._add_edge_agents(
-                filtered_data, monomer_data, suffix, color
-            )
-        if visualize_normals:
-            filtered_data = ActinVisualization._add_normal_agents(
-                filtered_data, monomer_data, normals, axis_positions, suffix, color
-            )
-        return filtered_data
+        return traj_data
 
     @staticmethod
     def save_actin(

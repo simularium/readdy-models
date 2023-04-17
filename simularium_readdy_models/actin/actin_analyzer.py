@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from typing import Dict
+
 import math
 import numpy as np
 
@@ -9,13 +11,46 @@ from .actin_util import ActinUtil
 from .actin_structure import ActinStructure
 
 
-TIMESTEP = 0.1  # ns
-
-
 class ActinAnalyzer:
     """
     Analyze data from a ReaDDy actin trajectory
     """
+    
+    @staticmethod
+    def bond_energy_constants(temp_c: float) -> Dict[int,float]:
+        """
+        Get k for lateral (offset = 1) 
+        and longitudinal (offset = 2) bonds
+        """
+        KT_NA = 2.479  # kJ / mol ??
+        THEO_TEMP_K = 298.0
+        temp_k = temp_c + 273.15
+        KT_NA = temp_k * KT_NA / THEO_TEMP_K  # ???
+        k_long = 250.0  # kJ / mol * nm^2
+        k_lat = 250.0  # kJ / mol * nm^2
+        k_long = k_long / KT_NA
+        k_lat = k_lat / KT_NA
+        return {
+            1 : k_lat,
+            2 : k_long,
+        }
+    
+    @staticmethod
+    def ideal_bond_lengths() -> Dict[int,float]:
+        """
+        Get ideal bond lengths for lateral (offset = 1) 
+        and longitudinal (offset = 2) bonds
+        """
+        ideal_length_lat = np.linalg.norm(
+            ActinStructure.mother_positions[1] - ActinStructure.mother_positions[0]
+        )
+        ideal_length_long = np.linalg.norm(
+            ActinStructure.mother_positions[2] - ActinStructure.mother_positions[0]
+        )
+        return {
+            1 : ideal_length_lat,
+            2 : ideal_length_long,
+        }
 
     @staticmethod
     def analyze_reaction_rate_over_time(reactions, time_inc_s, reaction_name):
@@ -1317,82 +1352,3 @@ class ActinAnalyzer:
                 result_lat_lat_lat[new_time_index].append(stretch_lat_lat_lat)
                 result_long_long_long[new_time_index].append(stretch_long_long_long)
         return (np.array(result_lat_lat_lat), np.array(result_long_long_long))
-
-    @staticmethod
-    def analyze_bond_energies(monomer_data, box_size, periodic_boundary, stride=1):
-        """
-        Get the strain energy using the harmonic spring equation
-        and the distance between bonds along the first mother filament,
-        trace the explicit lateral and explicit or implicit longitudinal bonds
-        """
-        energies_lat = []
-        energies_long = []
-        filament_positions = []
-        ideal_length_lat = np.linalg.norm(
-            ActinStructure.mother_positions[1] - ActinStructure.mother_positions[0]
-        )
-        ideal_length_long = np.linalg.norm(
-            ActinStructure.mother_positions[2] - ActinStructure.mother_positions[0]
-        )
-        KT_NA = 2.479  # kJ / mol ??
-        THEO_TEMP_K = 298.0
-        temp_C = 22.0
-        temp_K = temp_C + 273.15
-        KT_NA = temp_K * KT_NA / THEO_TEMP_K  # ???
-        k_long = 250.0  # kJ / mol * nm^2
-        k_lat = 250.0  # kJ / mol * nm^2
-        k_long = k_long / KT_NA
-        k_lat = k_lat / KT_NA
-        print("Analyzing bond energy...")
-        for time_index in range(0, len(monomer_data), stride):
-            energies_lat.append([])
-            energies_long.append([])
-            filament_positions.append([])
-            new_time = math.floor(time_index / stride)
-            filament = ActinAnalyzer._frame_mother_filaments(monomer_data[time_index])[
-                0
-            ]
-            for index in range(len(filament) - 2):
-                particle = monomer_data[time_index]["particles"][filament[index]]
-                particle_lat = monomer_data[time_index]["particles"][
-                    filament[index + 1]
-                ]
-                particle_long = monomer_data[time_index]["particles"][
-                    filament[index + 2]
-                ]
-                type_name = particle["type_name"]
-                type_name_lat = particle_lat["type_name"]
-                type_name_long = particle_long["type_name"]
-                if (
-                    "fixed" in type_name
-                    or "fixed" in type_name_lat
-                    or "fixed" in type_name_long
-                ):
-                    continue
-                pos = particle["position"]
-                pos_lat = particle_lat["position"]
-                pos_long = particle_long["position"]
-                if periodic_boundary:
-                    pos_lat = ReaddyUtil.get_non_periodic_boundary_position(
-                        pos, pos_lat, box_size
-                    )
-                    pos_long = ReaddyUtil.get_non_periodic_boundary_position(
-                        pos, pos_long, box_size
-                    )
-                bond_stretch_lat = np.linalg.norm(pos_lat - pos) - ideal_length_lat
-                energy_lat = 0.5 * k_long * bond_stretch_lat * bond_stretch_lat
-                if math.isnan(energy_lat):
-                    energy_lat = 0.0
-                bond_stretch_long = np.linalg.norm(pos_long - pos) - ideal_length_long
-                energy_long = 0.5 * k_lat * bond_stretch_long * bond_stretch_long
-                if math.isnan(energy_long):
-                    energy_long = 0.0
-                energies_lat[new_time].append(energy_lat)
-                energies_long[new_time].append(energy_long)
-                filament_positions[new_time].append(index)
-            new_time += 1
-        return (
-            np.array(energies_lat),
-            np.array(energies_long),
-            np.array(filament_positions),
-        )
