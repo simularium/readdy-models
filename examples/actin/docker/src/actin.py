@@ -8,7 +8,7 @@ import numpy as np
 import pandas
 import psutil
 
-from subcell_analysis.postprocessing.readdy import (
+from subcell_analysis.readdy import (
     ReaddyLoader, 
     ReaddyPostProcessor,
 )
@@ -20,7 +20,6 @@ from simularium_readdy_models.actin import (
     ActinGenerator,
     ActinTestData,
     ActinStructure,
-    ActinAnalyzer,
 )
 from simularium_readdy_models.visualization import ActinVisualization
 from simularium_readdy_models import ReaddyUtil
