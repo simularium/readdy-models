@@ -19,7 +19,7 @@ from simulariumio.plot_readers import ScatterPlotReader
 from simulariumio.filters import AddAgentsFilter, MultiplyTimeFilter
 from subcell_analysis.readdy import ReaddyPostProcessor
 from subcell_analysis import (
-    SpatialVisualizer
+    SpatialAnnotator
 )
 
 from ..actin import ActinAnalyzer, ACTIN_REACTIONS
@@ -885,7 +885,7 @@ class ActinVisualization:
         """
         if visualize_edges:
             edges = post_processor.edge_positions()
-            traj_data = SpatialVisualizer.add_fiber_agents(
+            traj_data = SpatialAnnotator.add_fiber_agents(
                 traj_data=traj_data,
                 fiber_points=edges,
                 type_name="edge",
@@ -908,7 +908,7 @@ class ActinVisualization:
                 axis_positions=axis_positions,
                 normal_length=5.,
             )
-            traj_data = SpatialVisualizer.add_fiber_agents(
+            traj_data = SpatialAnnotator.add_fiber_agents(
                 traj_data=traj_data,
                 fiber_points=normals,
                 type_name="normal",
@@ -925,7 +925,7 @@ class ActinVisualization:
                 axis_positions=axis_positions,
                 segment_length=0.1,
             )
-            traj_data = SpatialVisualizer.add_sphere_agents(
+            traj_data = SpatialAnnotator.add_sphere_agents(
                 traj_data=traj_data,
                 sphere_positions=control_points,
                 type_name="fiber point",
