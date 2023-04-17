@@ -31,8 +31,8 @@ jobs:
       shell: bash -l {0}
       run: |
         pytest simularium_readdy_models/tests/
-    - name: Upload codecov
-      uses: codecov/codecov-action@v1
+    - name: Upload Codecov
+      uses: codecov/codecov-action@v3
 
   lint:
     runs-on: ubuntu-latest

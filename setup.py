@@ -95,7 +95,7 @@ setup(
     test_suite="simularium_readdy_models/tests",
     tests_require=test_requirements,
     extras_require=extra_requirements,
-    url="https://github.com/simularium/simularium_readdy_models",
+    url="https://github.com/simularium/readdy-models",
     # Do not edit this string manually, always use bumpversion
     # Details in CONTRIBUTING.rst
     version="0.0.0",

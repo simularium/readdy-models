@@ -69,7 +69,7 @@ source_suffix = {
 master_doc = "index"
 
 # General information about the project.
-project = "Simularium Models Util"
+project = "Simularium ReaDDy Models"
 copyright = "2021, Blair Lyons"
 author = "Blair Lyons"
 
@@ -153,7 +153,7 @@ latex_documents = [
     (
         master_doc,
         "simularium_readdy_models.tex",
-        "Simularium Models Util Documentation",
+        "Simularium ReaDDy Models Documentation",
         "Blair Lyons",
         "manual",
     ),
@@ -168,7 +168,7 @@ man_pages = [
     (
         master_doc,
         "simularium_readdy_models",
-        "Simularium Models Util Documentation",
+        "Simularium ReaDDy Models Documentation",
         [author],
         1,
     )
@@ -184,7 +184,7 @@ texinfo_documents = [
     (
         master_doc,
         "simularium_readdy_models",
-        "Simularium Models Util Documentation",
+        "Simularium ReaDDy Models Documentation",
         author,
         "simularium_readdy_models",
         "One line description of project.",
