@@ -32,6 +32,8 @@ class ActinVisualization:
     annotate spatial data, and save simularium files.
     """
     
+    TIMESTEP: float = 0.1
+    
     @staticmethod
     def ACTIN_DISPLAY_DATA(longitudinal_bonds: bool) -> Dict[str,DisplayData]:
         # radii

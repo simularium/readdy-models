@@ -1,7 +1,0 @@
-simularium_readdy_models
-======================
-
-.. toctree::
-   :maxdepth: 4
-
-   simularium_readdy_models

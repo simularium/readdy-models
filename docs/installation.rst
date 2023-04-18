@@ -8,13 +8,13 @@ Installation
 Stable release
 --------------
 
-To install Simularium Models Util, run this command in your terminal:
+To install simularium_readdy_models, run this command in your terminal:
 
 .. code-block:: console
 
     $ pip install simularium_readdy_models
 
-This is the preferred method to install Simularium Models Util, as it will always install the most recent stable release.
+This is the preferred method to install simularium_readdy_models, as it will always install the most recent stable release.
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -26,7 +26,7 @@ you through the process.
 From sources
 ------------
 
-The sources for Simularium Models Util can be downloaded from the `Github repo`_.
+The sources for simularium_readdy_models can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 
