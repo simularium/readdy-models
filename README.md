@@ -4,16 +4,16 @@
 
 ## Simularium repositories
 This repository is part of the Simularium project ([simularium.allencell.org](https://simularium.allencell.org)), which includes repositories:
-- [simulariumIO](https://github.com/allen-cell-animated/simulariumio) - Python package that converts simulation outputs to the format consumed by the Simularium viewer website
-- [simularium-engine](https://github.com/allen-cell-animated/simularium-engine) - C++ backend application that interfaces with biological simulation engines and serves simulation data to the front end website
-- [simularium-viewer](https://github.com/allen-cell-animated/simularium-viewer) - NPM package to view Simularium trajectories in 3D
-- [simularium-website](https://github.com/allen-cell-animated/simularium-website) - Front end website for the Simularium project, includes the Simularium viewer
+- [simulariumIO](https://github.com/simularium/simulariumio) - Python package that converts simulation outputs to the format consumed by the Simularium viewer website
+- [simularium-engine](https://github.com/simularium/simularium-engine) - C++ backend application that interfaces with biological simulation engines and serves simulation data to the front end website
+- [simularium-viewer](https://github.com/simularium/simularium-viewer) - NPM package to view Simularium trajectories in 3D
+- [simularium-website](https://github.com/simularium/simularium-website) - Front end website for the Simularium project, includes the Simularium viewer
 
 # Simularium Models Util
 
-[![Build Status](https://github.com/allen-cell-animated/simularium_models_util/workflows/Build%20Main/badge.svg)](https://github.com/allen-cell-animated/simularium_models_util/actions)
-[![Documentation](https://github.com/allen-cell-animated/simularium_models_util/workflows/Documentation/badge.svg)](https://allen-cell-animated.github.io/simularium_models_util/)
-[![Code Coverage](https://codecov.io/gh/allen-cell-animated/simularium_models_util/branch/main/graph/badge.svg)](https://codecov.io/gh/allen-cell-animated/simularium_models_util)
+[![Build Status](https://github.com/simularium/simularium_readdy_models/workflows/Build%20Main/badge.svg)](https://github.com/simularium/simularium_readdy_models/actions)
+[![Documentation](https://github.com/simularium/simularium_readdy_models/workflows/Documentation/badge.svg)](https://simularium.github.io/simularium_readdy_models/)
+[![Code Coverage](https://codecov.io/gh/simularium/simularium_readdy_models/branch/main/graph/badge.svg)](https://codecov.io/gh/simularium/simularium_readdy_models)
 
 Tools for building computational biology models and example models from the Simularium project.
 
@@ -27,14 +27,14 @@ See [examples/README.md](examples/README.md) to run example actin, microtubules,
 
 ## Installation
 
-**Stable Release:** `pip install simularium_models_util`<br>
-**Development Head:** `pip install git+https://github.com/allen-cell-animated/simularium_models_util.git`<br>
+**Stable Release:** `pip install simularium_readdy_models`<br>
+**Development Head:** `pip install git+https://github.com/simularium/simularium_readdy_models.git`<br>
 **Local Editable Install** `pip install -e .[dev]` (or `pip install -e .\[dev\]` on mac) from repo root directory
 
 
 ## Documentation
 
-For full package documentation please visit [allen-cell-animated.github.io/simularium_models_util](https://allen-cell-animated.github.io/simularium_models_util).
+For full package documentation please visit [simularium.github.io/simularium_readdy_models](https://simularium.github.io/simularium_readdy_models).
 
 ## Development
 
