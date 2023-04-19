@@ -136,7 +136,14 @@ def analyze_results(actin_simulation):
     if visualize_normals or visualize_control_pts or plot_actin_compression or visualize_edges: 
         periodic_boundary = actin_simulation.parameters.get("periodic_boundary", False) 
         post_processor = ReaddyPostProcessor(
-            trajectory=ReaddyLoader(actin_simulation.parameters["name"] + ".h5").trajectory(),
+            trajectory=ReaddyLoader(
+                h5_file_path=actin_simulation.parameters["name"] + ".h5",
+                min_time_ix=0,
+                max_time_ix=-1,
+                time_inc=1,
+                timestep=100.0,
+                save_pickle_file=False,
+            ).trajectory(),
             box_size=actin_simulation.parameters["box_size"],
             periodic_boundary=periodic_boundary,
         )
@@ -190,6 +197,7 @@ def analyze_results(actin_simulation):
     BinaryWriter.save(
         trajectory_data=traj_data,
         output_path=actin_simulation.parameters["name"] + ".h5",
+        validate_ids=False,
     )
 
 

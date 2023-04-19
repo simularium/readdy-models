@@ -842,10 +842,10 @@ class ActinVisualization:
         times = []
         for frame in post_processor.trajectory:
             times.append(frame.time)
-        bond_energies = post_processor.fiber_bond_energies(
+        bond_energies, _ = post_processor.fiber_bond_energies(
             fiber_chain_ids=fiber_chain_ids,
             ideal_lengths=ActinAnalyzer.ideal_bond_lengths(),
-            k=ActinAnalyzer.bond_energy_constants(
+            ks=ActinAnalyzer.bond_energy_constants(
                 temp_c=temperature_c
             ),
             stride=10,
@@ -857,7 +857,7 @@ class ActinVisualization:
                 title="Total bond energy",
                 xaxis_title="T (μs)",
                 yaxis_title="Strain energy (KT)",
-                xtrace=times[::10],
+                xtrace=np.array(times[::10]),
                 ytraces={
                     "Lateral": sum_lat,
                     "Longitudinal": sum_long,
@@ -866,9 +866,9 @@ class ActinVisualization:
             )
         )
         formatted_plots = []
-        for plot_type in plots:
-            for plot in plots[plot_type]:
-                formatted_plots.append(ScatterPlotReader.read(plot))
+        reader = ScatterPlotReader()
+        for plot in plots:
+            formatted_plots.append(reader.read(plot))
         return formatted_plots
 
     @staticmethod
@@ -888,7 +888,7 @@ class ActinVisualization:
         if visualize_edges:
             edges = post_processor.edge_positions()
             traj_data = SpatialAnnotator.add_fiber_agents(
-                traj_data=traj_data,
+                traj_data,
                 fiber_points=edges,
                 type_name="edge",
                 fiber_width=0.5,
@@ -908,10 +908,10 @@ class ActinVisualization:
             normals = post_processor.linear_fiber_normals(
                 fiber_chain_ids=fiber_chain_ids,
                 axis_positions=axis_positions,
-                normal_length=5.,
+                normal_length=10.,
             )
             traj_data = SpatialAnnotator.add_fiber_agents(
-                traj_data=traj_data,
+                traj_data,
                 fiber_points=normals,
                 type_name="normal",
                 fiber_width=0.5,
@@ -925,13 +925,16 @@ class ActinVisualization:
                 )
             control_points = post_processor.linear_fiber_control_points(
                 axis_positions=axis_positions,
-                segment_length=0.1,
+                segment_length=10.,
             )
+            sphere_positions = []
+            for time_ix in range(len(control_points)):
+                sphere_positions.append(control_points[time_ix][0])
             traj_data = SpatialAnnotator.add_sphere_agents(
-                traj_data=traj_data,
-                sphere_positions=control_points,
+                traj_data,
+                sphere_positions,
                 type_name="fiber point",
-                radius=1.,
+                radius=0.8,
                 color="#eaeaea",
             )
         return traj_data
