@@ -4,7 +4,7 @@
 import os
 import argparse
 
-from simularium_models_util.visualization import MicrotubulesVisualization
+from simularium_readdy_models.visualization import MicrotubulesVisualization
 
 
 def main():

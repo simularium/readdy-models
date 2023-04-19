@@ -8,9 +8,9 @@ import argparse
 import psutil
 import tqdm
 
-from simularium_models_util.microtubules import MicrotubulesSimulation, MICROTUBULES_REACTIONS
-from simularium_models_util.visualization import MicrotubulesVisualization
-from simularium_models_util import RepeatedTimer, ReaddyUtil
+from simularium_readdy_models.microtubules import MicrotubulesSimulation, MICROTUBULES_REACTIONS
+from simularium_readdy_models.visualization import MicrotubulesVisualization
+from simularium_readdy_models import RepeatedTimer, ReaddyUtil
 
 
 def report_memory_usage():

@@ -67,7 +67,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/simularium_models_util.*rst
+docs/simularium_readdy_models.*rst
+docs/modules.rst
 
 # PyBuilder
 target/
@@ -114,6 +115,7 @@ ENV/
 # Simularium
 *.simularium
 *.h5
+*.dat
 
 # outputs
 *_logs.txt
