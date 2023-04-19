@@ -9,11 +9,11 @@ This repository is part of the Simularium project ([simularium.allencell.org](ht
 - [simularium-viewer](https://github.com/simularium/simularium-viewer) - NPM package to view Simularium trajectories in 3D
 - [simularium-website](https://github.com/simularium/simularium-website) - Front end website for the Simularium project, includes the Simularium viewer
 
-# Simularium Models Util
+# Simularium ReaDDy Models
 
-[![Build Status](https://github.com/simularium/simularium_readdy_models/workflows/Build%20Main/badge.svg)](https://github.com/simularium/simularium_readdy_models/actions)
-[![Documentation](https://github.com/simularium/simularium_readdy_models/workflows/Documentation/badge.svg)](https://simularium.github.io/simularium_readdy_models/)
-[![Code Coverage](https://codecov.io/gh/simularium/simularium_readdy_models/branch/main/graph/badge.svg)](https://codecov.io/gh/simularium/simularium_readdy_models)
+[![Build Status](https://github.com/simularium/simularium_readdy_models/workflows/Build%20Main/badge.svg)](https://github.com/simularium/readdy_models/actions)
+[![Documentation](https://github.com/simularium/simularium_readdy_models/workflows/Documentation/badge.svg)](https://simularium.github.io/readdy_models/)
+[![Code Coverage](https://codecov.io/gh/simularium/simularium_readdy_models/branch/main/graph/badge.svg)](https://codecov.io/gh/simularium/readdy_models)
 
 Tools for building computational biology models and example models from the Simularium project.
 
@@ -39,7 +39,4 @@ For full package documentation please visit [simularium.github.io/simularium_rea
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for information related to developing the code.
-
-
-**Allen Institute Software License**
 
