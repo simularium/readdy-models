@@ -1,4 +1,4 @@
-from simularium_models_util.visualization import MicrotubulesVisualization
+from simularium_readdy_models.visualization import MicrotubulesVisualization
 import numpy as np
 
 # h5_path = "outputs/scan_1_conc1x_rxn1x.h5"

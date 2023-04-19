@@ -1,4 +1,4 @@
-Welcome to Simularium Models Util's documentation!
+Welcome to simularium_readdy_models's documentation!
 ======================================
 
 .. toctree::
@@ -10,12 +10,5 @@ Welcome to Simularium Models Util's documentation!
    installation
    Package modules <modules>
    contributing
-   math
 
 .. mdinclude:: ../README.md
-
-Indices and tables
-==================
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

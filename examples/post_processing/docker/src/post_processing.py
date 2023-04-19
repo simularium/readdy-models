@@ -9,9 +9,9 @@ import psutil
 import numpy as np
 import boto3
 
-from simularium_models_util.microtubules import MicrotubulesSimulation
-from simularium_models_util.visualization import MicrotubulesVisualization
-from simularium_models_util import RepeatedTimer, ReaddyUtil
+from simularium_readdy_models.microtubules import MicrotubulesSimulation
+from simularium_readdy_models.visualization import MicrotubulesVisualization
+from simularium_readdy_models import RepeatedTimer, ReaddyUtil
 
 
 def main():
