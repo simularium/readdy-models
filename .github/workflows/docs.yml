@@ -15,11 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-        fetch-depth: 0
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.9
       - uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -27,7 +27,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.9
           activate-environment: anaconda-client-env
           environment-file: ./environment.yml
       - name: Install Dependencies
