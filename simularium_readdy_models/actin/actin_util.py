@@ -1,15 +1,14 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
+import random
 
 import numpy as np
 import readdy
-import random
 
 from ..common import ReaddyUtil
 from .actin_generator import ActinGenerator
 from .actin_structure import ActinStructure
 from .fiber_data import FiberData
-
 
 parameters = {}
 
@@ -39,7 +38,7 @@ class ActinUtil:
 
     def __init__(self, parameters, displacements=None):
         """
-        Utility functions for ReaDDy branched actin models
+        Utility functions for ReaDDy branched actin models.
 
         Parameters need to be accessible in ReaDDy callbacks
         which can't be instance methods, so parameters are global
@@ -125,7 +124,7 @@ class ActinUtil:
     @staticmethod
     def get_new_vertex(topology):
         """
-        Get the vertex tagged "new"
+        Get the vertex tagged "new".
         """
         results = ReaddyUtil.get_vertices_of_type(
             topology, "new", exact_match=False, error_msg="Failed to find new vertex"
@@ -141,7 +140,7 @@ class ActinUtil:
     def get_new_arp23(topology):
         """
         get a new arp3 and its unbranched arp2#free neighbor,
-        meaning the arp2/3 dimer has just bound
+        meaning the arp2/3 dimer has just bound.
         """
         for vertex in topology.graph.get_vertices():
             pt = topology.particle_type_of_vertex(vertex)
@@ -156,7 +155,7 @@ class ActinUtil:
         """
         how many different polymer numbers are there?
         if longitudinal bonds, need 5,
-        otherwise, only need 3
+        otherwise, only need 3.
         """
         return 3 if not bool(parameters["longitudinal_bonds"]) else 5
 
@@ -164,7 +163,7 @@ class ActinUtil:
     def get_actin_number(topology, vertex, offset):
         """
         get the type number for an actin plus the given offset in range [-1, 1]
-        (i.e. return 3 for type = "actin#ATP_1" and offset = -1)
+        (i.e. return 3 for type = "actin#ATP_1" and offset = -1).
         """
         pt = topology.particle_type_of_vertex(vertex)
         if "actin" not in pt:
@@ -185,7 +184,7 @@ class ActinUtil:
         """
         get a list of all numbered versions of a type
         (e.g. for "actin#ATP" return
-        ["actin#ATP_1", "actin#ATP_2", "actin#ATP_3"])
+        ["actin#ATP_1", "actin#ATP_2", "actin#ATP_3"]).
         """
         spacer = "_"
         if "#" not in vertex_type:
@@ -199,7 +198,7 @@ class ActinUtil:
         """
         get the difference in the actin's current orientation
         compared to the initial orientation as a rotation matrix
-        positions = [prev actin position, middle actin position, next actin position]
+        positions = [prev actin position, middle actin position, next actin position].
         """
         if periodic_boundary:
             positions[0] = ReaddyUtil.get_non_periodic_boundary_position(
@@ -221,7 +220,7 @@ class ActinUtil:
             previous actin position,
             middle actin position,
             next actin position
-        ]
+        ].
         """
         rotation = ActinUtil.get_actin_rotation(positions, box_size, periodic_boundary)
         if rotation is None:
@@ -239,7 +238,7 @@ class ActinUtil:
             previous actin position,
             middle actin position,
             next actin position
-        ]
+        ].
         """
         rotation = ActinUtil.get_actin_rotation(
             positions, parameters["box_size"], bool(parameters["periodic_boundary"])
@@ -252,7 +251,7 @@ class ActinUtil:
     @staticmethod
     def get_next_actin(topology, v_actin, direction, error_if_not_found=False):
         """
-        get the next actin toward the pointed or barbed direction
+        get the next actin toward the pointed or barbed direction.
         """
         n = ActinUtil.get_actin_number(topology, v_actin, direction)
         end_type = "barbed" if direction > 0 else "pointed"
@@ -281,7 +280,7 @@ class ActinUtil:
     @staticmethod
     def get_prev_branch_actin(topology, vertex, last_vertex_id, max_edges):
         """
-        recurse up the chain until first branch actin is found or max_edges is reached
+        recurse up the chain until first branch actin is found or max_edges is reached.
         """
         for neighbor in vertex:
             n_id = topology.particle_id_of_vertex(neighbor)
@@ -303,7 +302,7 @@ class ActinUtil:
         """
         get orientation vertices [actin, actin_arp2, actin_arp3]
         for a new actin within 3 actins of a branch,
-        as well as the offset vector
+        as well as the offset vector.
         """
         v_arp2 = ReaddyUtil.get_neighbor_of_types(
             topology, vertex, ["arp2", "arp2#branched", "arp2#free"], []
@@ -379,7 +378,7 @@ class ActinUtil:
     @staticmethod
     def set_end_vertex_position(topology, recipe, v_new, barbed):
         """
-        set the position of a new pointed or barbed vertex
+        set the position of a new pointed or barbed vertex.
         """
         vertices = []
         offset_vector = (
@@ -441,7 +440,7 @@ class ActinUtil:
     @staticmethod
     def set_new_trimer_vertex_position(topology, recipe, v_new, v_pointed, v_barbed):
         """
-        set the position of an actin monomer just added to a dimer to create a trimer
+        set the position of an actin monomer just added to a dimer to create a trimer.
         """
         pos_new = ReaddyUtil.get_vertex_position(topology, v_new)
         pos_pointed = ReaddyUtil.get_vertex_position(topology, v_pointed)
@@ -466,7 +465,7 @@ class ActinUtil:
         topology, recipe, v_arp2, v_arp3, v_actin_arp2, v_actin_arp3
     ):
         """
-        set the position of new arp2/3 vertices
+        set the position of new arp2/3 vertices.
         """
         actin_types = (
             ActinUtil.get_all_polymer_actin_types("actin")
@@ -510,7 +509,7 @@ class ActinUtil:
     def get_random_arp2(topology, with_ATP, with_branch):
         """
         get a random bound arp2 with the given arp3 nucleotide state
-        and with or without a branch attached to the arp2
+        and with or without a branch attached to the arp2.
         """
         v_arp3s = ReaddyUtil.get_vertices_of_type(
             topology,
@@ -539,7 +538,7 @@ class ActinUtil:
         topology, vertex, max_edges, exclude_id=None, last_vertex_id=None
     ):
         """
-        Check if an arp3 is attached to the vertex's neighbors within max_edges
+        Check if an arp3 is attached to the vertex's neighbors within max_edges.
         """
         for neighbor in vertex:
             n_id = topology.particle_id_of_vertex(neighbor)
@@ -565,7 +564,7 @@ class ActinUtil:
     def set_actin_mid_flag(topology, recipe, vertex, exclude_id=None):
         """
         if an actin near a reaction is a "mid" actin,
-        add the "mid" flag, otherwise remove it
+        add the "mid" flag, otherwise remove it.
 
         actin is "mid" unless:
         - it is pointed, barbed, or branch
@@ -593,7 +592,7 @@ class ActinUtil:
     @staticmethod
     def get_actins_near_branch(topology, recipe, v_actin_arp2, v_actin_arp3):
         """
-        get the 5 mother actins near a branch
+        get the 5 mother actins near a branch.
         """
         n_pointed = ActinUtil.get_actin_number(topology, v_actin_arp2, -1)
         pointed_types = [
@@ -646,7 +645,7 @@ class ActinUtil:
     @staticmethod
     def set_actin_mid_flags_at_new_branch(topology, recipe, v_actin_arp2, v_actin_arp3):
         """
-        Remove the "mid" flag on all the mother actins near a branch nucleation reaction
+        Remove the "mid" flag on all the mother actins near a branch nucleation reaction.
         """
         v_branch_actins = ActinUtil.get_actins_near_branch(
             topology, recipe, v_actin_arp2, v_actin_arp3
@@ -660,7 +659,7 @@ class ActinUtil:
         topology, recipe, v_actin_arp2, v_actin_arp3, v_arp3
     ):
         """
-        set the "mid" state on all the actins near a branch dissociation reaction
+        set the "mid" state on all the actins near a branch dissociation reaction.
         """
         v_branch_actins = ActinUtil.get_actins_near_branch(
             topology, recipe, v_actin_arp2, v_actin_arp3
@@ -675,7 +674,7 @@ class ActinUtil:
         simulation, n_fibers, length=20, use_uuids=True, longitudinal_bonds=True
     ):
         """
-        add linear actin fibers of the given length
+        add linear actin fibers of the given length.
         """
         positions = (
             np.random.uniform(size=(n_fibers, 3)) * parameters["box_size"]
@@ -708,7 +707,7 @@ class ActinUtil:
         longitudinal_bonds=True,
     ):
         """
-        add (branched) actin fiber(s)
+        add (branched) actin fiber(s).
 
         fibers_data : List[FiberData]
         """
@@ -722,7 +721,7 @@ class ActinUtil:
     @staticmethod
     def add_monomers_from_data(simulation, monomer_data):
         """
-        add actin and other monomers
+        add actin and other monomers.
 
         monomer_data : {
             "topologies": {
@@ -771,7 +770,7 @@ class ActinUtil:
     @staticmethod
     def add_actin_dimer(position, simulation):
         """
-        add an actin dimer fiber
+        add an actin dimer fiber.
         """
         positions = np.array(
             [
@@ -787,7 +786,7 @@ class ActinUtil:
     @staticmethod
     def add_actin_dimers(n, simulation):
         """
-        add actin dimers
+        add actin dimers.
         """
         positions = (
             np.random.uniform(size=(n, 3)) * parameters["box_size"]
@@ -801,7 +800,7 @@ class ActinUtil:
         """
         Get random positions for n particles of the given type
         either filling the simulation volume box
-        or confined to a sub volume box
+        or confined to a sub volume box.
         """
         if parameters[f"use_box_{particle_type}"]:
             center = np.array(
@@ -828,7 +827,7 @@ class ActinUtil:
     @staticmethod
     def add_actin_monomers(n, simulation):
         """
-        add free actin
+        add free actin.
         """
         positions = ActinUtil.get_box_positions(n, "actin")
         for p in range(len(positions)):
@@ -839,7 +838,7 @@ class ActinUtil:
     @staticmethod
     def add_arp23_dimers(n, simulation):
         """
-        add arp2/3 dimers
+        add arp2/3 dimers.
         """
         positions = ActinUtil.get_box_positions(n, "arp")
         for p in range(len(positions)):
@@ -858,7 +857,7 @@ class ActinUtil:
     @staticmethod
     def add_capping_protein(n, simulation):
         """
-        add free capping protein
+        add free capping protein.
         """
         positions = ActinUtil.get_box_positions(n, "cap")
         for p in range(len(positions)):
@@ -867,7 +866,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_reverse_dimerize(topology):
         """
-        reaction function for a dimer falling apart
+        reaction function for a dimer falling apart.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -898,7 +897,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_finish_trimerize(topology):
         """
-        reaction function for a trimer forming
+        reaction function for a trimer forming.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -933,7 +932,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_reverse_trimerize(topology):
         """
-        reaction function for removing ATP-actin from a trimer
+        reaction function for removing ATP-actin from a trimer.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -961,7 +960,7 @@ class ActinUtil:
     @staticmethod
     def do_finish_grow(topology, barbed):
         """
-        reaction function for the pointed or barbed end growing
+        reaction function for the pointed or barbed end growing.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         end_type = "barbed" if barbed else "pointed"
@@ -1007,14 +1006,14 @@ class ActinUtil:
     @staticmethod
     def reaction_function_finish_pointed_grow(topology):
         """
-        reaction function for the pointed end growing
+        reaction function for the pointed end growing.
         """
         return ActinUtil.do_finish_grow(topology, False)
 
     @staticmethod
     def reaction_function_finish_barbed_grow(topology):
         """
-        reaction function for the barbed end growing
+        reaction function for the barbed end growing.
         """
         return ActinUtil.do_finish_grow(topology, True)
 
@@ -1022,7 +1021,7 @@ class ActinUtil:
     def reaction_function_finish_arp_bind(topology):
         """
         reaction function to finish a branching reaction
-        (triggered by a spatial reaction)
+        (triggered by a spatial reaction).
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -1060,7 +1059,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_finish_start_branch(topology):
         """
-        reaction function for adding the first actin to an arp2/3 to start a branch
+        reaction function for adding the first actin to an arp2/3 to start a branch.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -1076,7 +1075,7 @@ class ActinUtil:
     @staticmethod
     def do_shrink(topology, barbed, atp):
         """
-        remove an (ATP or ADP)-actin from the (barbed or pointed) end
+        remove an (ATP or ADP)-actin from the (barbed or pointed) end.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         end_state = "Barbed" if barbed else "Pointed"
@@ -1158,35 +1157,35 @@ class ActinUtil:
     @staticmethod
     def reaction_function_pointed_shrink_ATP(topology):
         """
-        reaction function to remove an ATP-actin from the pointed end
+        reaction function to remove an ATP-actin from the pointed end.
         """
         return ActinUtil.do_shrink(topology, False, True)
 
     @staticmethod
     def reaction_function_pointed_shrink_ADP(topology):
         """
-        reaction function to remove an ADP-actin from the pointed end
+        reaction function to remove an ADP-actin from the pointed end.
         """
         return ActinUtil.do_shrink(topology, False, False)
 
     @staticmethod
     def reaction_function_barbed_shrink_ATP(topology):
         """
-        reaction function to remove an ATP-actin from the barbed end
+        reaction function to remove an ATP-actin from the barbed end.
         """
         return ActinUtil.do_shrink(topology, True, True)
 
     @staticmethod
     def reaction_function_barbed_shrink_ADP(topology):
         """
-        reaction function to remove an ADP-actin from the barbed end
+        reaction function to remove an ADP-actin from the barbed end.
         """
         return ActinUtil.do_shrink(topology, True, False)
 
     @staticmethod
     def reaction_function_cleanup_shrink(topology):
         """
-        reaction function for finishing a reverse polymerization reaction
+        reaction function for finishing a reverse polymerization reaction.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -1230,7 +1229,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_hydrolyze_actin(topology):
         """
-        reaction function to hydrolyze a filamentous ATP-actin to ADP-actin
+        reaction function to hydrolyze a filamentous ATP-actin to ADP-actin.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -1253,7 +1252,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_hydrolyze_arp(topology):
         """
-        reaction function to hydrolyze a arp2/3
+        reaction function to hydrolyze a arp2/3.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -1269,7 +1268,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_nucleotide_exchange_actin(topology):
         """
-        reaction function to exchange ATP for ADP in free actin
+        reaction function to exchange ATP for ADP in free actin.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -1289,7 +1288,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_nucleotide_exchange_arp(topology):
         """
-        reaction function to exchange ATP for ADP in free Arp2/3
+        reaction function to exchange ATP for ADP in free Arp2/3.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -1305,7 +1304,7 @@ class ActinUtil:
     @staticmethod
     def do_arp23_unbind(topology, with_ATP):
         """
-        dissociate an arp2/3 from a mother filament
+        dissociate an arp2/3 from a mother filament.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         state = "ATP" if with_ATP else "ADP"
@@ -1346,21 +1345,21 @@ class ActinUtil:
     @staticmethod
     def reaction_function_arp23_unbind_ATP(topology):
         """
-        reaction function to dissociate an arp2/3 with ATP from a mother filament
+        reaction function to dissociate an arp2/3 with ATP from a mother filament.
         """
         return ActinUtil.do_arp23_unbind(topology, True)
 
     @staticmethod
     def reaction_function_arp23_unbind_ADP(topology):
         """
-        reaction function to dissociate an arp2/3 with ADP from a mother filament
+        reaction function to dissociate an arp2/3 with ADP from a mother filament.
         """
         return ActinUtil.do_arp23_unbind(topology, False)
 
     @staticmethod
     def do_debranching(topology, with_ATP):
         """
-        reaction function to detach a branch filament from arp2/3
+        reaction function to detach a branch filament from arp2/3.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         state = "ATP" if with_ATP else "ADP"
@@ -1400,21 +1399,21 @@ class ActinUtil:
     @staticmethod
     def reaction_function_debranching_ATP(topology):
         """
-        reaction function to detach a branch filament from arp2/3 with ATP
+        reaction function to detach a branch filament from arp2/3 with ATP.
         """
         return ActinUtil.do_debranching(topology, True)
 
     @staticmethod
     def reaction_function_debranching_ADP(topology):
         """
-        reaction function to detach a branch filament from arp2/3 with ADP
+        reaction function to detach a branch filament from arp2/3 with ADP.
         """
         return ActinUtil.do_debranching(topology, False)
 
     @staticmethod
     def reaction_function_finish_cap_bind(topology):
         """
-        reaction function for adding a capping protein
+        reaction function for adding a capping protein.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -1427,7 +1426,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_cap_unbind(topology):
         """
-        reaction function to detach capping protein from a barbed end
+        reaction function to detach capping protein from a barbed end.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         if parameters["verbose"]:
@@ -1457,7 +1456,7 @@ class ActinUtil:
     @staticmethod
     def reaction_function_translate(topology):
         """
-        reaction function to translate particles by the displacements
+        reaction function to translate particles by the displacements.
         """
         global time_index
         recipe = readdy.StructuralReactionRecipe(topology)
@@ -1489,7 +1488,7 @@ class ActinUtil:
     @staticmethod
     def get_all_actin_particle_types():
         """
-        get particle types for actin
+        get particle types for actin.
 
         Actin filaments are polymers and to encode polarity,there are 3 polymer types. 
         These are represented as "actin#N" where N is in [1,3]. At branch points, 
@@ -1546,7 +1545,7 @@ class ActinUtil:
     @staticmethod
     def get_all_fixed_actin_particle_types():
         """
-        get particle types for actins that don't diffuse
+        get particle types for actins that don't diffuse.
         """
         result = []
         for i in ActinUtil.polymer_number_range():
@@ -1565,7 +1564,7 @@ class ActinUtil:
     @staticmethod
     def get_all_arp23_particle_types():
         """
-        get particle types for Arp2/3 dimer
+        get particle types for Arp2/3 dimer.
         """
         return [
             "arp2",
@@ -1580,7 +1579,7 @@ class ActinUtil:
     @staticmethod
     def get_all_cap_particle_types():
         """
-        get particle types for capping protein
+        get particle types for capping protein.
         """
         return [
             "cap",
@@ -1591,7 +1590,7 @@ class ActinUtil:
     @staticmethod
     def get_all_particle_types():
         """
-        add the given particle_types to the system
+        add the given particle_types to the system.
         """
         return (
             ActinUtil.get_all_actin_particle_types()
@@ -1604,7 +1603,7 @@ class ActinUtil:
     @staticmethod
     def add_particle_types(particle_types, system, diffCoeff):
         """
-        add the given particle_types to the system
+        add the given particle_types to the system.
         """
         for particle_type in particle_types:
             system.add_topology_species(particle_type, diffCoeff)
@@ -1612,7 +1611,7 @@ class ActinUtil:
     @staticmethod
     def add_actin_types(system, diffCoeff):
         """
-        add particle and topology types for actin
+        add particle and topology types for actin.
         """
         system.topologies.add_type("Actin-Monomer-ATP")
         system.topologies.add_type("Actin-Monomer")
@@ -1641,7 +1640,7 @@ class ActinUtil:
     @staticmethod
     def add_arp23_types(system, diffCoeff):
         """
-        add particle and topology types for Arp2/3 dimer
+        add particle and topology types for Arp2/3 dimer.
         """
         system.topologies.add_type("Arp23-Dimer-ATP")
         system.topologies.add_type("Arp23-Dimer")
@@ -1652,7 +1651,7 @@ class ActinUtil:
     @staticmethod
     def add_cap_types(system, diffCoeff):
         """
-        add particle and topology types for capping protein
+        add particle and topology types for capping protein.
         """
         system.topologies.add_type("Cap")
         ActinUtil.add_particle_types(
@@ -1664,7 +1663,7 @@ class ActinUtil:
         accurate_force_constants, system, util, longitudinal_bonds
     ):
         """
-        add bonds between actins
+        add bonds between actins.
         """
         bond_length_lat = ActinStructure.actin_to_actin_distance_lateral()
         bond_length_long = ActinStructure.actin_to_actin_distance_longitudinal()
@@ -1828,7 +1827,7 @@ class ActinUtil:
     @staticmethod
     def add_filament_twist_angles(force_constant, system, util, longitudinal_bonds):
         """
-        add angles for filament twist and cohesiveness
+        add angles for filament twist and cohesiveness.
         """
         # Lateral bond to lateral bond angle
         angle = ActinStructure.actin_to_actin_angle()
@@ -2074,7 +2073,7 @@ class ActinUtil:
         force_constant, system, util, longitudinal_bonds, only_linear_actin
     ):
         """
-        add dihedrals for filament twist and cohesiveness
+        add dihedrals for filament twist and cohesiveness.
         """
         # Lateral bond to lateral bond to lateral bond angle
         angle = ActinStructure.actin_to_actin_dihedral_angle()
@@ -2186,7 +2185,7 @@ class ActinUtil:
     @staticmethod
     def add_branch_bonds(system, util):
         """
-        add bonds between arp2, arp3, and actins
+        add bonds between arp2, arp3, and actins.
         """
         force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
         n_polymer_numbers = ActinUtil.n_polymer_numbers()
@@ -2279,7 +2278,7 @@ class ActinUtil:
     @staticmethod
     def add_branch_angles(force_constant, system, util):
         """
-        add angles for branching
+        add angles for branching.
         """
         n_polymer_numbers = ActinUtil.n_polymer_numbers()
         util.add_angle(
@@ -2412,7 +2411,7 @@ class ActinUtil:
     @staticmethod
     def add_branch_dihedrals(force_constant, system, util):
         """
-        add dihedrals for branching
+        add dihedrals for branching.
         """
         n_polymer_numbers = ActinUtil.n_polymer_numbers()
         # mother to arp
@@ -2756,7 +2755,7 @@ class ActinUtil:
     @staticmethod
     def add_cap_bonds(system, util):
         """
-        add capping protein to actin bonds
+        add capping protein to actin bonds.
         """
         force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
         util.add_polymer_bond_1D(
@@ -2773,7 +2772,7 @@ class ActinUtil:
     @staticmethod
     def add_cap_angles(force_constant, system, util):
         """
-        add angles for capping protein
+        add angles for capping protein.
         """
         angle = ActinStructure.actin_to_actin_angle()
         util.add_polymer_angle_1D(
@@ -2822,7 +2821,7 @@ class ActinUtil:
     @staticmethod
     def add_cap_dihedrals(force_constant, system, util):
         """
-        add dihedrals for capping protein
+        add dihedrals for capping protein.
         """
         angle = ActinStructure.actin_to_actin_dihedral_angle()
         util.add_polymer_dihedral_1D(
@@ -2875,7 +2874,7 @@ class ActinUtil:
         longitudinal_bonds,
     ):
         """
-        Add repulsion potentials between actins
+        Add repulsion potentials between actins.
         """
         n_polymer_numbers = ActinUtil.n_polymer_numbers()
         util.add_polymer_repulsions_1D(
@@ -2964,7 +2963,7 @@ class ActinUtil:
         longitudinal_bonds=True,
     ):
         """
-        add repulsions
+        add repulsions.
         """
         actin_types = (
             ActinUtil.get_all_actin_particle_types()
@@ -3041,7 +3040,7 @@ class ActinUtil:
     def add_box_potential(particle_types, origin, extent, force_constant, system):
         """
         add a box potential to keep the given particle types
-        inside a box centered at origin with extent
+        inside a box centered at origin with extent.
         """
         for particle_type in particle_types:
             system.potentials.add_box(
@@ -3055,7 +3054,7 @@ class ActinUtil:
     def check_add_global_box_potential(system):
         """
         If the boundaries are not periodic,
-        all particles need a box potential to keep them in the box volume
+        all particles need a box potential to keep them in the box volume.
         """
         if bool(parameters["periodic_boundary"]):
             return
@@ -3072,7 +3071,7 @@ class ActinUtil:
     @staticmethod
     def add_monomer_box_potentials(system):
         """
-        Confine free monomers to boxes centered at origin with extent
+        Confine free monomers to boxes centered at origin with extent.
         """
         particle_types = {
             "actin": ["actin#free", "actin#free_ATP"],
@@ -3108,7 +3107,7 @@ class ActinUtil:
     @staticmethod
     def add_dimerize_reaction(system):
         """
-        attach two monomers
+        attach two monomers.
         """
         system.topologies.add_spatial_reaction(
             "Dimerize: "
@@ -3121,7 +3120,7 @@ class ActinUtil:
     @staticmethod
     def add_dimerize_reverse_reaction(system):
         """
-        detach two monomers
+        detach two monomers.
         """
         system.topologies.add_structural_reaction(
             "Reverse_Dimerize",
@@ -3133,7 +3132,7 @@ class ActinUtil:
     @staticmethod
     def add_trimerize_reaction(system):
         """
-        attach a monomer to a dimer
+        attach a monomer to a dimer.
         """
         for i in ActinUtil.polymer_number_range():
             system.topologies.add_spatial_reaction(
@@ -3154,7 +3153,7 @@ class ActinUtil:
     @staticmethod
     def add_trimerize_reverse_reaction(system):
         """
-        detach a monomer from a dimer
+        detach a monomer from a dimer.
         """
         system.topologies.add_structural_reaction(
             "Reverse_Trimerize",
@@ -3166,7 +3165,7 @@ class ActinUtil:
     @staticmethod
     def add_nucleate_reaction(system):
         """
-        reversibly attach a monomer to a trimer
+        reversibly attach a monomer to a trimer.
         """
         for i in ActinUtil.polymer_number_range():
             system.topologies.add_spatial_reaction(
@@ -3188,7 +3187,7 @@ class ActinUtil:
     @staticmethod
     def add_pointed_growth_reaction(system):
         """
-        attach a monomer to the pointed (-) end of a filament
+        attach a monomer to the pointed (-) end of a filament.
         """
         for i in ActinUtil.polymer_number_range():
             system.topologies.add_spatial_reaction(
@@ -3229,7 +3228,7 @@ class ActinUtil:
     @staticmethod
     def add_pointed_shrink_reaction(system):
         """
-        remove a monomer from the pointed (-) end of a filament
+        remove a monomer from the pointed (-) end of a filament.
         """
         system.topologies.add_structural_reaction(
             "Pointed_Shrink_ATP",
@@ -3253,7 +3252,7 @@ class ActinUtil:
     @staticmethod
     def add_barbed_growth_reaction(system):
         """
-        attach a monomer to the barbed (+) end of a filament
+        attach a monomer to the barbed (+) end of a filament.
         """
         for i in ActinUtil.polymer_number_range():
             system.topologies.add_spatial_reaction(
@@ -3322,7 +3321,7 @@ class ActinUtil:
     @staticmethod
     def add_barbed_shrink_reaction(system):
         """
-        remove a monomer from the barbed (+) end of a filament
+        remove a monomer from the barbed (+) end of a filament.
         """
         system.topologies.add_structural_reaction(
             "Barbed_Shrink_ATP",
@@ -3340,7 +3339,7 @@ class ActinUtil:
     @staticmethod
     def add_hydrolyze_reaction(system):
         """
-        hydrolyze ATP
+        hydrolyze ATP.
         """
         system.topologies.add_structural_reaction(
             "Hydrolysis_Actin",
@@ -3358,7 +3357,7 @@ class ActinUtil:
     @staticmethod
     def add_actin_nucleotide_exchange_reaction(system):
         """
-        exchange ATP for ADP in free actin monomers
+        exchange ATP for ADP in free actin monomers.
         """
         system.topologies.add_structural_reaction(
             "Nucleotide_Exchange_Actin",
@@ -3370,7 +3369,7 @@ class ActinUtil:
     @staticmethod
     def add_arp23_nucleotide_exchange_reaction(system):
         """
-        exchange ATP for ADP in free Arp2/3 dimers
+        exchange ATP for ADP in free Arp2/3 dimers.
         """
         system.topologies.add_structural_reaction(
             "Nucleotide_Exchange_Arp",
@@ -3382,7 +3381,7 @@ class ActinUtil:
     @staticmethod
     def add_arp23_bind_reaction(system):
         """
-        add arp2/3 along filament to start a branch
+        add arp2/3 along filament to start a branch.
         """
         for i in ActinUtil.polymer_number_range():
             system.topologies.add_spatial_reaction(
@@ -3431,7 +3430,7 @@ class ActinUtil:
     @staticmethod
     def add_arp23_unbind_reaction(system):
         """
-        remove an arp2/3 that is not nucleated
+        remove an arp2/3 that is not nucleated.
         """
         system.topologies.add_structural_reaction(
             "Arp_Unbind_ATP",
@@ -3449,7 +3448,7 @@ class ActinUtil:
     @staticmethod
     def add_nucleate_branch_reaction(system):
         """
-        add actin to arp2/3 to begin a branch
+        add actin to arp2/3 to begin a branch.
         """
         system.topologies.add_spatial_reaction(
             "Barbed_Growth_Branch_ATP: "
@@ -3479,7 +3478,7 @@ class ActinUtil:
     @staticmethod
     def add_debranch_reaction(system):
         """
-        remove a branch
+        remove a branch.
         """
         system.topologies.add_structural_reaction(
             "Debranch_ATP",
@@ -3497,7 +3496,7 @@ class ActinUtil:
     @staticmethod
     def add_cap_bind_reaction(system):
         """
-        add capping protein to a barbed end to stop growth
+        add capping protein to a barbed end to stop growth.
         """
         for i in ActinUtil.polymer_number_range():
             system.topologies.add_spatial_reaction(
@@ -3526,7 +3525,7 @@ class ActinUtil:
     @staticmethod
     def add_cap_unbind_reaction(system):
         """
-        remove capping protein
+        remove capping protein.
         """
         system.topologies.add_structural_reaction(
             "Cap_Unbind",
@@ -3538,7 +3537,7 @@ class ActinUtil:
     @staticmethod
     def add_translate_reaction(system):
         """
-        translate particles by the displacements each timestep
+        translate particles by the displacements each timestep.
         """
         system.topologies.add_structural_reaction(
             "Translate",

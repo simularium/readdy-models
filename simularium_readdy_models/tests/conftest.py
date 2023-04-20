@@ -1,10 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import numpy as np
 
 from simularium_readdy_models.actin import ActinStructure
-
 
 parameters_rxns_off = {
     "name": "actin",
@@ -64,7 +62,7 @@ parameters_rxns_off = {
 
 def assert_monomers_equal(topology_monomers1, topology_monomers2, test_position=False):
     """
-    Assert two topologies (in monomer form) are equivalent
+    Assert two topologies (in monomer form) are equivalent.
     """
     # check topology has the correct type_name
     # and contains the correct particle_ids (in any order)
@@ -94,7 +92,7 @@ def assert_monomers_equal(topology_monomers1, topology_monomers2, test_position=
 
 def assert_fibers_equal(topology_fibers1, topology_fibers2, test_position=False):
     """
-    Assert two topologies (in fiber form) are equivalent
+    Assert two topologies (in fiber form) are equivalent.
     """
     # check topology has the correct type_name
     # and contains the correct points (in order)

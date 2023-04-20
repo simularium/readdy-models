@@ -1,22 +1,22 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import copy
-import numpy as np
-import scipy.linalg as linalg
-import random
-import readdy
-import os
-from shutil import rmtree
 import math
+import os
+import random
+from shutil import rmtree
+
+import numpy as np
 import pandas as pd
+import readdy
+import scipy.linalg as linalg
 from tqdm import tqdm
 
 
 class ReaddyUtil:
     def __init__(self):
         """
-        Utilities used for Simularium ReaDDy models
+        Utilities used for Simularium ReaDDy models.
         """
         self.bond_pairs = []
         self.angle_triples = []
@@ -26,14 +26,14 @@ class ReaddyUtil:
     @staticmethod
     def is_zero_vector(v):
         """
-        are all the vector's 3 components zero?
+        are all the vector's 3 components zero?.
         """
         return v[0] == 0 and v[1] == 0 and v[2] == 0
 
     @staticmethod
     def normalize(v):
         """
-        normalize a vector
+        normalize a vector.
         """
         if ReaddyUtil.is_zero_vector(v):
             return v
@@ -43,7 +43,7 @@ class ReaddyUtil:
     def analyze_reaction_count_over_time(reactions, reaction_name):
         """
         Get a list of the number of times a reaction happened
-        between each analyzed timestep of the given reaction
+        between each analyzed timestep of the given reaction.
         """
         if reaction_name not in reactions:
             print(f"Couldn't find reaction: {reaction_name}")
@@ -53,7 +53,7 @@ class ReaddyUtil:
     @staticmethod
     def get_perpendicular_components_of_vector(v, v_perpendicular):
         """
-        Get the components of v that are perpendicular to v_perpendicular
+        Get the components of v that are perpendicular to v_perpendicular.
         """
         if ReaddyUtil.is_zero_vector(v) or ReaddyUtil.is_zero_vector(v_perpendicular):
             return np.zeros(3)
@@ -67,7 +67,7 @@ class ReaddyUtil:
     def get_angle_between_vectors(v1, v2, in_degrees=False):
         """
         get the angle between two vectors
-        in radians unless in_degrees is True
+        in radians unless in_degrees is True.
         """
         result = np.arccos(
             np.clip(
@@ -79,7 +79,7 @@ class ReaddyUtil:
     @staticmethod
     def rotate(v, axis, angle):
         """
-        rotate a vector around axis by angle (radians)
+        rotate a vector around axis by angle (radians).
         """
         rotation = linalg.expm(np.cross(np.eye(3), ReaddyUtil.normalize(axis) * angle))
         return np.dot(rotation, np.copy(v))
@@ -87,7 +87,7 @@ class ReaddyUtil:
     @staticmethod
     def get_rotation_matrix(v1, v2):
         """
-        Cross the vectors and get a rotation matrix
+        Cross the vectors and get a rotation matrix.
         """
         v3 = np.cross(v2, v1)
         return np.array(
@@ -99,7 +99,7 @@ class ReaddyUtil:
         """
         orthonormalize and cross the vectors from position 2
         to the other positions to get a basis local to position 2,
-        positions = [position 1, position 2, position 3]
+        positions = [position 1, position 2, position 3].
         """
         v1 = ReaddyUtil.normalize(positions[0] - positions[1])
         v2 = ReaddyUtil.normalize(positions[2] - positions[1])
@@ -109,7 +109,7 @@ class ReaddyUtil:
     @staticmethod
     def get_orientation_from_vectors(v1, v2):
         """
-        orthonormalize and cross the vectors to get a rotation matrix
+        orthonormalize and cross the vectors to get a rotation matrix.
         """
         v2 = ReaddyUtil.normalize(v2 - (np.dot(v1, v2) / np.dot(v1, v1)) * v1)
         return ReaddyUtil.get_rotation_matrix(v1, v2)
@@ -117,7 +117,7 @@ class ReaddyUtil:
     @staticmethod
     def get_random_perpendicular_vector(v):
         """
-        get a random unit vector perpendicular to v
+        get a random unit vector perpendicular to v.
         """
         if v[0] == 0 and v[1] == 0:
             if v[2] == 0:
@@ -140,14 +140,14 @@ class ReaddyUtil:
         for particle_id in particle_ids:
             particle = monomers["particles"][particle_id]
             type_name = particle["type_name"]
-            neighbor_ids = [nid for nid in particle["neighbor_ids"]]
+            neighbor_ids = list(particle["neighbor_ids"])
             result += f"  {particle_id} : {type_name}, {neighbor_ids}\n"
         return result
 
     @staticmethod
     def topology_to_string(topology):
         """
-        get string with vertex types and ids in a topology
+        get string with vertex types and ids in a topology.
         """
         result = f"{topology.type} : \n"
         for vertex in topology.graph.get_vertices():
@@ -161,7 +161,7 @@ class ReaddyUtil:
     @staticmethod
     def vertex_to_string(topology, vertex):
         """
-        get string with type and id for vertex
+        get string with type and id for vertex.
         """
         return (
             topology.particle_type_of_vertex(vertex)
@@ -174,7 +174,7 @@ class ReaddyUtil:
     def get_non_periodic_boundary_position(pos1, pos2, box_size):
         """
         if the distance between two positions is greater than box_size,
-        move the second position across the box (for positioning calculations)
+        move the second position across the box (for positioning calculations).
         """
         result = np.copy(pos2)
         for dim in range(3):
@@ -188,7 +188,7 @@ class ReaddyUtil:
         calculates the theoretical diffusion constant of a spherical particle
             with radius r0[nm]
             in a media with viscosity eta [cP]
-            at temperature T [Kelvin]
+            at temperature T [Kelvin].
 
             returns nm^2/s
         """
@@ -204,7 +204,7 @@ class ReaddyUtil:
         """
         calculates the number of particles for a species
             at concentration C [uM]
-            in a cuboidal container with dimensions dim = dimx, dimy, dimz [nm]
+            in a cuboidal container with dimensions dim = dimx, dimy, dimz [nm].
 
             returns unitless number
         """
@@ -215,7 +215,7 @@ class ReaddyUtil:
         """
         calculates the concentration for a species
             with number of particles n
-            in a cuboidal container with dimensions dim = dimx, dimy, dimz [nm]
+            in a cuboidal container with dimensions dim = dimx, dimy, dimz [nm].
 
             returns concentration [uM]
         """
@@ -227,7 +227,7 @@ class ReaddyUtil:
         If a vertex was not found, check if an exception should be raised
         or a debug message should be printed
         If error_msg == "", don't raise an exception
-        If not verbose or debug_msg == "", don't print the message
+        If not verbose or debug_msg == "", don't print the message.
         """
         if error_msg:
             raise Exception(error_msg + "\n" + ReaddyUtil.topology_to_string(topology))
@@ -239,7 +239,7 @@ class ReaddyUtil:
         topology, vertex_type, exact_match, verbose=False, debug_msg="", error_msg=""
     ):
         """
-        get the first vertex with a given type
+        get the first vertex with a given type.
         """
         for vertex in topology.graph.get_vertices():
             pt = topology.particle_type_of_vertex(vertex)
@@ -255,7 +255,7 @@ class ReaddyUtil:
         topology, vertex_types, verbose=False, debug_msg="", error_msg=""
     ):
         """
-        get the first vertex with any of the given types
+        get the first vertex with any of the given types.
         """
         for vertex in topology.graph.get_vertices():
             if topology.particle_type_of_vertex(vertex) in vertex_types:
@@ -268,7 +268,7 @@ class ReaddyUtil:
         topology, vertex_id, verbose=False, debug_msg="", error_msg=""
     ):
         """
-        get the first vertex with a given id
+        get the first vertex with a given id.
         """
         for vertex in topology.graph.get_vertices():
             if topology.particle_id_of_vertex(vertex) == vertex_id:
@@ -281,7 +281,7 @@ class ReaddyUtil:
         topology, vertex, exclude_vertices, verbose=False, debug_msg="", error_msg=""
     ):
         """
-        get the first neighboring vertex
+        get the first neighboring vertex.
         """
         exclude_ids = []
         for v in exclude_vertices:
@@ -305,7 +305,7 @@ class ReaddyUtil:
         error_msg="",
     ):
         """
-        get the first neighboring vertex of type vertex_type
+        get the first neighboring vertex of type vertex_type.
         """
         exclude_ids = []
         for v in exclude_vertices:
@@ -334,7 +334,7 @@ class ReaddyUtil:
     ):
         """
         get the first neighboring vertex with any of the given types,
-        excluding particles with the given ids
+        excluding particles with the given ids.
         """
         exclude_ids = []
         for v in exclude_vertices:
@@ -354,7 +354,7 @@ class ReaddyUtil:
         topology, vertex_type, exact_match, verbose=False, debug_msg="", error_msg=""
     ):
         """
-        get all vertices with a given type
+        get all vertices with a given type.
         """
         v = []
         for vertex in topology.graph.get_vertices():
@@ -378,7 +378,7 @@ class ReaddyUtil:
         error_msg="",
     ):
         """
-        get all neighboring vertices with a given type
+        get all neighboring vertices with a given type.
         """
         v = []
         for neighbor in vertex:
@@ -397,7 +397,7 @@ class ReaddyUtil:
         topology, vertex_type, exact_match, verbose=False, debug_msg="", error_msg=""
     ):
         """
-        get a random vertex with a given type
+        get a random vertex with a given type.
         """
         vertices = ReaddyUtil.get_vertices_of_type(topology, vertex_type, exact_match)
         if len(vertices) == 0:
@@ -410,7 +410,7 @@ class ReaddyUtil:
         topology, vertex_types, verbose=False, debug_msg="", error_msg=""
     ):
         """
-        get a random vertex with any of the given types
+        get a random vertex with any of the given types.
         """
         v = []
         for vertex_type in vertex_types:
@@ -423,7 +423,7 @@ class ReaddyUtil:
     @staticmethod
     def vertex_satisfies_type(vertex_type, types_include, types_exclude):
         """
-        check if vertex satisfies the type requirements
+        check if vertex satisfies the type requirements.
         """
         for t in types_include:
             if t not in vertex_type:
@@ -438,7 +438,7 @@ class ReaddyUtil:
         particle_type, add_flags, remove_flags, reverse_sort=False
     ):
         """
-        get particle type with the flags added and removed
+        get particle type with the flags added and removed.
         """
         if "#" not in particle_type:
             for f in range(len(add_flags)):
@@ -473,7 +473,7 @@ class ReaddyUtil:
         topology, recipe, vertex, add_flags, remove_flags, reverse_sort=False
     ):
         """
-        set flags on a vertex
+        set flags on a vertex.
         """
         particle_type = topology.particle_type_of_vertex(vertex)
         particle_type = ReaddyUtil.particle_type_with_flags(
@@ -489,7 +489,7 @@ class ReaddyUtil:
             by offset in [
                 -2 * polymer_number_types + 1,
                 2 * polymer_number_types - 1
-            ]
+            ].
 
         returns number in [1, polymer_number_types]
         """
@@ -503,7 +503,7 @@ class ReaddyUtil:
     @staticmethod
     def get_vertex_position(topology, vertex):
         """
-        get the position of a vertex
+        get the position of a vertex.
         """
         pos = topology.position_of_vertex(vertex)
         return np.array([pos[0], pos[1], pos[2]])
@@ -511,7 +511,7 @@ class ReaddyUtil:
     @staticmethod
     def vertices_are_equal(topology, vertex1, vertex2):
         """
-        check if references are the same vertex
+        check if references are the same vertex.
         """
         return topology.particle_id_of_vertex(
             vertex1
@@ -520,7 +520,7 @@ class ReaddyUtil:
     @staticmethod
     def vertices_are_connected(topology, vertex1, vertex2):
         """
-        check if the vertices share an edge
+        check if the vertices share an edge.
         """
         for neighbor in vertex1:
             if ReaddyUtil.vertices_are_equal(topology, vertex2, neighbor.get()):
@@ -530,7 +530,7 @@ class ReaddyUtil:
     @staticmethod
     def reaction_function_reset_state(topology):
         """
-        reaction function for removing flags from a topology
+        reaction function for removing flags from a topology.
         """
         recipe = readdy.StructuralReactionRecipe(topology)
         tt = topology.type
@@ -541,7 +541,7 @@ class ReaddyUtil:
     def rate_function_infinity(topology):
         """
         rate function for a reaction that should trigger immediately
-        whenever reactants are available
+        whenever reactants are available.
         """
         return 1e30
 
@@ -549,7 +549,7 @@ class ReaddyUtil:
     def clamp_polymer_offsets_2D(polymer_index_x, polymer_offsets):
         """
         clamp offsets so y polymer offset is incremented
-        if new x polymer index is not in [1,3]
+        if new x polymer index is not in [1,3].
         """
         if len(polymer_offsets) < 2:
             return polymer_offsets
@@ -569,7 +569,7 @@ class ReaddyUtil:
         creates a list of types with 1D polymer numbers
             for each type in particle types
             at polymer number x
-            with polymer_offset dx in [-2, 2]
+            with polymer_offset dx in [-2, 2].
 
             returns list of types
         """
@@ -595,7 +595,7 @@ class ReaddyUtil:
         creates a list of types with 2D polymer numbers
             for each type in particle types
             at polymer number x_y
-            with polymer_offsets [dx, dy] both in [-2, 2]
+            with polymer_offsets [dx, dy] both in [-2, 2].
 
             returns list of types
         """
@@ -616,7 +616,7 @@ class ReaddyUtil:
     @staticmethod
     def get_random_unit_vector():
         """
-        get a random unit vector
+        get a random unit vector.
         """
         return ReaddyUtil.normalize(
             np.array([random.random(), random.random(), random.random()])
@@ -625,7 +625,7 @@ class ReaddyUtil:
     @staticmethod
     def get_random_boundary_position(box_size):
         """
-        get a random position on one of the boundary faces
+        get a random position on one of the boundary faces.
         """
         pos = box_size * np.random.uniform(size=(3)) - box_size / 2
         face = random.randint(0, 5)
@@ -646,7 +646,7 @@ class ReaddyUtil:
     @staticmethod
     def try_remove_edge(topology, recipe, vertex1, vertex2):
         """
-        try to remove an edge
+        try to remove an edge.
         """
         if not ReaddyUtil.vertices_are_connected(topology, vertex1, vertex2):
             return False, (
@@ -664,7 +664,7 @@ class ReaddyUtil:
             from each type in types1
             to each type in types2
             with force constant force_const
-            and length bond_length [nm]
+            and length bond_length [nm].
         """
         for t1 in types1:
             for t2 in types2:
@@ -682,7 +682,7 @@ class ReaddyUtil:
             through each type in types2
             to each type in types3
             with force constant force_const
-            and angle [radians]
+            and angle [radians].
         """
         for t1 in types1:
             for t2 in types2:
@@ -707,7 +707,7 @@ class ReaddyUtil:
             through each type in types3
             to each type in types4
             with force constant force_const
-            and angle [radians]
+            and angle [radians].
         """
         for t1 in types1:
             for t2 in types2:
@@ -736,7 +736,7 @@ class ReaddyUtil:
             between each type in types1
             and each type in types2
             with force constant force_const
-            with equilibrium distance [nm]
+            with equilibrium distance [nm].
         """
         for t1 in types1:
             for t2 in types2:
@@ -802,7 +802,7 @@ class ReaddyUtil:
             to types particle_types2
             with offset polymer_offset2
             with force constant force_const
-            and length bond_length [nm]
+            and length bond_length [nm].
         """
         polymer_number_types = int(polymer_number_types)
         for x in range(1, polymer_number_types + 1):
@@ -843,7 +843,7 @@ class ReaddyUtil:
             to types particle_types2
             with offsets polymer_offsets2
             with force constant force_const
-            and length bond_length [nm]
+            and length bond_length [nm].
         """
         for x in range(1, 4):
             for y in range(1, 4):
@@ -879,9 +879,8 @@ class ReaddyUtil:
             with offset polymer_offset
             of types particle_types
             with force constant force_const
-            and angle [radians]
+            and angle [radians].
         """
-
         for x in range(1, polymer_number_types + 1):
             self.add_angle(
                 ReaddyUtil.get_types_with_polymer_numbers_1D(
@@ -915,7 +914,7 @@ class ReaddyUtil:
             with offsets polymer_offsets
             of types particle_types
             with force constant force_const
-            and angle [radians]
+            and angle [radians].
         """
         for x in range(1, 4):
             for y in range(1, 4):
@@ -957,9 +956,8 @@ class ReaddyUtil:
             with offset polymer_offset
             of types particle_types
             with force constant force_const
-            and angle [radians]
+            and angle [radians].
         """
-
         for x in range(1, polymer_number_types + 1):
             self.add_dihedral(
                 ReaddyUtil.get_types_with_polymer_numbers_1D(
@@ -998,7 +996,7 @@ class ReaddyUtil:
             with offsets polymer_offsets
             of types particle_types
             with force constant force_const
-            and angle [radians]
+            and angle [radians].
         """
         for x in range(1, 4):
             for y in range(1, 4):
@@ -1029,7 +1027,7 @@ class ReaddyUtil:
         system, n_cpu, sim_name="", total_steps=0, record=False, save_checkpoints=False
     ):
         """
-        Create the ReaDDy simulation
+        Create the ReaDDy simulation.
         """
         simulation = system.simulation("CPU")
         simulation.kernel_configuration.n_threads = n_cpu
@@ -1057,7 +1055,7 @@ class ReaddyUtil:
         During a running simulation,
         get all the edges in the ReaDDy topologies
         as (particle1 id, particle2 id)
-        from readdy.simulation.current_topologies
+        from readdy.simulation.current_topologies.
         """
         result = []
         for top in current_topologies:
@@ -1072,7 +1070,7 @@ class ReaddyUtil:
     def get_current_monomers(current_topologies):
         """
         During a running simulation,
-        get data for topologies of particles
+        get data for topologies of particles.
         """
         edges = ReaddyUtil.get_current_particle_edges(current_topologies)
         result = {
@@ -1105,7 +1103,7 @@ class ReaddyUtil:
         """
         After a simulation has finished,
         get all the edges at the given time index
-        as (particle1 id, particle2 id)
+        as (particle1 id, particle2 id).
 
         topology_records from
         readdy.Trajectory(h5_file_path).read_observable_topologies()
@@ -1125,7 +1123,7 @@ class ReaddyUtil:
     ):
         """
         After a simulation has finished,
-        get data for topologies of particles
+        get data for topologies of particles.
 
         traj from readdy.Trajectory(h5_file_path)
         topology_records from traj.read_observable_topologies()
@@ -1172,7 +1170,7 @@ class ReaddyUtil:
         traj,
     ):
         """
-        For each time point, get monomer data and times
+        For each time point, get monomer data and times.
         """
         print("Shaping data for analysis...")
         result = []
@@ -1273,7 +1271,7 @@ class ReaddyUtil:
     @staticmethod
     def vector_is_invalid(v):
         """
-        check if any of a 3D vector's components are NaN
+        check if any of a 3D vector's components are NaN.
         """
         return math.isnan(v[0]) or math.isnan(v[1]) or math.isnan(v[2])
 
@@ -1282,7 +1280,7 @@ class ReaddyUtil:
         time_index, topology_type, topology_records, traj
     ):
         """
-        Get the number of topologies of a given type at the given time index
+        Get the number of topologies of a given type at the given time index.
         """
         result = 0
         for top in topology_records[time_index]:
@@ -1299,7 +1297,7 @@ class ReaddyUtil:
     ):
         """
         Get a list of ids for all the neighbors of particle_id with particle type
-        in the given list of types in the given frame of data
+        in the given list of types in the given frame of data.
         """
         result = []
         for neighbor_id in frame_particle_data["particles"][particle_id][
@@ -1319,7 +1317,7 @@ class ReaddyUtil:
     def analyze_frame_get_ids_for_types(particle_types, frame_particle_data):
         """
         Get a list of ids for all the particles with particle type
-        in the given list of types in the given frame of data
+        in the given list of types in the given frame of data.
         """
         result = []
         for p_id in frame_particle_data["particles"]:
@@ -1337,7 +1335,7 @@ class ReaddyUtil:
     ):
         """
         Get the id for the first neighbor with one of the neighbor_types
-        in the given frame of data
+        in the given frame of data.
         """
         for neighbor_id in frame_particle_data["particles"][particle_id][
             "neighbor_ids"
@@ -1375,7 +1373,7 @@ class ReaddyUtil:
         Starting from the particle with start_particle_id,
         get ids for a chain of particles with neighbor_types in the given frame of data,
         avoiding the particle with last_particle_id,
-        if chain_length = 0, return entire chain
+        if chain_length = 0, return entire chain.
         """
         if next_neighbor_index is not None:
             n_types = neighbor_types[next_neighbor_index]
@@ -1417,7 +1415,7 @@ class ReaddyUtil:
         Read reaction counts per frame from a ReaDDy trajectory
         and create a DataFrame with the number of times each
         ReaDDy reaction and total set of reactions has happened
-        by each time step / stride
+        by each time step / stride.
         """
         print("Loading reactions...")
         reaction_times, readdy_reactions = trajectory.read_observable_reaction_counts()
@@ -1427,7 +1425,7 @@ class ReaddyUtil:
                 flat_readdy_reactions, **readdy_reactions[rxn_type]
             )
         reaction_names = list(np.column_stack(flat_readdy_reactions)[0])
-        reaction_data = np.column_stack([x for x in flat_readdy_reactions.values()])
+        reaction_data = np.column_stack(list(flat_readdy_reactions.values()))
         interval = int((reaction_data.shape[0] - 1) * stride / float(recorded_steps))
         reaction_data = np.sum(
             reaction_data[:-1].reshape(-1, interval, len(reaction_names)), axis=1

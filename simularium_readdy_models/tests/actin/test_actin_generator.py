@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
-import pytest
 import numpy as np
+import pytest
 
 from simularium_readdy_models.actin import (
     ActinGenerator,

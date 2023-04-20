@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
-import readdy
 import numpy as np
+import readdy
 
 from ..common import ReaddyUtil
-from .actin_util import ActinUtil
 from .actin_structure import ActinStructure
+from .actin_util import ActinUtil
 
 
 class ActinSimulation:
@@ -18,7 +17,7 @@ class ActinSimulation:
         save_checkpoints=False,
     ):
         """
-        Creates a ReaDDy branched actin simulation
+        Creates a ReaDDy branched actin simulation.
 
         Ref: http://jcb.rupress.org/content/jcb/180/5/887.full.pdf
 
@@ -78,7 +77,7 @@ class ActinSimulation:
     def create_actin_system(self):
         """
         Create the ReaDDy system for actin
-        including particle types, constraints, and reactions
+        including particle types, constraints, and reactions.
         """
         self.system = readdy.ReactionDiffusionSystem(
             box_size=self._parameter("box_size"),
@@ -95,7 +94,7 @@ class ActinSimulation:
     def add_particle_types(self):
         """
         Add particle and topology types for actin particles
-        to the ReaDDy system
+        to the ReaDDy system.
         """
         temperature = self._parameter("temperature_K")
         viscosity = self._parameter("viscosity")
@@ -116,7 +115,7 @@ class ActinSimulation:
     def add_constraints(self):
         """
         Add geometric constraints for connected actin particles,
-        including bonds, angles, and repulsions, to the ReaDDy system
+        including bonds, angles, and repulsions, to the ReaDDy system.
         """
         util = ReaddyUtil()
         accurate_force_constants = self._parameter("accurate_force_constants")
@@ -187,7 +186,7 @@ class ActinSimulation:
 
     def add_reactions(self):
         """
-        Add reactions to the ReaDDy system
+        Add reactions to the ReaDDy system.
         """
         if bool(self._parameter("reactions")):
             self.actin_util.add_dimerize_reaction(self.system)
@@ -227,7 +226,7 @@ class ActinSimulation:
 
     def get_pointed_end_displacements(self):
         """
-        Get parameters for translation of the pointed end of an orthogonal seed
+        Get parameters for translation of the pointed end of an orthogonal seed.
         """
         if not self.do_pointed_end_translation():
             return {}
@@ -267,7 +266,7 @@ class ActinSimulation:
     def add_random_monomers(self):
         """
         Add randomly distributed actin monomers, Arp2/3 dimers,
-        and capping protein according to concentrations and box size
+        and capping protein according to concentrations and box size.
         """
         box_size = self._parameter("box_size")
         self.actin_util.add_actin_monomers(
@@ -291,7 +290,7 @@ class ActinSimulation:
 
     def add_random_linear_fibers(self, use_uuids=True, longitudinal_bonds=True):
         """
-        Add randomly distributed and oriented linear fibers
+        Add randomly distributed and oriented linear fibers.
         """
         seed_n_fibers = int(self._parameter("seed_n_fibers"))
         if seed_n_fibers < 1:
@@ -306,7 +305,7 @@ class ActinSimulation:
 
     def add_fibers_from_data(self, fibers_data, use_uuids=True):
         """
-        Add fibers specified in a list of FiberData
+        Add fibers specified in a list of FiberData.
 
         fiber_data: List[FiberData]
         (FiberData for mother fibers only, which should have
@@ -332,7 +331,7 @@ class ActinSimulation:
                 },
             },
         }
-        * IDs are ints
+        * IDs are ints.
         """
         self.topologies = self.actin_util.add_monomers_from_data(
             self.simulation, monomer_data
@@ -340,7 +339,7 @@ class ActinSimulation:
 
     def add_obstacles(self):
         """
-        Add obstacle particles
+        Add obstacle particles.
         """
         n = 0
         while f"obstacle{n}_position_x" in self.parameters:
@@ -358,7 +357,7 @@ class ActinSimulation:
 
     def add_crystal_structure_monomers(self):
         """
-        Add monomers exactly from the branched actin crystal structure
+        Add monomers exactly from the branched actin crystal structure.
         """
         type_names = [
             "actin#pointed_ATP_1",
@@ -415,7 +414,7 @@ class ActinSimulation:
 
     def simulate(self, d_time):
         """
-        Simulate in ReaDDy for the given d_time seconds
+        Simulate in ReaDDy for the given d_time seconds.
         """
 
         def loop():
@@ -454,6 +453,6 @@ class ActinSimulation:
         During a running simulation,
         get data for topologies of particles
         from readdy.simulation.current_topologies
-        as monomers
+        as monomers.
         """
         return ReaddyUtil.get_current_monomers(self.simulation.current_topologies)

@@ -1,41 +1,38 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
+from typing import Any, Dict, List
 
 import numpy as np
-from typing import Dict, List, Any
-
-from simulariumio.readdy import ReaddyConverter, ReaddyData
 from simulariumio import (
-    TrajectoryConverter,
-    MetaData,
-    UnitData,
-    ScatterPlotData,
-    DisplayData,
     DISPLAY_TYPE,
-    TrajectoryData,
     CameraData,
+    DisplayData,
+    MetaData,
+    ScatterPlotData,
+    TrajectoryConverter,
+    TrajectoryData,
+    UnitData,
 )
-from simulariumio.plot_readers import ScatterPlotReader
 from simulariumio.filters import AddAgentsFilter, MultiplyTimeFilter
+from simulariumio.plot_readers import ScatterPlotReader
+from simulariumio.readdy import ReaddyConverter, ReaddyData
+from subcell_analysis import SpatialAnnotator
 from subcell_analysis.readdy import ReaddyPostProcessor
-from subcell_analysis import (
-    SpatialAnnotator
-)
 
-from ..actin import ActinAnalyzer, ACTIN_REACTIONS
+from ..actin import ACTIN_REACTIONS, ActinAnalyzer
 from ..common import ReaddyUtil
 
 
 class ActinVisualization:
     """
-    Actin-specific visualization functions to create plots, 
+    Actin-specific visualization functions to create plots,
     annotate spatial data, and save simularium files.
     """
-    
+
     TIMESTEP: float = 0.1
-    
+
     @staticmethod
-    def ACTIN_DISPLAY_DATA(longitudinal_bonds: bool) -> Dict[str,DisplayData]:
+    def ACTIN_DISPLAY_DATA(longitudinal_bonds: bool) -> Dict[str, DisplayData]:
         # radii
         extra_radius = 1.5
         actin_radius = 2.0 + extra_radius
@@ -267,7 +264,7 @@ class ActinVisualization:
     @staticmethod
     def get_bound_monomers_plot(monomer_data, times):
         """
-        Add a plot of percent actin in filaments
+        Add a plot of percent actin in filaments.
         """
         return ScatterPlotData(
             title="Monomers over time",
@@ -290,7 +287,7 @@ class ActinVisualization:
     @staticmethod
     def get_avg_length_plot(monomer_data, times):
         """
-        Add a plot of average mother and daughter filament length
+        Add a plot of average mother and daughter filament length.
         """
         return ScatterPlotData(
             title="Average length of filaments",
@@ -312,7 +309,7 @@ class ActinVisualization:
     def get_growth_reactions_plot(reactions, times):
         """
         Add a plot of reaction events over time
-        for each total growth reaction
+        for each total growth reaction.
         """
         ytraces = {}
         for total_rxn_name in ACTIN_REACTIONS.GROWTH_RXNS:
@@ -336,7 +333,7 @@ class ActinVisualization:
         Add a plot of the number of times a structural reaction
         was triggered over time
         Note: triggered != completed, the reaction may have failed
-        to find the required reactants
+        to find the required reactants.
         """
         ytraces = {}
         for total_rxn_name in ACTIN_REACTIONS.STRUCTURAL_RXNS:
@@ -358,7 +355,7 @@ class ActinVisualization:
     def get_growth_reactions_vs_actin_plot(reactions, monomer_data, box_size):
         """
         Add a plot of average reaction events over time
-        for each total growth reaction
+        for each total growth reaction.
         """
         ytraces = {}
         for rxn_group_name in ACTIN_REACTIONS.GROUPED_GROWTH_RXNS:
@@ -387,7 +384,7 @@ class ActinVisualization:
     @staticmethod
     def get_capped_ends_plot(monomer_data, times):
         """
-        Add a plot of percent barbed ends that are capped
+        Add a plot of percent barbed ends that are capped.
         """
         return ScatterPlotData(
             title="Capped barbed ends",
@@ -406,7 +403,7 @@ class ActinVisualization:
     @staticmethod
     def get_branch_angle_plot(monomer_data, box_size, periodic_boundary, times):
         """
-        Add a plot of branch angle mean and std dev
+        Add a plot of branch angle mean and std dev.
         """
         angles = ActinAnalyzer.analyze_branch_angles(
             monomer_data, box_size, periodic_boundary
@@ -432,7 +429,7 @@ class ActinVisualization:
         """
         Add a plot of average helix pitch
         for both the short and long helices
-        ideal Ref: http://www.jbc.org/content/266/1/1.full.pdf
+        ideal Ref: http://www.jbc.org/content/266/1/1.full.pdf.
         """
         return ScatterPlotData(
             title="Average helix pitch",
@@ -462,7 +459,7 @@ class ActinVisualization:
     ):
         """
         Add a plot of how many nm each monomer is away
-        from ideal position in a straight filament
+        from ideal position in a straight filament.
         """
         return ScatterPlotData(
             title="Filament bending",
@@ -494,7 +491,7 @@ class ActinVisualization:
     ):
         """
         Use an ActinAnalyzer to generate plots of observables
-        for polymerizing actin
+        for polymerizing actin.
         """
         if plots is None:
             plots = {
@@ -525,7 +522,7 @@ class ActinVisualization:
     @staticmethod
     def get_total_axis_twist_plot(axis_twist, times):
         """
-        Add a plot of total axis twist vs time
+        Add a plot of total axis twist vs time.
         """
         axis_sum = np.sum(axis_twist, axis=1)
         return ScatterPlotData(
@@ -545,7 +542,7 @@ class ActinVisualization:
     @staticmethod
     def get_total_plane_twist_plot(plane_twist, times):
         """
-        Add a plot of total plane twist vs time
+        Add a plot of total plane twist vs time.
         """
         plane_sum = np.sum(plane_twist, axis=1)
         plane_sum /= plane_sum[0]
@@ -563,7 +560,7 @@ class ActinVisualization:
     @staticmethod
     def get_twist_per_monomer_plot(twist_angles, filament_positions):
         """
-        Add a plot of twist vs position of the monomer in filament
+        Add a plot of twist vs position of the monomer in filament.
         """
         end_time = len(twist_angles) - 1
         return ScatterPlotData(
@@ -582,7 +579,7 @@ class ActinVisualization:
         lateral_bond_energies, longitudinal_bond_energies, times
     ):
         """
-        Add a plot of bond energies (lat and long) vs time
+        Add a plot of bond energies (lat and long) vs time.
         """
         sum_lat = np.sum(lateral_bond_energies, axis=1)
         sum_long = np.sum(longitudinal_bond_energies, axis=1)
@@ -603,7 +600,7 @@ class ActinVisualization:
         lateral_bond_energies, longitudinal_bond_energies, filament_positions
     ):
         """
-        Add a plot of bond energies (lat and long) vs index of monomer in filament
+        Add a plot of bond energies (lat and long) vs index of monomer in filament.
         """
         end_time = len(lateral_bond_energies) - 1
         return ScatterPlotData(
@@ -624,7 +621,7 @@ class ActinVisualization:
     ):
         """
         Add a plot of distance from first to last particle
-        in the first filament vs time
+        in the first filament vs time.
         """
         filament_length = ActinAnalyzer.analyze_filament_length(
             normals, axis_positions, box_size, periodic_boundary, stride
@@ -647,12 +644,9 @@ class ActinVisualization:
     def get_bond_stretch_plot(monomer_data, box_size, periodic_boundary, stride, times):
         """
         Add a scatter plot of difference in bond length from ideal
-        for lateral and longitudinal actin bonds vs time
+        for lateral and longitudinal actin bonds vs time.
         """
-        (
-            stretch_lat,
-            stretch_long,
-        ) = ActinAnalyzer.analyze_bond_stretch(
+        (stretch_lat, stretch_long,) = ActinAnalyzer.analyze_bond_stretch(
             monomer_data, box_size, periodic_boundary, stride
         )
         mean_lat = np.mean(stretch_lat, axis=1)
@@ -679,7 +673,7 @@ class ActinVisualization:
     ):
         """
         Add a scatter plot of difference in angles from ideal
-        for lateral and longitudinal actin bonds vs time
+        for lateral and longitudinal actin bonds vs time.
         """
         (
             stretch_lat_lat,
@@ -712,7 +706,7 @@ class ActinVisualization:
     ):
         """
         Add a scatter plot of difference in angles from ideal
-        for lateral and longitudinal actin bonds vs time
+        for lateral and longitudinal actin bonds vs time.
         """
         (
             stretch_lat_lat_lat,
@@ -748,7 +742,7 @@ class ActinVisualization:
     ):
         """
         Use an ActinAnalyzer to generate plots of observables
-        for a diffusing actin filament
+        for a diffusing actin filament.
         """
         STRIDE = 10
         if plots is None:
@@ -788,7 +782,7 @@ class ActinVisualization:
     ):
         """
         Use an ActinAnalyzer to generate plots of observables
-        for actin being bent or twisted
+        for actin being bent or twisted.
         """
         if plots is None:
             plots = {
@@ -835,7 +829,7 @@ class ActinVisualization:
     ) -> List[Dict[str, Any]]:
         """
         Use an ActinAnalyzer to generate plots of observables
-        for actin being compressed
+        for actin being compressed.
         """
         if plots is None:
             plots = []
@@ -845,9 +839,7 @@ class ActinVisualization:
         bond_energies, _ = post_processor.fiber_bond_energies(
             fiber_chain_ids=fiber_chain_ids,
             ideal_lengths=ActinAnalyzer.ideal_bond_lengths(),
-            ks=ActinAnalyzer.bond_energy_constants(
-                temp_c=temperature_c
-            ),
+            ks=ActinAnalyzer.bond_energy_constants(temp_c=temperature_c),
             stride=10,
         )
         sum_lat = np.sum(bond_energies[1], axis=1)
@@ -883,7 +875,7 @@ class ActinVisualization:
     ) -> TrajectoryData:
         """
         Use an ActinAnalyzer to generate plots of observables
-        for actin being compressed
+        for actin being compressed.
         """
         if visualize_edges:
             edges = post_processor.edge_positions()
@@ -908,7 +900,7 @@ class ActinVisualization:
             normals = post_processor.linear_fiber_normals(
                 fiber_chain_ids=fiber_chain_ids,
                 axis_positions=axis_positions,
-                normal_length=10.,
+                normal_length=10.0,
             )
             traj_data = SpatialAnnotator.add_fiber_agents(
                 traj_data,
@@ -925,7 +917,7 @@ class ActinVisualization:
                 )
             control_points = post_processor.linear_fiber_control_points(
                 axis_positions=axis_positions,
-                segment_length=10.,
+                segment_length=10.0,
             )
             sphere_positions = []
             for time_ix in range(len(control_points)):
@@ -948,13 +940,10 @@ class ActinVisualization:
         longitudinal_bonds: bool = True,
     ) -> TrajectoryData:
         """
-        Get a TrajectoryData to visualize an actin trajectory in Simularium
+        Get a TrajectoryData to visualize an actin trajectory in Simularium.
         """
         data = ReaddyData(
-            timestep=(
-                ActinVisualization.TIMESTEP * total_steps
-                * time_multiplier
-            ),
+            timestep=(ActinVisualization.TIMESTEP * total_steps * time_multiplier),
             path_to_readdy_h5=path_to_readdy_h5,
             meta_data=MetaData(
                 box_size=box_size,
@@ -987,7 +976,7 @@ class ActinVisualization:
         plots: List[Dict[str, Any]] = None,
     ):
         """
-        save a simularium file with actin trajector(ies)
+        save a simularium file with actin trajector(ies).
         """
         traj_data = trajectory_datas[0]
         for index in range(1, len(trajectory_datas)):

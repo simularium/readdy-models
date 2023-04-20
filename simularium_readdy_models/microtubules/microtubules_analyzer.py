@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import numpy as np
 
@@ -12,9 +11,8 @@ class MicrotubulesAnalyzer:
     def get_protofilaments(frame_particle_data):
         """
         get a list of the number of monomers in the closed part
-        of each protofilament at the time index
+        of each protofilament at the time index.
         """
-
         protofilaments = []
 
         for particle_id in frame_particle_data["particles"]:
@@ -100,7 +98,7 @@ class MicrotubulesAnalyzer:
     def analyze_protofilament_lengths(monomer_data):
         """
         Get a list of the number of monomers in each mother filament
-        in each frame of the trajectory
+        in each frame of the trajectory.
         """
         max_len = -1
         result = []
