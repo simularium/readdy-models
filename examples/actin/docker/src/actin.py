@@ -41,6 +41,8 @@ def parse_args():
     parser.add_argument(
         "replicate", help="which replicate?", nargs="?", default=""
     )
+    parser.add_argument('--save_pickle', action=argparse.BooleanOptionalAction)
+    parser.set_defaults(save_pickle=False)
     return parser.parse_args()
 
 
@@ -110,22 +112,22 @@ def report_hardware_usage():
         f"CPU % used: {psutil.cpu_percent()}\n"
         f"Disk % used: {psutil.disk_usage('/').percent}\n"
     )
-    
-    
-def analyze_results(actin_simulation):
+
+
+def analyze_results(parameters, save_pickle=False):
     # get analysis parameters
-    plot_actin_compression = actin_simulation.parameters.get("plot_actin_compression", False) 
-    visualize_edges = actin_simulation.parameters.get("visualize_edges", False) 
-    visualize_normals = actin_simulation.parameters.get("visualize_normals", False) 
-    visualize_control_pts = actin_simulation.parameters.get("visualize_control_pts", False)
+    plot_actin_compression = parameters.get("plot_actin_compression", False) 
+    visualize_edges = parameters.get("visualize_edges", False) 
+    visualize_normals = parameters.get("visualize_normals", False) 
+    visualize_control_pts = parameters.get("visualize_control_pts", False)
     
     # convert to simularium
     traj_data = ActinVisualization.simularium_trajectory(
-        path_to_readdy_h5=actin_simulation.parameters["name"] + ".h5",
-        box_size=actin_simulation.parameters["box_size"],
-        total_steps=actin_simulation.parameters["total_steps"],
+        path_to_readdy_h5=parameters["name"] + ".h5",
+        box_size=parameters["box_size"],
+        total_steps=parameters["total_steps"],
         time_multiplier=1e-3,  # assume 1e3 recorded steps
-        longitudinal_bonds=bool(actin_simulation.parameters.get("longitudinal_bonds", True)),
+        longitudinal_bonds=bool(parameters.get("longitudinal_bonds", True)),
     )
     
     # load different views of ReaDDy data
@@ -134,17 +136,17 @@ def analyze_results(actin_simulation):
     axis_positions = None
     new_chain_ids = None
     if visualize_normals or visualize_control_pts or plot_actin_compression or visualize_edges: 
-        periodic_boundary = actin_simulation.parameters.get("periodic_boundary", False) 
+        periodic_boundary = parameters.get("periodic_boundary", False) 
         post_processor = ReaddyPostProcessor(
             trajectory=ReaddyLoader(
-                h5_file_path=actin_simulation.parameters["name"] + ".h5",
+                h5_file_path=parameters["name"] + ".h5",
                 min_time_ix=0,
                 max_time_ix=-1,
                 time_inc=1,
                 timestep=100.0,
-                save_pickle_file=False,
+                save_pickle_file=save_pickle,
             ).trajectory(),
-            box_size=actin_simulation.parameters["box_size"],
+            box_size=parameters["box_size"],
             periodic_boundary=periodic_boundary,
         )
         if visualize_normals or visualize_control_pts or plot_actin_compression:
@@ -179,7 +181,7 @@ def analyze_results(actin_simulation):
         traj_data.plots = ActinVisualization.generate_actin_compression_plots(
             post_processor,
             fiber_chain_ids,
-            temperature_c=actin_simulation.parameters["temperature_C"],
+            temperature_c=parameters["temperature_C"],
         )
 
     # add annotation objects to the spatial data
@@ -196,7 +198,7 @@ def analyze_results(actin_simulation):
     # save simularium file
     BinaryWriter.save(
         trajectory_data=traj_data,
-        output_path=actin_simulation.parameters["name"] + ".h5",
+        output_path=parameters["name"] + ".h5",
         validate_ids=False,
     )
 
@@ -216,7 +218,7 @@ def main():
         show_summary=False,
     )
     report_hardware_usage()
-    analyze_results(actin_simulation)
+    analyze_results(actin_simulation.parameters, args.save_pickle)
 
 
 if __name__ == "__main__":

@@ -15,8 +15,8 @@ parameters = {}
 
 def set_parameters(p):
     global parameters
-    parameters = p
-    return p
+    parameters = ActinUtil.DEFAULT_PARAMETERS.copy()
+    parameters.update(p)
 
 
 displacements = {}
@@ -54,7 +54,6 @@ class ActinUtil:
         "internal_timestep": 0.1,  # ns
         "box_size": np.array([float(500.0)] * 3),  # nm
         "periodic_boundary": True,
-        "accurate_force_constants": True,
         "reaction_distance": 1.0,  # nm
         "n_cpu": 4,
         "actin_concentration": 200.0,  # uM
@@ -67,33 +66,33 @@ class ActinUtil:
         "only_linear_actin_constraints": False,
         "reactions": True,
         "dimerize_rate": 2.1e-2,  # 1/ns
-        "dimerize_reverse_rate": 1.4e-1,  # 1/ns
+        "dimerize_reverse_rate": 1.4e-9,  # 1/ns
         "trimerize_rate": 2.1e-2,  # 1/ns
-        "trimerize_reverse_rate": 1.4e-1,  # 1/ns
-        "pointed_growth_ATP_rate": 2.4e5,  # 1/ns
-        "pointed_growth_ADP_rate": 3.0e4,  # 1/ns
-        "pointed_shrink_ATP_rate": 8.0e-15,  # 1/ns
-        "pointed_shrink_ADP_rate": 3.0e-15,  # 1/ns
-        "barbed_growth_ATP_rate": 2.1e6,  # 1/ns
-        "barbed_growth_ADP_rate": 7.0e5,  # 1/ns
-        "nucleate_ATP_rate": 2.1e6,  # 1/ns
-        "nucleate_ADP_rate": 7.0e5,  # 1/ns
-        "barbed_shrink_ATP_rate": 1.4e-14,  # 1/ns
-        "barbed_shrink_ADP_rate": 8.0e-14,  # 1/ns
-        "arp_bind_ATP_rate": 2.1e6,  # 1/ns
-        "arp_bind_ADP_rate": 7.0e5,  # 1/ns
-        "arp_unbind_ATP_rate": 1.4e-14,  # 1/ns
-        "arp_unbind_ADP_rate": 8.0e-14,  # 1/ns
-        "barbed_growth_branch_ATP_rate": 2.1e6,  # 1/ns
-        "barbed_growth_branch_ADP_rate": 7.0e5,  # 1/ns
-        "debranching_ATP_rate": 1.4e-14,  # 1/ns
-        "debranching_ADP_rate": 8.0e-14,  # 1/ns
-        "cap_bind_rate": 2.1e6,  # 1/ns
-        "cap_unbind_rate": 1.4e-14,  # 1/ns
-        "hydrolysis_actin_rate": 3.5e-15,  # 1/ns
-        "hydrolysis_arp_rate": 3.5e-15,  # 1/ns
-        "nucleotide_exchange_actin_rate": 1e-10,  # 1/ns
-        "nucleotide_exchange_arp_rate": 1e-10,  # 1/ns
+        "trimerize_reverse_rate": 1.4e-9,  # 1/ns
+        "pointed_growth_ATP_rate": 2.4e-5,  # 1/ns
+        "pointed_growth_ADP_rate": 2.95e-6,  # 1/ns
+        "pointed_shrink_ATP_rate": 8.0e-10,  # 1/ns
+        "pointed_shrink_ADP_rate": 3.0e-10,  # 1/ns
+        "barbed_growth_ATP_rate": 2.1e-2,  # 1/ns
+        "barbed_growth_ADP_rate": 7.0e-5,  # 1/ns
+        "nucleate_ATP_rate": 2.1e-2,  # 1/ns
+        "nucleate_ADP_rate": 7.0e-5,  # 1/ns
+        "barbed_shrink_ATP_rate": 1.4e-9,  # 1/ns
+        "barbed_shrink_ADP_rate": 8.0e-9,  # 1/ns
+        "arp_bind_ATP_rate": 2.1e-2,  # 1/ns
+        "arp_bind_ADP_rate": 7.0e-5,  # 1/ns
+        "arp_unbind_ATP_rate": 1.4e-9,  # 1/ns
+        "arp_unbind_ADP_rate": 8.0e-9,  # 1/ns
+        "barbed_growth_branch_ATP_rate": 2.1e-2,  # 1/ns
+        "barbed_growth_branch_ADP_rate": 7.0e-5,  # 1/ns
+        "debranching_ATP_rate": 1.4e-9,  # 1/ns
+        "debranching_ADP_rate": 7.0e-5,  # 1/ns
+        "cap_bind_rate": 2.1e-2,  # 1/ns
+        "cap_unbind_rate": 1.4e-9,  # 1/ns
+        "hydrolysis_actin_rate": 3.5e-5,  # 1/ns
+        "hydrolysis_arp_rate": 3.5e-5,  # 1/ns
+        "nucleotide_exchange_actin_rate": 1e-5,  # 1/ns
+        "nucleotide_exchange_arp_rate": 1e-5,  # 1/ns
         "verbose": False,
         "use_box_actin": False,
         "use_box_arp": False,
@@ -109,16 +108,15 @@ class ActinUtil:
         "plot_polymerization": False,
         "plot_filament_structure": False,
         "plot_bend_twist": False,
+        "plot_actin_compression": False,
         "visualize_edges": False,
         "visualize_normals": False,
+        "visualize_control_pts": False,
         "longitudinal_bonds": True,
         "displace_stride": 1,
-        "bonds_force_multiplier": 0.1,
-        "angles_force_multiplier": 4.0,
-        "dihedrals_force_multiplier": 1.0,
-        "actin_actin_repulsion_potentials": True,
-        "actin_actin_angle_potentials": True,
-        "actin_actin_dihedral_potentials": True,
+        "bonds_force_multiplier": 0.2,
+        "angles_force_constant": 1000.0,
+        "dihedrals_force_constant": 1000.0,
     }
 
     @staticmethod
@@ -1659,22 +1657,15 @@ class ActinUtil:
         )
 
     @staticmethod
-    def add_bonds_between_actins(
-        accurate_force_constants, system, util, longitudinal_bonds
-    ):
+    def add_bonds_between_actins(system, util, longitudinal_bonds, force_multiplier):
         """
         add bonds between actins.
         """
         bond_length_lat = ActinStructure.actin_to_actin_distance_lateral()
         bond_length_long = ActinStructure.actin_to_actin_distance_longitudinal()
         n_polymer_numbers = ActinUtil.n_polymer_numbers()
-        force_constant = ActinUtil.DEFAULT_FORCE_CONSTANT
-        lat_force_constant = force_constant
-        long_force_constant = force_constant
-        if accurate_force_constants:
-            multiplier = float(parameters["bonds_force_multiplier"])
-            lat_force_constant = multiplier * 968.2  # kJ / mol / nm^2
-            long_force_constant = multiplier * 1437.5  # kJ / mol / nm^2
+        lat_force_constant = force_multiplier * 968.2  # kJ / mol / nm^2
+        long_force_constant = force_multiplier * 1437.5  # kJ / mol / nm^2
         # lateral actin-actin bond
         util.add_polymer_bond_1D(
             [
@@ -1772,7 +1763,7 @@ class ActinUtil:
                 "actin#fixed_barbed_2",
                 "actin#fixed_barbed_ATP_2",
             ],
-            force_constant,
+            ActinUtil.DEFAULT_FORCE_CONSTANT,
             bond_length_lat,
             system,
         )
@@ -1802,7 +1793,7 @@ class ActinUtil:
                 "actin#new_ATP",
             ],
             None,
-            force_constant,
+            ActinUtil.DEFAULT_FORCE_CONSTANT,
             bond_length_lat,
             system,
             n_polymer_numbers,
@@ -1819,7 +1810,7 @@ class ActinUtil:
                 "actin#new",
                 "actin#new_ATP",
             ],
-            force_constant,
+            ActinUtil.DEFAULT_FORCE_CONSTANT,
             bond_length_lat,
             system,
         )
@@ -3554,7 +3545,7 @@ class ActinUtil:
             displacement_parameters["tangent_displace_speed_um_s"]
             * 1e-6
             * displace_stride
-            * ActinUtil.DEFAULT_PARAMETERS["internal_timestep"]
+            * parameters["internal_timestep"]
         )
         return monomer_pos + np.array([d_pos_x, 0.0, 0.0])
 
