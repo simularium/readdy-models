@@ -147,6 +147,7 @@ ignore = [
   "*examples/*",
   "*tests/**",
   "environment.yml",
+  "examples/*",
 ]
 
 [tool.mypy]
