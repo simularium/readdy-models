@@ -3,6 +3,7 @@
 
 import os
 import argparse
+import time
 
 import numpy as np
 import pandas
@@ -116,6 +117,7 @@ def report_hardware_usage():
 
 def analyze_results(parameters, save_pickle=False):
     # get analysis parameters
+    plot_actin_structure = parameters.get("plot_actin_structure", False) 
     plot_actin_compression = parameters.get("plot_actin_compression", False) 
     visualize_edges = parameters.get("visualize_edges", False) 
     visualize_normals = parameters.get("visualize_normals", False) 
@@ -135,7 +137,7 @@ def analyze_results(parameters, save_pickle=False):
     fiber_chain_ids = None
     axis_positions = None
     new_chain_ids = None
-    if visualize_normals or visualize_control_pts or plot_actin_compression or visualize_edges: 
+    if visualize_normals or visualize_control_pts or visualize_edges or plot_actin_structure or plot_actin_compression: 
         periodic_boundary = parameters.get("periodic_boundary", False) 
         post_processor = ReaddyPostProcessor(
             trajectory=ReaddyLoader(
@@ -168,20 +170,27 @@ def analyze_results(parameters, save_pickle=False):
                 ],
                 polymer_number_range=5,
             )
-            if visualize_normals or visualize_control_pts:
-                axis_positions, new_chain_ids = post_processor.linear_fiber_axis_positions(
-                    fiber_chain_ids=fiber_chain_ids,
-                    ideal_positions=ActinStructure.mother_positions[2:5],
-                    ideal_vector_to_axis=ActinStructure.vector_to_axis(),
-                )
+            axis_positions, new_chain_ids = post_processor.linear_fiber_axis_positions(
+                fiber_chain_ids=fiber_chain_ids,
+                ideal_positions=ActinStructure.mother_positions[2:5],
+                ideal_vector_to_axis=ActinStructure.vector_to_axis(),
+            )
     
     # create plots
+    if plot_actin_structure:
+        print("plot actin structure metrics")
+        traj_data.plots = ActinVisualization.generate_filament_structure_plots(
+            post_processor.trajectory,
+            parameters["box_size"],
+            periodic_boundary=True,
+            plots=traj_data.plots,
+        )
+        
     if plot_actin_compression:
-        print("plot actin compression")
+        print("plot actin compression metrics")
         traj_data.plots = ActinVisualization.generate_actin_compression_plots(
-            post_processor,
-            fiber_chain_ids,
-            temperature_c=parameters["temperature_C"],
+            axis_positions,
+            plots=traj_data.plots,
         )
 
     # add annotation objects to the spatial data
