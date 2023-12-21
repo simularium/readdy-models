@@ -1172,7 +1172,7 @@ class ActinAnalyzer:
             stretch_lat.append([])
             stretch_long.append([])
             new_time_index = math.floor(time_index / stride)
-            filament = trajectory[time_index].topologies["topologies"][0].particle_ids
+            filament = trajectory[time_index].topologies[0].particle_ids
             for index in range(len(filament) - 2):
                 particle = trajectory[time_index].particles[filament[index]]
                 particle_lat = trajectory[time_index].particles[filament[index + 1]]

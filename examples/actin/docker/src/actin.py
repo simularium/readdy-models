@@ -9,18 +9,11 @@ import numpy as np
 import pandas
 import psutil
 
-from subcell_analysis.readdy import (
-    ReaddyLoader, 
-    ReaddyPostProcessor,
-)
-from simulariumio import BinaryWriter
-
 from simularium_readdy_models.actin import (
     FiberData,
     ActinSimulation,
     ActinGenerator,
     ActinTestData,
-    ActinStructure,
 )
 from simularium_readdy_models.visualization import ActinVisualization
 from simularium_readdy_models import ReaddyUtil
@@ -115,103 +108,6 @@ def report_hardware_usage():
     )
 
 
-def analyze_results(parameters, save_pickle=False):
-    # get analysis parameters
-    plot_actin_structure = parameters.get("plot_actin_structure", False) 
-    plot_actin_compression = parameters.get("plot_actin_compression", False) 
-    visualize_edges = parameters.get("visualize_edges", False) 
-    visualize_normals = parameters.get("visualize_normals", False) 
-    visualize_control_pts = parameters.get("visualize_control_pts", False)
-    
-    # convert to simularium
-    traj_data = ActinVisualization.simularium_trajectory(
-        path_to_readdy_h5=parameters["name"] + ".h5",
-        box_size=parameters["box_size"],
-        total_steps=parameters["total_steps"],
-        time_multiplier=1e-3,  # assume 1e3 recorded steps
-        longitudinal_bonds=bool(parameters.get("longitudinal_bonds", True)),
-    )
-    
-    # load different views of ReaDDy data
-    post_processor = None
-    fiber_chain_ids = None
-    axis_positions = None
-    new_chain_ids = None
-    if visualize_normals or visualize_control_pts or visualize_edges or plot_actin_structure or plot_actin_compression: 
-        periodic_boundary = parameters.get("periodic_boundary", False) 
-        post_processor = ReaddyPostProcessor(
-            trajectory=ReaddyLoader(
-                h5_file_path=parameters["name"] + ".h5",
-                min_time_ix=0,
-                max_time_ix=-1,
-                time_inc=1,
-                timestep=100.0,
-                save_pickle_file=save_pickle,
-            ).trajectory(),
-            box_size=parameters["box_size"],
-            periodic_boundary=periodic_boundary,
-        )
-        if visualize_normals or visualize_control_pts or plot_actin_compression:
-            fiber_chain_ids = post_processor.linear_fiber_chain_ids(
-                start_particle_phrases=["pointed"],
-                other_particle_types=[
-                    "actin#",
-                    "actin#ATP_",
-                    "actin#mid_",
-                    "actin#mid_ATP_",
-                    "actin#fixed_",
-                    "actin#fixed_ATP_",
-                    "actin#mid_fixed_",
-                    "actin#mid_fixed_ATP_",
-                    "actin#barbed_",
-                    "actin#barbed_ATP_",
-                    "actin#fixed_barbed_",
-                    "actin#fixed_barbed_ATP_",
-                ],
-                polymer_number_range=5,
-            )
-            axis_positions, new_chain_ids = post_processor.linear_fiber_axis_positions(
-                fiber_chain_ids=fiber_chain_ids,
-                ideal_positions=ActinStructure.mother_positions[2:5],
-                ideal_vector_to_axis=ActinStructure.vector_to_axis(),
-            )
-    
-    # create plots
-    if plot_actin_structure:
-        print("plot actin structure metrics")
-        traj_data.plots = ActinVisualization.generate_filament_structure_plots(
-            post_processor.trajectory,
-            parameters["box_size"],
-            periodic_boundary=True,
-            plots=traj_data.plots,
-        )
-        
-    if plot_actin_compression:
-        print("plot actin compression metrics")
-        traj_data.plots = ActinVisualization.generate_actin_compression_plots(
-            axis_positions,
-            plots=traj_data.plots,
-        )
-
-    # add annotation objects to the spatial data
-    traj_data = ActinVisualization.add_spatial_annotations(
-        traj_data,
-        post_processor,
-        visualize_edges,
-        visualize_normals,
-        visualize_control_pts,
-        new_chain_ids,
-        axis_positions,
-    )
-    
-    # save simularium file
-    BinaryWriter.save(
-        trajectory_data=traj_data,
-        output_path=parameters["name"] + ".h5",
-        validate_ids=False,
-    )
-
-
 def main():
     args = parse_args()
     parameters = setup_parameters(args)
@@ -227,7 +123,12 @@ def main():
         show_summary=False,
     )
     report_hardware_usage()
-    analyze_results(actin_simulation.parameters, args.save_pickle)
+    ActinVisualization.analyze_and_visualize_trajectory(
+        actin_simulation.parameters["name"], 
+        actin_simulation.parameters["total_steps"],
+        actin_simulation.parameters,
+        args.save_pickle,
+    )
 
 
 if __name__ == "__main__":
