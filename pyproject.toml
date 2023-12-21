@@ -144,10 +144,9 @@ ignore = [
   ".cookiecutter.yaml",
   "*docs/*",
   "*.ipynb",
-  "*examples/*",
+  "*examples/**",
   "*tests/**",
   "environment.yml",
-  "examples/*",
 ]
 
 [tool.mypy]
