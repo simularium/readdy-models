@@ -111,6 +111,7 @@ def report_hardware_usage():
 def main():
     args = parse_args()
     parameters = setup_parameters(args)
+    start_time = time.time()
     actin_simulation = ActinSimulation(
         parameters=parameters, 
         record=True, 
@@ -122,6 +123,7 @@ def main():
         timestep=actin_simulation.parameters.get("internal_timestep", 0.1),
         show_summary=False,
     )
+    print("Run time: %s seconds " % (time.time() - start_time))
     report_hardware_usage()
     ActinVisualization.analyze_and_visualize_trajectory(
         actin_simulation.parameters["name"], 
