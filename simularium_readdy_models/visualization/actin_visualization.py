@@ -263,10 +263,10 @@ class ActinVisualization:
 
     @staticmethod
     def get_bond_stretch_plot(
-        trajectory: List[FrameData], 
-        box_size: np.ndarray, 
-        periodic_boundary: bool, 
-        stride: int, 
+        trajectory: List[FrameData],
+        box_size: np.ndarray,
+        periodic_boundary: bool,
+        stride: int,
         times: np.ndarray,
     ) -> ScatterPlotData:
         """
@@ -296,10 +296,10 @@ class ActinVisualization:
 
     @staticmethod
     def get_angle_stretch_plot(
-        trajectory: List[FrameData], 
-        box_size: np.ndarray, 
-        periodic_boundary: bool, 
-        stride: int, 
+        trajectory: List[FrameData],
+        box_size: np.ndarray,
+        periodic_boundary: bool,
+        stride: int,
         times: np.ndarray,
     ) -> ScatterPlotData:
         """
@@ -333,10 +333,10 @@ class ActinVisualization:
 
     @staticmethod
     def get_dihedral_stretch_plot(
-        trajectory: List[FrameData], 
-        box_size: np.ndarray, 
-        periodic_boundary: bool, 
-        stride: int, 
+        trajectory: List[FrameData],
+        box_size: np.ndarray,
+        periodic_boundary: bool,
+        stride: int,
         times: np.ndarray,
     ) -> ScatterPlotData:
         """
@@ -417,23 +417,36 @@ class ActinVisualization:
         peak_asym = []
         contour_length = []
         total_steps = len(axis_positions)
-        control_pts = ReaddyPostProcessor.linear_fiber_control_points(axis_positions, 10.)
+        control_pts = ReaddyPostProcessor.linear_fiber_control_points(
+            axis_positions, 10.0
+        )
         for time_ix in range(total_steps):
-            perp_dist.append(CompressionAnalyzer.get_average_distance_from_end_to_end_axis(
-                polymer_trace=control_pts[time_ix][0],
-            ))
-            bending_energy.append(1000. * CompressionAnalyzer.get_bending_energy_from_trace(
-                polymer_trace=control_pts[time_ix][0],
-            ))
-            non_coplanarity.append(CompressionAnalyzer.get_third_component_variance(
-                polymer_trace=control_pts[time_ix][0],
-            ))
-            peak_asym.append(CompressionAnalyzer.get_asymmetry_of_peak(
-                polymer_trace=control_pts[time_ix][0],
-            ))
-            contour_length.append(CompressionAnalyzer.get_contour_length_from_trace(
-                polymer_trace=control_pts[time_ix][0],
-            ))
+            perp_dist.append(
+                CompressionAnalyzer.get_average_distance_from_end_to_end_axis(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
+            bending_energy.append(
+                1000.0
+                * CompressionAnalyzer.get_bending_energy_from_trace(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
+            non_coplanarity.append(
+                CompressionAnalyzer.get_third_component_variance(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
+            peak_asym.append(
+                CompressionAnalyzer.get_asymmetry_of_peak(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
+            contour_length.append(
+                CompressionAnalyzer.get_contour_length_from_trace(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
         times = timestep * np.arange(total_steps)
         plots["scatter"] += [
             ScatterPlotData(
@@ -444,9 +457,9 @@ class ActinVisualization:
                 ytraces={
                     "<<<": np.zeros(times.shape),
                     ">>>": 85.0 * np.ones(times.shape),
-                    "filament" : np.array(perp_dist),
+                    "filament": np.array(perp_dist),
                 },
-                render_mode="lines"
+                render_mode="lines",
             ),
             ScatterPlotData(
                 title="Bending Energy",
@@ -456,9 +469,9 @@ class ActinVisualization:
                 ytraces={
                     "<<<": np.zeros(times.shape),
                     ">>>": 10.0 * np.ones(times.shape),
-                    "filament" : np.array(bending_energy),
+                    "filament": np.array(bending_energy),
                 },
-                render_mode="lines"
+                render_mode="lines",
             ),
             ScatterPlotData(
                 title="Non-coplanarity",
@@ -468,9 +481,9 @@ class ActinVisualization:
                 ytraces={
                     "<<<": np.zeros(times.shape),
                     ">>>": 0.03 * np.ones(times.shape),
-                    "filament" : np.array(non_coplanarity),
+                    "filament": np.array(non_coplanarity),
                 },
-                render_mode="lines"
+                render_mode="lines",
             ),
             ScatterPlotData(
                 title="Peak Asymmetry",
@@ -480,9 +493,9 @@ class ActinVisualization:
                 ytraces={
                     "<<<": np.zeros(times.shape),
                     ">>>": 0.5 * np.ones(times.shape),
-                    "filament" : np.array(peak_asym),
+                    "filament": np.array(peak_asym),
                 },
-                render_mode="lines"
+                render_mode="lines",
             ),
             ScatterPlotData(
                 title="Contour Length",
@@ -492,17 +505,17 @@ class ActinVisualization:
                 ytraces={
                     "<<<": 480 * np.ones(times.shape),
                     ">>>": 505 * np.ones(times.shape),
-                    "filament" : np.array(contour_length),
+                    "filament": np.array(contour_length),
                 },
-                render_mode="lines"
+                render_mode="lines",
             ),
         ]
         return plots
-    
+
     @staticmethod
     def add_plots_to_trajectory(
-        trajectory: TrajectoryData, 
-        plots: Dict[str,List[ScatterPlotData or HistogramPlotData]]
+        trajectory: TrajectoryData,
+        plots: Dict[str, List[ScatterPlotData or HistogramPlotData]],
     ) -> TrajectoryData:
         reader = ScatterPlotReader()
         for plot in plots["scatter"]:
@@ -609,25 +622,25 @@ class ActinVisualization:
             spatial_units=UnitData("nm"),
         )
         return ReaddyConverter(data)._data
-    
+
     @staticmethod
     def analyze_and_visualize_trajectory(
         output_name: str,
         total_steps: float,
-        parameters: Dict[str, Any], 
-        save_pickle: bool = False
+        parameters: Dict[str, Any],
+        save_pickle: bool = False,
     ) -> TrajectoryData:
         """
         Do all visualization, annotation, and metric calculation on an actin trajectory
         and save it as a simularium file.
         """
         # get analysis parameters
-        plot_actin_structure = parameters.get("plot_actin_structure", False) 
-        plot_actin_compression = parameters.get("plot_actin_compression", False) 
-        visualize_edges = parameters.get("visualize_edges", False) 
-        visualize_normals = parameters.get("visualize_normals", False) 
+        plot_actin_structure = parameters.get("plot_actin_structure", False)
+        plot_actin_compression = parameters.get("plot_actin_compression", False)
+        visualize_edges = parameters.get("visualize_edges", False)
+        visualize_normals = parameters.get("visualize_normals", False)
         visualize_control_pts = parameters.get("visualize_control_pts", False)
-        
+
         # convert to simularium
         traj_data = ActinVisualization.simularium_trajectory(
             path_to_readdy_h5=output_name + ".h5",
@@ -636,15 +649,23 @@ class ActinVisualization:
             saved_frames=1e3,
             longitudinal_bonds=bool(parameters.get("longitudinal_bonds", True)),
         )
-        
+
         # load different views of ReaDDy data
         post_processor = None
         fiber_chain_ids = None
         axis_positions = None
         new_chain_ids = None
-        time_step = max(1, total_steps * 1E-3) * parameters.get("internal_timestep", 0.1) * 1E-6  # ms
-        if visualize_normals or visualize_control_pts or visualize_edges or plot_actin_structure or plot_actin_compression: 
-            periodic_boundary = parameters.get("periodic_boundary", False) 
+        time_step = (
+            max(1, total_steps * 1e-3) * parameters.get("internal_timestep", 0.1) * 1e-6
+        )  # ms
+        if (
+            visualize_normals
+            or visualize_control_pts
+            or visualize_edges
+            or plot_actin_structure
+            or plot_actin_compression
+        ):
+            periodic_boundary = parameters.get("periodic_boundary", False)
             post_processor = ReaddyPostProcessor(
                 trajectory=ReaddyLoader(
                     h5_file_path=output_name + ".h5",
@@ -676,12 +697,15 @@ class ActinVisualization:
                     ],
                     polymer_number_range=5,
                 )
-                axis_positions, new_chain_ids = post_processor.linear_fiber_axis_positions(
+                (
+                    axis_positions,
+                    new_chain_ids,
+                ) = post_processor.linear_fiber_axis_positions(
                     fiber_chain_ids=fiber_chain_ids,
                     ideal_positions=ActinStructure.mother_positions[2:5],
                     ideal_vector_to_axis=ActinStructure.vector_to_axis(),
                 )
-        
+
         # create plots
         plots = None
         if plot_actin_compression:
@@ -711,7 +735,7 @@ class ActinVisualization:
             new_chain_ids,
             axis_positions,
         )
-        
+
         # save simularium file
         BinaryWriter.save(
             trajectory_data=traj_data,

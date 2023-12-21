@@ -1149,12 +1149,7 @@ class ActinAnalyzer:
         return np.array(filament_length)
 
     @staticmethod
-    def analyze_bond_stretch(
-        trajectory,
-        box_size, 
-        periodic_boundary, 
-        stride=1
-    ):
+    def analyze_bond_stretch(trajectory, box_size, periodic_boundary, stride=1):
         """
         Get the difference in bond length from ideal
         for lateral and longitudinal actin bonds.
@@ -1209,12 +1204,7 @@ class ActinAnalyzer:
         return np.array(stretch_lat), np.array(stretch_long)
 
     @staticmethod
-    def analyze_angle_stretch(
-        trajectory, 
-        box_size, 
-        periodic_boundary, 
-        stride=1
-    ):
+    def analyze_angle_stretch(trajectory, box_size, periodic_boundary, stride=1):
         """
         Get the difference in angles (degrees) from ideal
         for actin angles between:
@@ -1293,12 +1283,7 @@ class ActinAnalyzer:
         )
 
     @staticmethod
-    def analyze_dihedral_stretch(
-        trajectory, 
-        box_size, 
-        periodic_boundary, 
-        stride=1
-    ):
+    def analyze_dihedral_stretch(trajectory, box_size, periodic_boundary, stride=1):
         """
         Get the difference in dihedral angles (degrees) from ideal
         for actin angles between:
