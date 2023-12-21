@@ -9,18 +9,18 @@ from simulariumio import (
     DisplayData,
     MetaData,
     ScatterPlotData,
-    TrajectoryConverter,
+    HistogramPlotData,
     TrajectoryData,
     UnitData,
+    BinaryWriter,
 )
-from simulariumio.filters import AddAgentsFilter, MultiplyTimeFilter
-from simulariumio.plot_readers import ScatterPlotReader
+from simulariumio.filters import MultiplyTimeFilter
 from simulariumio.readdy import ReaddyConverter, ReaddyData
-from subcell_analysis import SpatialAnnotator
-from subcell_analysis.readdy import ReaddyPostProcessor
+from simulariumio.plot_readers import ScatterPlotReader, HistogramPlotReader
+from subcell_analysis import SpatialAnnotator, CompressionAnalyzer
+from subcell_analysis.readdy import ReaddyPostProcessor, ReaddyLoader, FrameData
 
-from ..actin import ACTIN_REACTIONS, ActinAnalyzer
-from ..common import ReaddyUtil
+from ..actin import ActinAnalyzer, ActinStructure
 
 
 class ActinVisualization:
@@ -262,392 +262,19 @@ class ActinVisualization:
         return display_data
 
     @staticmethod
-    def get_bound_monomers_plot(monomer_data, times):
-        """
-        Add a plot of percent actin in filaments.
-        """
-        return ScatterPlotData(
-            title="Monomers over time",
-            xaxis_title="Time (µs)",
-            yaxis_title="Monomers (%)",
-            xtrace=times,
-            ytraces={
-                "Actin in filaments": 100.0
-                * ActinAnalyzer.analyze_ratio_of_filamentous_to_total_actin(
-                    monomer_data
-                ),
-                "Arp2/3 in filaments": 100.0
-                * ActinAnalyzer.analyze_ratio_of_bound_to_total_arp23(monomer_data),
-                "Actin in daughter filaments": 100.0
-                * ActinAnalyzer.analyze_ratio_of_daughter_to_total_actin(monomer_data),
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_avg_length_plot(monomer_data, times):
-        """
-        Add a plot of average mother and daughter filament length.
-        """
-        return ScatterPlotData(
-            title="Average length of filaments",
-            xaxis_title="Time (µs)",
-            yaxis_title="Average length (monomers)",
-            xtrace=times,
-            ytraces={
-                "Mother filaments": ActinAnalyzer.analyze_average_for_series(
-                    ActinAnalyzer.analyze_mother_filament_lengths(monomer_data)
-                ),
-                "Daughter filaments": ActinAnalyzer.analyze_average_for_series(
-                    ActinAnalyzer.analyze_daughter_filament_lengths(monomer_data)
-                ),
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_growth_reactions_plot(reactions, times):
-        """
-        Add a plot of reaction events over time
-        for each total growth reaction.
-        """
-        ytraces = {}
-        for total_rxn_name in ACTIN_REACTIONS.GROWTH_RXNS:
-            rxn_events = ReaddyUtil.analyze_reaction_count_over_time(
-                reactions, total_rxn_name
-            )
-            if rxn_events is not None:
-                ytraces[total_rxn_name] = rxn_events
-        return ScatterPlotData(
-            title="Growth reactions",
-            xaxis_title="Time (µs)",
-            yaxis_title="Reaction events",
-            xtrace=times,
-            ytraces=ytraces,
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_structural_reactions_plot(reactions, times):
-        """
-        Add a plot of the number of times a structural reaction
-        was triggered over time
-        Note: triggered != completed, the reaction may have failed
-        to find the required reactants.
-        """
-        ytraces = {}
-        for total_rxn_name in ACTIN_REACTIONS.STRUCTURAL_RXNS:
-            rxn_events = ReaddyUtil.analyze_reaction_count_over_time(
-                reactions, total_rxn_name
-            )
-            if rxn_events is not None:
-                ytraces[total_rxn_name] = rxn_events
-        return ScatterPlotData(
-            title="Structural reaction triggers",
-            xaxis_title="Time (µs)",
-            yaxis_title="Reactions triggered",
-            xtrace=times,
-            ytraces=ytraces,
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_growth_reactions_vs_actin_plot(reactions, monomer_data, box_size):
-        """
-        Add a plot of average reaction events over time
-        for each total growth reaction.
-        """
-        ytraces = {}
-        for rxn_group_name in ACTIN_REACTIONS.GROUPED_GROWTH_RXNS:
-            group_reaction_events = []
-            for total_rxn_name in ACTIN_REACTIONS.GROUPED_GROWTH_RXNS[rxn_group_name]:
-                group_reaction_events.append(
-                    ReaddyUtil.analyze_reaction_count_over_time(
-                        reactions, total_rxn_name
-                    )
-                )
-            if len(group_reaction_events) > 0:
-                ytraces[rxn_group_name] = np.sum(
-                    np.array(group_reaction_events), axis=0
-                )
-        return ScatterPlotData(
-            title="Growth vs [actin]",
-            xaxis_title="[Actin] (µM)",
-            yaxis_title="Reaction events",
-            xtrace=ActinAnalyzer.analyze_free_actin_concentration_over_time(
-                monomer_data, box_size
-            ),
-            ytraces=ytraces,
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_capped_ends_plot(monomer_data, times):
-        """
-        Add a plot of percent barbed ends that are capped.
-        """
-        return ScatterPlotData(
-            title="Capped barbed ends",
-            xaxis_title="Time (µs)",
-            yaxis_title="Capped ends (%)",
-            xtrace=times,
-            ytraces={
-                "Capped ends": 100.0
-                * ActinAnalyzer.analyze_ratio_of_capped_ends_to_total_ends(
-                    monomer_data
-                ),
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_branch_angle_plot(monomer_data, box_size, periodic_boundary, times):
-        """
-        Add a plot of branch angle mean and std dev.
-        """
-        angles = ActinAnalyzer.analyze_branch_angles(
-            monomer_data, box_size, periodic_boundary
-        )
-        mean = ActinAnalyzer.analyze_average_for_series(angles)
-        stddev = ActinAnalyzer.analyze_stddev_for_series(angles)
-        return ScatterPlotData(
-            title="Average branch angle",
-            xaxis_title="Time (µs)",
-            yaxis_title="Branch angle (°)",
-            xtrace=times,
-            ytraces={
-                "Ideal": np.array(times.shape[0] * [70.9]),
-                "Mean": mean,
-                "Mean - std": mean - stddev,
-                "Mean + std": mean + stddev,
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_helix_pitch_plot(monomer_data, box_size, periodic_boundary, times):
-        """
-        Add a plot of average helix pitch
-        for both the short and long helices
-        ideal Ref: http://www.jbc.org/content/266/1/1.full.pdf.
-        """
-        return ScatterPlotData(
-            title="Average helix pitch",
-            xaxis_title="Time (µs)",
-            yaxis_title="Pitch (nm)",
-            xtrace=times,
-            ytraces={
-                "Ideal short pitch": np.array(times.shape[0] * [5.9]),
-                "Mean short pitch": ActinAnalyzer.analyze_average_for_series(
-                    ActinAnalyzer.analyze_short_helix_pitches(
-                        monomer_data, box_size, periodic_boundary
-                    )
-                ),
-                "Ideal long pitch": np.array(times.shape[0] * [72]),
-                "Mean long pitch": ActinAnalyzer.analyze_average_for_series(
-                    ActinAnalyzer.analyze_long_helix_pitches(
-                        monomer_data, box_size, periodic_boundary
-                    )
-                ),
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_filament_straightness_plot(
-        monomer_data, box_size, periodic_boundary, times
-    ):
-        """
-        Add a plot of how many nm each monomer is away
-        from ideal position in a straight filament.
-        """
-        return ScatterPlotData(
-            title="Filament bending",
-            xaxis_title="Time (µs)",
-            yaxis_title="Filament bending",
-            xtrace=times,
-            ytraces={
-                "Filament bending": (
-                    ActinAnalyzer.analyze_average_for_series(
-                        ActinAnalyzer.analyze_filament_straightness(
-                            monomer_data,
-                            box_size,
-                            periodic_boundary,
-                        )
-                    )
-                ),
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def generate_polymerization_plots(
-        monomer_data,
-        times,
-        reactions,
-        box_size,
-        periodic_boundary=True,
-        plots=None,
-    ):
-        """
-        Use an ActinAnalyzer to generate plots of observables
-        for polymerizing actin.
-        """
-        if plots is None:
-            plots = {
-                "scatter": [],
-                "histogram": [],
-            }
-        plots["scatter"] += [
-            ActinVisualization.get_bound_monomers_plot(monomer_data, times),
-            ActinVisualization.get_avg_length_plot(monomer_data, times),
-            ActinVisualization.get_growth_reactions_plot(reactions, times),
-            ActinVisualization.get_growth_reactions_vs_actin_plot(
-                reactions, monomer_data, box_size
-            ),
-            # ActinVisualization.get_capped_ends_plot(monomer_data, times),
-            ActinVisualization.get_branch_angle_plot(
-                monomer_data, box_size, periodic_boundary, times
-            ),
-            ActinVisualization.get_helix_pitch_plot(
-                monomer_data, box_size, periodic_boundary, times
-            ),
-            ActinVisualization.get_filament_straightness_plot(
-                monomer_data, box_size, periodic_boundary, times
-            ),
-            ActinVisualization.get_structural_reactions_plot(reactions, times),
-        ]
-        return plots
-
-    @staticmethod
-    def get_total_axis_twist_plot(axis_twist, times):
-        """
-        Add a plot of total axis twist vs time.
-        """
-        axis_sum = np.sum(axis_twist, axis=1)
-        return ScatterPlotData(
-            title="Total filament axis twist",
-            xaxis_title="T (μs)",
-            yaxis_title="Twist (rotations)",
-            xtrace=times,
-            ytraces={
-                "<<<": 9.5 * np.ones(axis_sum.shape),
-                ">>>": 15.5 * np.ones(axis_sum.shape),
-                "Ideal": axis_sum[0] * np.ones(axis_sum.shape),
-                "Axis angle": axis_sum,
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_total_plane_twist_plot(plane_twist, times):
-        """
-        Add a plot of total plane twist vs time.
-        """
-        plane_sum = np.sum(plane_twist, axis=1)
-        plane_sum /= plane_sum[0]
-        return ScatterPlotData(
-            title="Total filament plane twist",
-            xaxis_title="T (μs)",
-            yaxis_title="Twist (normalized)",
-            xtrace=times,
-            ytraces={
-                "Total": plane_sum,
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_twist_per_monomer_plot(twist_angles, filament_positions):
-        """
-        Add a plot of twist vs position of the monomer in filament.
-        """
-        end_time = len(twist_angles) - 1
-        return ScatterPlotData(
-            title="Final twist along filament",
-            xaxis_title="Filament position (index)",
-            yaxis_title="Twist (rotations)",
-            xtrace=filament_positions[end_time],
-            ytraces={
-                "End": twist_angles[end_time],
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_total_bond_energy_plot(
-        lateral_bond_energies, longitudinal_bond_energies, times
-    ):
-        """
-        Add a plot of bond energies (lat and long) vs time.
-        """
-        sum_lat = np.sum(lateral_bond_energies, axis=1)
-        sum_long = np.sum(longitudinal_bond_energies, axis=1)
-        return ScatterPlotData(
-            title="Total bond energy",
-            xaxis_title="T (μs)",
-            yaxis_title="Strain energy (KT)",
-            xtrace=times,
-            ytraces={
-                "Lateral": sum_lat,
-                "Longitudinal": sum_long,
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_bond_energy_per_monomer_plot(
-        lateral_bond_energies, longitudinal_bond_energies, filament_positions
-    ):
-        """
-        Add a plot of bond energies (lat and long) vs index of monomer in filament.
-        """
-        end_time = len(lateral_bond_energies) - 1
-        return ScatterPlotData(
-            title="Final bond energy along filament",
-            xaxis_title="Filament position (index)",
-            yaxis_title="Strain Energy (KT)",
-            xtrace=filament_positions[end_time],
-            ytraces={
-                "Lateral": lateral_bond_energies[end_time],
-                "Longitudinal": longitudinal_bond_energies[end_time],
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_filament_length_plot(
-        normals, axis_positions, box_size, periodic_boundary, stride, times
-    ):
-        """
-        Add a plot of distance from first to last particle
-        in the first filament vs time.
-        """
-        filament_length = ActinAnalyzer.analyze_filament_length(
-            normals, axis_positions, box_size, periodic_boundary, stride
-        )
-        return ScatterPlotData(
-            title="Filament length",
-            xaxis_title="T (μs)",
-            yaxis_title="Length of filament (nm)",
-            xtrace=times[::stride],
-            ytraces={
-                "<<<": 450.0 * np.ones(filament_length.shape),
-                ">>>": 550.0 * np.ones(filament_length.shape),
-                "Ideal": filament_length[0] * np.ones(filament_length.shape),
-                "Filament length": filament_length,
-            },
-            render_mode="lines",
-        )
-
-    @staticmethod
-    def get_bond_stretch_plot(monomer_data, box_size, periodic_boundary, stride, times):
+    def get_bond_stretch_plot(
+        trajectory: List[FrameData],
+        box_size: np.ndarray,
+        periodic_boundary: bool,
+        stride: int,
+        times: np.ndarray,
+    ) -> ScatterPlotData:
         """
         Add a scatter plot of difference in bond length from ideal
         for lateral and longitudinal actin bonds vs time.
         """
         (stretch_lat, stretch_long,) = ActinAnalyzer.analyze_bond_stretch(
-            monomer_data, box_size, periodic_boundary, stride
+            trajectory, box_size, periodic_boundary, stride
         )
         mean_lat = np.mean(stretch_lat, axis=1)
         # stddev_lat = np.std(stretch_lat, axis=1)
@@ -655,7 +282,7 @@ class ActinVisualization:
         # stddev_long = np.std(stretch_long, axis=1)
         return ScatterPlotData(
             title="Bond stretch",
-            xaxis_title="T (μs)",
+            xaxis_title="T (ms)",
             yaxis_title="Bond stretch (nm)",
             xtrace=times[::stride],
             ytraces={
@@ -669,8 +296,12 @@ class ActinVisualization:
 
     @staticmethod
     def get_angle_stretch_plot(
-        monomer_data, box_size, periodic_boundary, stride, times
-    ):
+        trajectory: List[FrameData],
+        box_size: np.ndarray,
+        periodic_boundary: bool,
+        stride: int,
+        times: np.ndarray,
+    ) -> ScatterPlotData:
         """
         Add a scatter plot of difference in angles from ideal
         for lateral and longitudinal actin bonds vs time.
@@ -680,14 +311,14 @@ class ActinVisualization:
             stretch_lat_long,
             stretch_long_long,
         ) = ActinAnalyzer.analyze_angle_stretch(
-            monomer_data, box_size, periodic_boundary, stride
+            trajectory, box_size, periodic_boundary, stride
         )
         mean_lat_lat = np.mean(stretch_lat_lat, axis=1)
         mean_lat_long = np.mean(stretch_lat_long, axis=1)
         mean_long_long = np.mean(stretch_long_long, axis=1)
         return ScatterPlotData(
             title="Angle stretch",
-            xaxis_title="T (μs)",
+            xaxis_title="T (ms)",
             yaxis_title="Angle stretch (degrees)",
             xtrace=times[::stride],
             ytraces={
@@ -702,8 +333,12 @@ class ActinVisualization:
 
     @staticmethod
     def get_dihedral_stretch_plot(
-        monomer_data, box_size, periodic_boundary, stride, times
-    ):
+        trajectory: List[FrameData],
+        box_size: np.ndarray,
+        periodic_boundary: bool,
+        stride: int,
+        times: np.ndarray,
+    ) -> ScatterPlotData:
         """
         Add a scatter plot of difference in angles from ideal
         for lateral and longitudinal actin bonds vs time.
@@ -712,13 +347,13 @@ class ActinVisualization:
             stretch_lat_lat_lat,
             stretch_long_long_long,
         ) = ActinAnalyzer.analyze_dihedral_stretch(
-            monomer_data, box_size, periodic_boundary, stride
+            trajectory, box_size, periodic_boundary, stride
         )
         mean_lat_lat_lat = np.mean(stretch_lat_lat_lat, axis=1)
         mean_long_long_long = np.mean(stretch_long_long_long, axis=1)
         return ScatterPlotData(
             title="Dihedral stretch",
-            xaxis_title="T (μs)",
+            xaxis_title="T (ms)",
             yaxis_title="Angle stretch (degrees)",
             xtrace=times[::stride],
             ytraces={
@@ -731,15 +366,12 @@ class ActinVisualization:
         )
 
     @staticmethod
-    def generate_filament_structure_plots(
-        monomer_data,
-        times,
-        box_size,
-        normals,
-        axis_positions,
-        periodic_boundary=True,
-        plots=None,
-    ):
+    def generate_actin_structure_plots(
+        trajectory: List[FrameData],
+        box_size: np.ndarray,
+        periodic_boundary: bool = True,
+        plots: Dict[str, List[ScatterPlotData or HistogramPlotData]] = None,
+    ) -> Dict[str, List[ScatterPlotData or HistogramPlotData]]:
         """
         Use an ActinAnalyzer to generate plots of observables
         for a diffusing actin filament.
@@ -750,118 +382,148 @@ class ActinVisualization:
                 "scatter": [],
                 "histogram": [],
             }
-        axis_twist, _, _ = ActinAnalyzer.analyze_twist_axis(
-            normals, axis_positions, STRIDE
-        )
+        times = np.array([frame.time for frame in trajectory])
         plots["scatter"] += [
-            ActinVisualization.get_total_axis_twist_plot(axis_twist, times[::STRIDE]),
-            ActinVisualization.get_filament_length_plot(
-                normals, axis_positions, box_size, periodic_boundary, STRIDE, times
-            ),
             ActinVisualization.get_bond_stretch_plot(
-                monomer_data, box_size, periodic_boundary, STRIDE, times
+                trajectory, box_size, periodic_boundary, STRIDE, times
             ),
             ActinVisualization.get_angle_stretch_plot(
-                monomer_data, box_size, periodic_boundary, STRIDE, times
+                trajectory, box_size, periodic_boundary, STRIDE, times
             ),
             ActinVisualization.get_dihedral_stretch_plot(
-                monomer_data, box_size, periodic_boundary, STRIDE, times
-            ),
-        ]
-        return plots
-
-    @staticmethod
-    def generate_bend_twist_plots(
-        monomer_data,
-        times,
-        box_size,
-        normals,
-        axis_positions,
-        periodic_boundary=True,
-        plots=None,
-    ):
-        """
-        Use an ActinAnalyzer to generate plots of observables
-        for actin being bent or twisted.
-        """
-        if plots is None:
-            plots = {
-                "scatter": [],
-                "histogram": [],
-            }
-        STRIDE = 10
-        (axis_twist, _, _) = ActinAnalyzer.analyze_twist_axis(
-            normals, axis_positions, STRIDE
-        )
-        (twist_angles, filament_positions1) = ActinAnalyzer.analyze_twist_planes(
-            monomer_data, box_size, periodic_boundary, STRIDE
-        )
-        (
-            lateral_bond_energies,
-            longitudinal_bond_energies,
-            filament_positions2,
-        ) = ActinAnalyzer.analyze_bond_energies(
-            monomer_data, box_size, periodic_boundary, STRIDE
-        )
-        plots["scatter"] += [
-            ActinVisualization.get_total_axis_twist_plot(axis_twist, times[::STRIDE]),
-            ActinVisualization.get_total_plane_twist_plot(
-                twist_angles, times[::STRIDE]
-            ),
-            ActinVisualization.get_twist_per_monomer_plot(
-                twist_angles, filament_positions1
-            ),
-            ActinVisualization.get_total_bond_energy_plot(
-                lateral_bond_energies, longitudinal_bond_energies, times[::STRIDE]
-            ),
-            ActinVisualization.get_bond_energy_per_monomer_plot(
-                lateral_bond_energies, longitudinal_bond_energies, filament_positions2
+                trajectory, box_size, periodic_boundary, STRIDE, times
             ),
         ]
         return plots
 
     @staticmethod
     def generate_actin_compression_plots(
-        post_processor: ReaddyPostProcessor,
-        fiber_chain_ids: List[List[List[int]]],
-        temperature_c: float,
-        plots: List[ScatterPlotData] = None,
-    ) -> List[Dict[str, Any]]:
+        axis_positions: List[List[np.ndarray]],
+        timestep: float,
+        plots: Dict[str, List[ScatterPlotData or HistogramPlotData]] = None,
+    ) -> Dict[str, List[ScatterPlotData or HistogramPlotData]]:
         """
         Use an ActinAnalyzer to generate plots of observables
         for actin being compressed.
         """
         if plots is None:
-            plots = []
-        times = []
-        for frame in post_processor.trajectory:
-            times.append(frame.time)
-        bond_energies, _ = post_processor.fiber_bond_energies(
-            fiber_chain_ids=fiber_chain_ids,
-            ideal_lengths=ActinAnalyzer.ideal_bond_lengths(),
-            ks=ActinAnalyzer.bond_energy_constants(temp_c=temperature_c),
-            stride=10,
+            plots = {
+                "scatter": [],
+                "histogram": [],
+            }
+        perp_dist = []
+        bending_energy = []
+        non_coplanarity = []
+        peak_asym = []
+        contour_length = []
+        total_steps = len(axis_positions)
+        control_pts = ReaddyPostProcessor.linear_fiber_control_points(
+            axis_positions, 10.0
         )
-        sum_lat = np.sum(bond_energies[1], axis=1)
-        sum_long = np.sum(bond_energies[2], axis=1)
-        plots.append(
+        for time_ix in range(total_steps):
+            perp_dist.append(
+                CompressionAnalyzer.get_average_distance_from_end_to_end_axis(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
+            bending_energy.append(
+                1000.0
+                * CompressionAnalyzer.get_bending_energy_from_trace(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
+            non_coplanarity.append(
+                CompressionAnalyzer.get_third_component_variance(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
+            peak_asym.append(
+                CompressionAnalyzer.get_asymmetry_of_peak(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
+            contour_length.append(
+                CompressionAnalyzer.get_contour_length_from_trace(
+                    polymer_trace=control_pts[time_ix][0],
+                )
+            )
+        times = timestep * np.arange(total_steps)
+        plots["scatter"] += [
             ScatterPlotData(
-                title="Total bond energy",
-                xaxis_title="T (μs)",
-                yaxis_title="Strain energy (KT)",
-                xtrace=np.array(times[::10]),
+                title="Average Perpendicular Distance",
+                xaxis_title="T (ms)",
+                yaxis_title="distance (nm)",
+                xtrace=times,
                 ytraces={
-                    "Lateral": sum_lat,
-                    "Longitudinal": sum_long,
+                    "<<<": np.zeros(times.shape),
+                    ">>>": 85.0 * np.ones(times.shape),
+                    "filament": np.array(perp_dist),
                 },
                 render_mode="lines",
-            )
-        )
-        formatted_plots = []
+            ),
+            ScatterPlotData(
+                title="Bending Energy",
+                xaxis_title="T (ms)",
+                yaxis_title="energy",
+                xtrace=times,
+                ytraces={
+                    "<<<": np.zeros(times.shape),
+                    ">>>": 10.0 * np.ones(times.shape),
+                    "filament": np.array(bending_energy),
+                },
+                render_mode="lines",
+            ),
+            ScatterPlotData(
+                title="Non-coplanarity",
+                xaxis_title="T (ms)",
+                yaxis_title="3rd component variance from PCA",
+                xtrace=times,
+                ytraces={
+                    "<<<": np.zeros(times.shape),
+                    ">>>": 0.03 * np.ones(times.shape),
+                    "filament": np.array(non_coplanarity),
+                },
+                render_mode="lines",
+            ),
+            ScatterPlotData(
+                title="Peak Asymmetry",
+                xaxis_title="T (ms)",
+                yaxis_title="normalized peak distance",
+                xtrace=times,
+                ytraces={
+                    "<<<": np.zeros(times.shape),
+                    ">>>": 0.5 * np.ones(times.shape),
+                    "filament": np.array(peak_asym),
+                },
+                render_mode="lines",
+            ),
+            ScatterPlotData(
+                title="Contour Length",
+                xaxis_title="T (ms)",
+                yaxis_title="filament contour length (nm)",
+                xtrace=times,
+                ytraces={
+                    "<<<": 480 * np.ones(times.shape),
+                    ">>>": 505 * np.ones(times.shape),
+                    "filament": np.array(contour_length),
+                },
+                render_mode="lines",
+            ),
+        ]
+        return plots
+
+    @staticmethod
+    def add_plots_to_trajectory(
+        trajectory: TrajectoryData,
+        plots: Dict[str, List[ScatterPlotData or HistogramPlotData]],
+    ) -> TrajectoryData:
         reader = ScatterPlotReader()
-        for plot in plots:
-            formatted_plots.append(reader.read(plot))
-        return formatted_plots
+        for plot in plots["scatter"]:
+            trajectory.plots.append(reader.read(plot))
+        reader = HistogramPlotReader()
+        for plot in plots["histogram"]:
+            trajectory.plots.append(reader.read(plot))
+        return trajectory
 
     @staticmethod
     def add_spatial_annotations(
@@ -936,14 +598,14 @@ class ActinVisualization:
         path_to_readdy_h5: str,
         box_size: np.ndarray,
         total_steps: int,
-        time_multiplier: float,
+        saved_frames: float,
         longitudinal_bonds: bool = True,
     ) -> TrajectoryData:
         """
         Get a TrajectoryData to visualize an actin trajectory in Simularium.
         """
         data = ReaddyData(
-            timestep=(ActinVisualization.TIMESTEP * total_steps * time_multiplier),
+            timestep=1e-6 * (ActinVisualization.TIMESTEP * total_steps / saved_frames),
             path_to_readdy_h5=path_to_readdy_h5,
             meta_data=MetaData(
                 box_size=box_size,
@@ -953,43 +615,131 @@ class ActinVisualization:
                     up_vector=np.array([0.0, 1.0, 0.0]),
                     fov_degrees=120.0,
                 ),
+                scale_factor=1.0,
             ),
             display_data=ActinVisualization.ACTIN_DISPLAY_DATA(longitudinal_bonds),
-            time_units=UnitData("µs"),
+            time_units=UnitData("ms"),
             spatial_units=UnitData("nm"),
         )
-        converter = ReaddyConverter(data)
-        traj_data = converter.filter_data(
-            [
-                MultiplyTimeFilter(
-                    multiplier=time_multiplier,
-                    apply_to_plots=False,
-                )
-            ]
-        )
-        return traj_data
+        return ReaddyConverter(data)._data
 
     @staticmethod
-    def save_actin(
-        trajectory_datas: List[TrajectoryData],
-        output_path: str,
-        plots: List[Dict[str, Any]] = None,
-    ):
+    def analyze_and_visualize_trajectory(
+        output_name: str,
+        total_steps: float,
+        parameters: Dict[str, Any],
+        save_pickle: bool = False,
+    ) -> TrajectoryData:
         """
-        save a simularium file with actin trajector(ies).
+        Do all visualization, annotation, and metric calculation on an actin trajectory
+        and save it as a simularium file.
         """
-        traj_data = trajectory_datas[0]
-        for index in range(1, len(trajectory_datas)):
-            traj_data = TrajectoryConverter(traj_data).filter_data(
-                [
-                    AddAgentsFilter(
-                        new_agent_data=trajectory_datas[index].agent_data,
-                    )
-                ]
+        # get analysis parameters
+        plot_actin_structure = parameters.get("plot_actin_structure", False)
+        plot_actin_compression = parameters.get("plot_actin_compression", False)
+        visualize_edges = parameters.get("visualize_edges", False)
+        visualize_normals = parameters.get("visualize_normals", False)
+        visualize_control_pts = parameters.get("visualize_control_pts", False)
+
+        # convert to simularium
+        traj_data = ActinVisualization.simularium_trajectory(
+            path_to_readdy_h5=output_name + ".h5",
+            box_size=parameters["box_size"],
+            total_steps=total_steps,
+            saved_frames=1e3,
+            longitudinal_bonds=bool(parameters.get("longitudinal_bonds", True)),
+        )
+
+        # load different views of ReaDDy data
+        post_processor = None
+        fiber_chain_ids = None
+        axis_positions = None
+        new_chain_ids = None
+        time_step = (
+            max(1, total_steps * 1e-3) * parameters.get("internal_timestep", 0.1) * 1e-6
+        )  # ms
+        if (
+            visualize_normals
+            or visualize_control_pts
+            or visualize_edges
+            or plot_actin_structure
+            or plot_actin_compression
+        ):
+            periodic_boundary = parameters.get("periodic_boundary", False)
+            post_processor = ReaddyPostProcessor(
+                trajectory=ReaddyLoader(
+                    h5_file_path=output_name + ".h5",
+                    min_time_ix=0,
+                    max_time_ix=-1,
+                    time_inc=1,
+                    timestep=time_step,
+                    save_pickle_file=save_pickle,
+                ).trajectory(),
+                box_size=parameters["box_size"],
+                periodic_boundary=periodic_boundary,
             )
-        converter = TrajectoryConverter(traj_data)
-        if plots is not None:
-            for plot_type in plots:
-                for plot in plots[plot_type]:
-                    converter.add_plot(plot, plot_type)
-        converter.save(output_path)
+            if visualize_normals or visualize_control_pts or plot_actin_compression:
+                fiber_chain_ids = post_processor.linear_fiber_chain_ids(
+                    start_particle_phrases=["pointed"],
+                    other_particle_types=[
+                        "actin#",
+                        "actin#ATP_",
+                        "actin#mid_",
+                        "actin#mid_ATP_",
+                        "actin#fixed_",
+                        "actin#fixed_ATP_",
+                        "actin#mid_fixed_",
+                        "actin#mid_fixed_ATP_",
+                        "actin#barbed_",
+                        "actin#barbed_ATP_",
+                        "actin#fixed_barbed_",
+                        "actin#fixed_barbed_ATP_",
+                    ],
+                    polymer_number_range=5,
+                )
+                (
+                    axis_positions,
+                    new_chain_ids,
+                ) = post_processor.linear_fiber_axis_positions(
+                    fiber_chain_ids=fiber_chain_ids,
+                    ideal_positions=ActinStructure.mother_positions[2:5],
+                    ideal_vector_to_axis=ActinStructure.vector_to_axis(),
+                )
+
+        # create plots
+        plots = None
+        if plot_actin_compression:
+            print("plot actin compression metrics")
+            plots = ActinVisualization.generate_actin_compression_plots(
+                axis_positions,
+                time_step,
+                plots=plots,
+            )
+        if plot_actin_structure:
+            print("plot actin structure metrics")
+            plots = ActinVisualization.generate_actin_structure_plots(
+                post_processor.trajectory,
+                parameters["box_size"],
+                periodic_boundary=True,
+                plots=plots,
+            )
+        traj_data = ActinVisualization.add_plots_to_trajectory(traj_data, plots)
+
+        # add annotation objects to the spatial data
+        traj_data = ActinVisualization.add_spatial_annotations(
+            traj_data,
+            post_processor,
+            visualize_edges,
+            visualize_normals,
+            visualize_control_pts,
+            new_chain_ids,
+            axis_positions,
+        )
+
+        # save simularium file
+        BinaryWriter.save(
+            trajectory_data=traj_data,
+            output_path=output_name + ".h5",
+            validate_ids=False,
+        )
+        return traj_data

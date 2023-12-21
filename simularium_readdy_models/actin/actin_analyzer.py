@@ -1149,7 +1149,7 @@ class ActinAnalyzer:
         return np.array(filament_length)
 
     @staticmethod
-    def analyze_bond_stretch(monomer_data, box_size, periodic_boundary, stride=1):
+    def analyze_bond_stretch(trajectory, box_size, periodic_boundary, stride=1):
         """
         Get the difference in bond length from ideal
         for lateral and longitudinal actin bonds.
@@ -1163,22 +1163,18 @@ class ActinAnalyzer:
             ActinStructure.mother_positions[2] - ActinStructure.mother_positions[0]
         )
         print("Analyzing bond stretch...")
-        for time_index in range(0, len(monomer_data), stride):
+        for time_index in range(0, len(trajectory), stride):
             stretch_lat.append([])
             stretch_long.append([])
             new_time_index = math.floor(time_index / stride)
-            filament = monomer_data[time_index]["topologies"][0]["particle_ids"]
+            filament = trajectory[time_index].topologies[0].particle_ids
             for index in range(len(filament) - 2):
-                particle = monomer_data[time_index]["particles"][filament[index]]
-                particle_lat = monomer_data[time_index]["particles"][
-                    filament[index + 1]
-                ]
-                particle_long = monomer_data[time_index]["particles"][
-                    filament[index + 2]
-                ]
-                type_name = particle["type_name"]
-                type_name_lat = particle_lat["type_name"]
-                type_name_long = particle_long["type_name"]
+                particle = trajectory[time_index].particles[filament[index]]
+                particle_lat = trajectory[time_index].particles[filament[index + 1]]
+                particle_long = trajectory[time_index].particles[filament[index + 2]]
+                type_name = particle.type_name
+                type_name_lat = particle_lat.type_name
+                type_name_long = particle_long.type_name
                 if (
                     "fixed" in type_name
                     or "fixed" in type_name_lat
@@ -1187,9 +1183,9 @@ class ActinAnalyzer:
                     stretch_lat[new_time_index].append(0.0)
                     stretch_long[new_time_index].append(0.0)
                     continue
-                pos = particle["position"]
-                pos_lat = particle_lat["position"]
-                pos_long = particle_long["position"]
+                pos = particle.position
+                pos_lat = particle_lat.position
+                pos_long = particle_long.position
                 if periodic_boundary:
                     pos_lat = ReaddyUtil.get_non_periodic_boundary_position(
                         pos, pos_lat, box_size
@@ -1208,7 +1204,7 @@ class ActinAnalyzer:
         return np.array(stretch_lat), np.array(stretch_long)
 
     @staticmethod
-    def analyze_angle_stretch(monomer_data, box_size, periodic_boundary, stride=1):
+    def analyze_angle_stretch(trajectory, box_size, periodic_boundary, stride=1):
         """
         Get the difference in angles (degrees) from ideal
         for actin angles between:
@@ -1223,24 +1219,24 @@ class ActinAnalyzer:
         ideal_angle_lat_long = ActinStructure.actin_to_actin_angle(True, False, True)
         ideal_angle_long_long = ActinStructure.actin_to_actin_angle(False, False, True)
         print("Analyzing angle stretch...")
-        for time_index in range(0, len(monomer_data), stride):
+        for time_index in range(0, len(trajectory), stride):
             result_lat_lat.append([])
             result_lat_long.append([])
             result_long_long.append([])
             new_time_index = math.floor(time_index / stride)
-            filament = monomer_data[time_index]["topologies"][0]["particle_ids"]
+            filament = trajectory[time_index].topologies[0].particle_ids
             for index in range(len(filament) - 4):
                 particles = []
                 positions = []
                 fixed = False
                 for d in range(5):
                     particles.append(
-                        monomer_data[time_index]["particles"][filament[index + d]]
+                        trajectory[time_index].particles[filament[index + d]]
                     )
-                    if "fixed" in particles[d]["type_name"]:
+                    if "fixed" in particles[d].type_name:
                         fixed = True
                         break
-                    positions.append(particles[d]["position"])
+                    positions.append(particles[d].position)
                     if d > 0 and periodic_boundary:
                         positions[d] = ReaddyUtil.get_non_periodic_boundary_position(
                             positions[d - 1], positions[d], box_size
@@ -1287,7 +1283,7 @@ class ActinAnalyzer:
         )
 
     @staticmethod
-    def analyze_dihedral_stretch(monomer_data, box_size, periodic_boundary, stride=1):
+    def analyze_dihedral_stretch(trajectory, box_size, periodic_boundary, stride=1):
         """
         Get the difference in dihedral angles (degrees) from ideal
         for actin angles between:
@@ -1305,23 +1301,23 @@ class ActinAnalyzer:
             False, False, False, True
         )
         print("Analyzing dihedral stretch...")
-        for time_index in range(0, len(monomer_data), stride):
+        for time_index in range(0, len(trajectory), stride):
             result_lat_lat_lat.append([])
             result_long_long_long.append([])
             new_time_index = math.floor(time_index / stride)
-            filament = monomer_data[time_index]["topologies"][0]["particle_ids"]
+            filament = trajectory[time_index].topologies[0].particle_ids
             for index in range(len(filament) - 6):
                 particles = []
                 positions = []
                 fixed = False
                 for d in range(7):
                     particles.append(
-                        monomer_data[time_index]["particles"][filament[index + d]]
+                        trajectory[time_index].particles[filament[index + d]]
                     )
-                    if "fixed" in particles[d]["type_name"]:
+                    if "fixed" in particles[d].type_name:
                         fixed = True
                         break
-                    positions.append(particles[d]["position"])
+                    positions.append(particles[d].position)
                     if d > 0 and periodic_boundary:
                         positions[d] = ReaddyUtil.get_non_periodic_boundary_position(
                             positions[d - 1], positions[d], box_size
