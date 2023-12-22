@@ -17,7 +17,14 @@ from simulariumio import (
 from simulariumio.filters import MultiplyTimeFilter
 from simulariumio.readdy import ReaddyConverter, ReaddyData
 from simulariumio.plot_readers import ScatterPlotReader, HistogramPlotReader
-from subcell_analysis import SpatialAnnotator, CompressionAnalyzer
+from subcell_analysis import SpatialAnnotator
+from subcell_analysis.compression_analysis import (
+    get_average_distance_from_end_to_end_axis,
+    get_bending_energy_from_trace,
+    get_third_component_variance,
+    get_asymmetry_of_peak,
+    get_contour_length_from_trace,
+)
 from subcell_analysis.readdy import ReaddyPostProcessor, ReaddyLoader, FrameData
 
 from ..actin import ActinAnalyzer, ActinStructure
@@ -422,28 +429,28 @@ class ActinVisualization:
         )
         for time_ix in range(total_steps):
             perp_dist.append(
-                CompressionAnalyzer.get_average_distance_from_end_to_end_axis(
+                get_average_distance_from_end_to_end_axis(
                     polymer_trace=control_pts[time_ix][0],
                 )
             )
             bending_energy.append(
                 1000.0
-                * CompressionAnalyzer.get_bending_energy_from_trace(
+                * get_bending_energy_from_trace(
                     polymer_trace=control_pts[time_ix][0],
                 )
             )
             non_coplanarity.append(
-                CompressionAnalyzer.get_third_component_variance(
+                get_third_component_variance(
                     polymer_trace=control_pts[time_ix][0],
                 )
             )
             peak_asym.append(
-                CompressionAnalyzer.get_asymmetry_of_peak(
+                get_asymmetry_of_peak(
                     polymer_trace=control_pts[time_ix][0],
                 )
             )
             contour_length.append(
-                CompressionAnalyzer.get_contour_length_from_trace(
+                get_contour_length_from_trace(
                     polymer_trace=control_pts[time_ix][0],
                 )
             )
