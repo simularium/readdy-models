@@ -4,6 +4,7 @@
 import argparse
 import random
 import math
+import copy
 
 import numpy as np
 import readdy
@@ -257,53 +258,17 @@ def config_init_conditions(simulation):
             "Oxygen", ["oxygen"], np.array([position])
         )
         
-def angle_between_orientations(P, Q):
-    mat_p = Rotation.from_matrix(P)
-    mat_q = Rotation.from_matrix(Q)
-    vp = mat_p.apply([1, 0, 0])
-    vq = mat_q.apply([1, 0, 0])
-    result2 = ReaddyUtil.get_angle_between_vectors(vp, vq, in_degrees=True)
-    
-    d = np.matmul(P, np.linalg.inv(Q))
-    result1 = np.rad2deg(np.arccos((np.trace(d) - 1) / 2))
-    
-    return result1, result2
-        
-def euler_angles(rotation_matrix):
-    if rotation_matrix is None:
-        return np.zeros(3)
-    return Rotation.from_matrix(rotation_matrix).as_euler("XYZ", degrees=False)
+def correct_rotation(time_ix, raw_rot, prev_raw_rot, diff_rot):
+    if time_ix < 1:
+        return raw_rot, Rotation.from_rotvec(np.zeros(3))
+    curr_diff = raw_rot * prev_raw_rot.inv()
+    new_diff = diff_rot * curr_diff.inv()
+    curr_rot = raw_rot * new_diff
+    return curr_rot, new_diff
         
 def add_unified_hemoglobin(agent_data):
     total_steps = agent_data.times.shape[0]
     n_hemoglobin = N_HEMOGLOBIN_SIDE ** 3
-    n_subunits = 4 * n_hemoglobin
-    positions = np.zeros((total_steps, n_hemoglobin, 3))
-    rotations = np.zeros((total_steps, n_hemoglobin, 3))
-    last_orientations = n_hemoglobin * [None]
-    for time_ix in range(total_steps):
-        for sub_ix in range(0, n_subunits, 4):
-            hb_ix = math.floor(sub_ix / 4.)
-            sub_positions = agent_data.positions[time_ix][sub_ix:sub_ix + 4]
-            center_pos = np.mean(sub_positions, axis=0)
-            positions[time_ix][hb_ix] = center_pos
-            orientation = ReaddyUtil.get_orientation_from_positions([
-                sub_positions[0], center_pos, sub_positions[1]
-            ])
-            if time_ix > 0 and time_ix < 20:
-                
-                try:
-                    difference = angle_between_orientations(orientation, last_orientations[hb_ix])
-                except:
-                    difference = None
-                    
-                a = str(orientation)
-                b = str(last_orientations[hb_ix])
-                c = str(difference)
-                print(f"------------ {time_ix}\n\n" + a + "\n\n" + b + "\n\n" + c + "\n\n")
-                
-            rotations[time_ix][hb_ix] = euler_angles(orientation)
-            last_orientations[hb_ix] = np.copy(orientation)
     start_ix = agent_data.get_dimensions().max_agents
     end_ix = start_ix + n_hemoglobin
     new_agent_data = agent_data.get_copy_with_increased_buffer_size(
@@ -316,6 +281,28 @@ def add_unified_hemoglobin(agent_data):
     new_agent_data.unique_ids[:,start_ix:end_ix] = np.array(range(start_ix, end_ix, 1))
     for time_ix in range(total_steps):
         new_agent_data.types[time_ix] += n_hemoglobin * ["hemoglobin#unified"]
+    n_subunits = 4 * n_hemoglobin
+    positions = np.zeros((total_steps, n_hemoglobin, 3))
+    rotations = np.zeros((total_steps, n_hemoglobin, 3))
+    prev_rotations = n_hemoglobin * [None]
+    diff_rotations = n_hemoglobin * [None]
+    for time_ix in range(total_steps):
+        for sub_ix in range(0, n_subunits, 4):
+            hb_ix = math.floor(sub_ix / 4.)
+            sub_positions = agent_data.positions[time_ix][sub_ix:sub_ix + 4]
+            center_pos = np.mean(sub_positions, axis=0)
+            positions[time_ix][hb_ix] = center_pos
+            positions[time_ix][hb_ix + 1] = center_pos + np.array([5, 0, 0])
+            raw_rotation = Rotation.from_matrix(
+                ReaddyUtil.get_orientation_from_positions([
+                    sub_positions[0], center_pos, sub_positions[1]
+                ])
+            )
+            corrected_rotation, diff_rotations[hb_ix] = correct_rotation(
+                time_ix, raw_rotation, prev_rotations[hb_ix], diff_rotations[hb_ix]
+            )
+            rotations[time_ix][hb_ix] = corrected_rotation.as_euler("XYZ", degrees=False)
+            prev_rotations[hb_ix] = copy.copy(raw_rotation)
     new_agent_data.positions[:,start_ix:end_ix] = positions
     new_agent_data.radii[:,start_ix:end_ix] = np.ones(n_hemoglobin)
     new_agent_data.rotations[:,start_ix:end_ix] = rotations
@@ -327,7 +314,6 @@ def add_unified_hemoglobin(agent_data):
         color="#666666",
     )
     return new_agent_data
-    
         
 def visualize(output_name, total_steps):
     oxygen_display_data = DisplayData(
