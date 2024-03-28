@@ -72,7 +72,11 @@ def add_types_and_potentials(system):
     system.add_species("oxygen#remove", 0)
     particles = {
         "hemoglobin" : HEMOGLOBIN_RADIUS,
+        "hemoglobin#1" : HEMOGLOBIN_RADIUS,
+        "hemoglobin#2" : HEMOGLOBIN_RADIUS,
         "hemoglobin#bound" : HEMOGLOBIN_RADIUS,
+        "hemoglobin#bound_1" : HEMOGLOBIN_RADIUS,
+        "hemoglobin#bound_2" : HEMOGLOBIN_RADIUS,
         "oxygen" : OXYGEN_RADIUS,
         "oxygen#bound" : OXYGEN_RADIUS,
     }
@@ -98,10 +102,12 @@ def add_types_and_potentials(system):
             system.potentials.add_harmonic_repulsion(
                 name, other_name, FORCE_CONSTANT, radius + other_radius
             )
+    hb_types = [
+        "hemoglobin", "hemoglobin#1", "hemoglobin#2", 
+        "hemoglobin#bound", "hemoglobin#bound_1", "hemoglobin#bound_2",
+    ]
     ReaddyUtil().add_angle(
-        ["hemoglobin", "hemoglobin#bound"], 
-        ["hemoglobin", "hemoglobin#bound"], 
-        ["hemoglobin", "hemoglobin#bound"], 
+        hb_types, hb_types, hb_types, 
         FORCE_CONSTANT, HEMOGLOBIN_ANGLE, system
     )
 
@@ -123,7 +129,7 @@ def reaction_function_start_unbind(topology):
     recipe = readdy.StructuralReactionRecipe(topology)
     v_hemoglobin = ReaddyUtil.get_first_vertex_of_types(
         topology,
-        ["hemoglobin#bound"],
+        ["hemoglobin#bound", "hemoglobin#bound_1", "hemoglobin#bound_2"],
     )
     if v_hemoglobin is None:
         return recipe
@@ -137,7 +143,7 @@ def reaction_function_start_unbind(topology):
     )
     recipe.change_topology_type("Dissociating1")
     return recipe
-    
+
 def reaction_function_finish_unbind(topology):
     recipe = readdy.StructuralReactionRecipe(topology)
     v_oxygen = ReaddyUtil.get_first_vertex_of_types(
@@ -145,15 +151,20 @@ def reaction_function_finish_unbind(topology):
         ["oxygen#bound"],
         error_msg="Failed to find bound oxygen while dissociating",
     )
-    v_hemoglobin = ReaddyUtil.get_neighbor_of_type(
+    v_hemoglobin = ReaddyUtil.get_neighbor_of_types(
         topology,
         v_oxygen,
-        "hemoglobin#bound",
-        exact_match=True,
+        ["hemoglobin#bound", "hemoglobin#bound_1", "hemoglobin#bound_2"],
+        [],
         error_msg="Failed to find bound hemoglobin neighbor of bound oxygen",
     )
     recipe.remove_edge(v_hemoglobin, v_oxygen)
-    recipe.change_particle_type(v_hemoglobin, "hemoglobin")
+    pt = topology.particle_type_of_vertex(v_hemoglobin)
+    if pt[-1] == "1" or pt[-1] == "2":
+        new_pt = f"hemoglobin#{pt[-1]}"
+    else:
+        new_pt = "hemoglobin"
+    recipe.change_particle_type(v_hemoglobin, new_pt)
     recipe.change_particle_type(v_oxygen, "oxygen")
     recipe.change_topology_type("Dissociating2")
     return recipe
@@ -169,6 +180,16 @@ def reaction_function_cleanup(topology):
 def add_reactions(system):
     system.topologies.add_spatial_reaction(
         "Bind: Hemoglobin(hemoglobin) + Oxygen(oxygen) -> Associating(hemoglobin#bound--oxygen#bound)",
+        rate=O2_BINDING_RATE,
+        radius=HEMOGLOBIN_RADIUS + OXYGEN_RADIUS,
+    )
+    system.topologies.add_spatial_reaction(
+        "Bind1: Hemoglobin(hemoglobin#1) + Oxygen(oxygen) -> Associating(hemoglobin#bound_1--oxygen#bound)",
+        rate=O2_BINDING_RATE,
+        radius=HEMOGLOBIN_RADIUS + OXYGEN_RADIUS,
+    )
+    system.topologies.add_spatial_reaction(
+        "Bind2: Hemoglobin(hemoglobin#2) + Oxygen(oxygen) -> Associating(hemoglobin#bound_2--oxygen#bound)",
         rate=O2_BINDING_RATE,
         radius=HEMOGLOBIN_RADIUS + OXYGEN_RADIUS,
     )
@@ -228,11 +249,14 @@ def hemoglobin_lattice_positions():
 
 def hemoglobin_particle_states():
     result = []
-    for _ in range(4):
+    for ix in range(4):
+        number = str(ix + 1) if ix < 2 else ""
         if random.random() > START_PERCENT_O2_BOUND / 100.:
-            result.append("hemoglobin")
+            delimiter = "#" if number else ""
+            result.append(f"hemoglobin{delimiter}{number}")
         else:
-            result.append("hemoglobin#bound")
+            delimiter = "_" if number else ""
+            result.append(f"hemoglobin#bound{delimiter}{number}")
     return result
 
 def config_init_conditions(simulation):
@@ -322,6 +346,26 @@ def visualize(output_name, total_steps):
         radius=OXYGEN_RADIUS,
         color="#ffffff",
     )
+    hb_display_data = DisplayData(
+        name="hemoglobin#deoxy",
+        display_type=DISPLAY_TYPE.SPHERE,
+        radius=HEMOGLOBIN_RADIUS,
+        color="#0000ff",
+    )
+    hb_display_data1 = copy.copy(hb_display_data)
+    hb_display_data1.name = "hemoglobin#deoxy_1"
+    hb_display_data2 = copy.copy(hb_display_data)
+    hb_display_data2.name = "hemoglobin#deoxy_2"
+    hb_bound_display_data = DisplayData(
+        name="hemoglobin#oxy",
+        display_type=DISPLAY_TYPE.SPHERE,
+        radius=HEMOGLOBIN_RADIUS,
+        color="#660000",
+    )
+    hb_bound_display_data1 = copy.copy(hb_bound_display_data)
+    hb_bound_display_data1.name = "hemoglobin#oxy_1"
+    hb_bound_display_data2 = copy.copy(hb_bound_display_data)
+    hb_bound_display_data2.name = "hemoglobin#oxy_2"
     traj_data = ReaddyConverter(ReaddyData(
         timestep=TIMESTEP * max(int(total_steps / 1000.0), 1) * 1e-3,
         path_to_readdy_h5=output_name + ".h5",
@@ -330,18 +374,12 @@ def visualize(output_name, total_steps):
             scale_factor=1.0,
         ),
         display_data={
-            "hemoglobin": DisplayData(
-                name="hemoglobin#deoxy",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=HEMOGLOBIN_RADIUS,
-                color="#0000ff",
-            ),
-            "hemoglobin#bound": DisplayData(
-                name="hemoglobin#oxy",
-                display_type=DISPLAY_TYPE.SPHERE,
-                radius=HEMOGLOBIN_RADIUS,
-                color="#660000",
-            ),
+            "hemoglobin": hb_display_data,
+            "hemoglobin#1": hb_display_data1,
+            "hemoglobin#2": hb_display_data2,
+            "hemoglobin#bound": hb_bound_display_data,
+            "hemoglobin#bound_1": hb_bound_display_data1,
+            "hemoglobin#bound_2": hb_bound_display_data2,
             "oxygen": oxygen_display_data,
             "oxygen#bound": oxygen_display_data,
             "oxygen#remove": oxygen_display_data,
