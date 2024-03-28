@@ -27,7 +27,7 @@ from simularium_readdy_models import ReaddyUtil
 
 TIMESTEP = 0.1 # ns
 BOX_SIZE = 20. # nm
-N_HEMOGLOBIN_SIDE = 1 # will be cubed
+N_HEMOGLOBIN_SIDE = 3 # will be cubed
 N_OXYGEN = 10 # 118 total, most start bound to Hb
 N_CO = 21 # serious poisoning
 HEMOGLOBIN_RADIUS = 1.5 # nm
@@ -55,6 +55,9 @@ def parse_args():
     )
     parser.add_argument(
         "total_steps", help="how many timesteps to calculate"
+    )
+    parser.add_argument(
+        "record_steps", help="how many timesteps to save", default="1000"
     )
     parser.add_argument('--save_pickle', action=argparse.BooleanOptionalAction)
     parser.set_defaults(save_pickle=False)
@@ -266,11 +269,10 @@ def correct_rotation(time_ix, raw_rot, prev_raw_rot, diff_rot):
     curr_rot = raw_rot * new_diff
     return curr_rot, new_diff
         
-def add_unified_hemoglobin(agent_data):
+def add_unified_hemoglobin_viz(agent_data):
+    # create new agent_data buffer with room for unified Hb agents
     total_steps = agent_data.times.shape[0]
-    n_hemoglobin = N_HEMOGLOBIN_SIDE ** 3
-    start_ix = agent_data.get_dimensions().max_agents
-    end_ix = start_ix + n_hemoglobin
+    n_hemoglobin = int(N_HEMOGLOBIN_SIDE ** 3)
     new_agent_data = agent_data.get_copy_with_increased_buffer_size(
         DimensionData(
             total_steps=total_steps, 
@@ -278,21 +280,28 @@ def add_unified_hemoglobin(agent_data):
         )
     )
     new_agent_data.n_agents += n_hemoglobin
-    new_agent_data.unique_ids[:,start_ix:end_ix] = np.array(range(start_ix, end_ix, 1))
-    for time_ix in range(total_steps):
-        new_agent_data.types[time_ix] += n_hemoglobin * ["hemoglobin#unified"]
+    new_agent_data.display_data["hemoglobin#unified"] = DisplayData(
+        name="hemoglobin#unified",
+        display_type=DISPLAY_TYPE.PDB,
+        url="https://files.rcsb.org/download/1A3N.pdb",
+        radius=1.0,
+        color="#666666",
+    )
+    # get unified position and rotation
     n_subunits = 4 * n_hemoglobin
-    positions = np.zeros((total_steps, n_hemoglobin, 3))
-    rotations = np.zeros((total_steps, n_hemoglobin, 3))
     prev_rotations = n_hemoglobin * [None]
     diff_rotations = n_hemoglobin * [None]
     for time_ix in range(total_steps):
+        start_ix = int(agent_data.n_agents[time_ix])
+        end_ix = start_ix + n_hemoglobin
+        new_agent_data.unique_ids[time_ix][start_ix:end_ix] = np.array(range(start_ix, end_ix, 1))
+        new_agent_data.types[time_ix] += n_hemoglobin * ["hemoglobin#unified"]
+        new_agent_data.radii[time_ix][start_ix:end_ix] = np.ones(n_hemoglobin)
         for sub_ix in range(0, n_subunits, 4):
             hb_ix = math.floor(sub_ix / 4.)
             sub_positions = agent_data.positions[time_ix][sub_ix:sub_ix + 4]
             center_pos = np.mean(sub_positions, axis=0)
-            positions[time_ix][hb_ix] = center_pos
-            positions[time_ix][hb_ix + 1] = center_pos + np.array([5, 0, 0])
+            new_agent_data.positions[time_ix][start_ix + hb_ix] = center_pos
             raw_rotation = Rotation.from_matrix(
                 ReaddyUtil.get_orientation_from_positions([
                     sub_positions[0], center_pos, sub_positions[1]
@@ -301,18 +310,8 @@ def add_unified_hemoglobin(agent_data):
             corrected_rotation, diff_rotations[hb_ix] = correct_rotation(
                 time_ix, raw_rotation, prev_rotations[hb_ix], diff_rotations[hb_ix]
             )
-            rotations[time_ix][hb_ix] = corrected_rotation.as_euler("XYZ", degrees=False)
+            new_agent_data.rotations[time_ix][start_ix + hb_ix] = corrected_rotation.as_euler("XYZ", degrees=False)
             prev_rotations[hb_ix] = copy.copy(raw_rotation)
-    new_agent_data.positions[:,start_ix:end_ix] = positions
-    new_agent_data.radii[:,start_ix:end_ix] = np.ones(n_hemoglobin)
-    new_agent_data.rotations[:,start_ix:end_ix] = rotations
-    new_agent_data.display_data["hemoglobin#unified"] = DisplayData(
-        name="hemoglobin#unified",
-        display_type=DISPLAY_TYPE.OBJ,
-        url="https://aics-simularium-data.s3.us-east-2.amazonaws.com/meshes/obj/maya_gizmo.obj",
-        radius=1.0,
-        color="#666666",
-    )
     return new_agent_data
         
 def visualize(output_name, total_steps):
@@ -349,7 +348,7 @@ def visualize(output_name, total_steps):
         time_units=UnitData("ms"),
         spatial_units=UnitData("nm"),
     ))._data
-    traj_data.agent_data = add_unified_hemoglobin(traj_data.agent_data)
+    traj_data.agent_data = add_unified_hemoglobin_viz(traj_data.agent_data)
     TrajectoryConverter(traj_data).save(output_name)
 
 
@@ -357,11 +356,12 @@ def main():
     args = parse_args()
     system = create_system()
     total_steps = int(float(args.total_steps))
+    record_multiplier = float(args.record_steps) / 1000.
     simulation = ReaddyUtil.create_readdy_simulation(
         system,
         n_cpu=4,
         sim_name=args.output_name,
-        total_steps=total_steps,
+        total_steps=record_multiplier * total_steps,
         record=True,
     )
     config_init_conditions(simulation)
