@@ -356,7 +356,7 @@ def main():
     args = parse_args()
     system = create_system()
     total_steps = int(float(args.total_steps))
-    record_multiplier = float(args.record_steps) / 1000.
+    record_multiplier = 1000. / float(args.record_steps)
     simulation = ReaddyUtil.create_readdy_simulation(
         system,
         n_cpu=4,
@@ -370,7 +370,7 @@ def main():
         timestep=TIMESTEP,
         show_summary=False,
     )
-    visualize(args.output_name, total_steps)
+    visualize(args.output_name, record_multiplier * total_steps)
     print(f"{n_binding_events} binding events.")
     print(f"{n_unbinding_events} unbinding events.")
 
