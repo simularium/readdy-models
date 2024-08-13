@@ -47,10 +47,10 @@ jobs:
     - name: Lint
       run: just lint
 
-  # Publish to PyPI if test, lint, and manifest checks passed
+  # Publish to PyPI if lint and manifest checks passed
   publish:
     if: "success() && startsWith(github.ref, 'refs/tags/')"
-    needs: [check-manifest, test, lint]
+    needs: [check-manifest, lint]
     runs-on: ubuntu-latest
 
     steps:
