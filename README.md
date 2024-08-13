@@ -1,23 +1,12 @@
-!!! **This repository is being actively developed and is not yet released, proceed with caution :)**
-
----
-
 ## Simularium repositories
 This repository is part of the Simularium project ([simularium.allencell.org](https://simularium.allencell.org)), which includes repositories:
 - [simulariumIO](https://github.com/simularium/simulariumio) - Python package that converts simulation outputs to the format consumed by the Simularium viewer website
-- [simularium-engine](https://github.com/simularium/simularium-engine) - C++ backend application that interfaces with biological simulation engines and serves simulation data to the front end website
+- [octopus](https://github.com/simularium/octopus) - Python backend application that interfaces with biological simulation engines and serves simulation data to the front end website
 - [simularium-viewer](https://github.com/simularium/simularium-viewer) - NPM package to view Simularium trajectories in 3D
 - [simularium-website](https://github.com/simularium/simularium-website) - Front end website for the Simularium project, includes the Simularium viewer
 
 # Simularium ReaDDy Models
-
-[![Build Status](https://github.com/simularium/simularium_readdy_models/workflows/Build%20Main/badge.svg)](https://github.com/simularium/readdy_models/actions)
-[![Documentation](https://github.com/simularium/simularium_readdy_models/workflows/Documentation/badge.svg)](https://simularium.github.io/readdy_models/)
-[![Code Coverage](https://codecov.io/gh/simularium/simularium_readdy_models/branch/main/graph/badge.svg)](https://codecov.io/gh/simularium/readdy_models)
-
-Tools for building computational biology models and example models from the Simularium project.
-
-Currently includes coarse-grained monomer ReaDDy models for actin, microtubules, and kinesin.
+Tools for building computational biology models and example models from the Simularium project. Includes coarse-grained monomer [ReaDDy](https://readdy.github.io/) models for actin, microtubules, and kinesin.
 
 ---
 
