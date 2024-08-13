@@ -27,11 +27,6 @@ See [examples/README.md](examples/README.md) to run example actin, microtubules,
 2. Activate the environment: `conda activate readdy_models`
 3. Install remaining dependencies: `just install`
 
-
-## Documentation
-
-For full package documentation please visit [simularium.github.io/simularium_readdy_models](https://simularium.github.io/simularium_readdy_models).
-
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for information related to developing the code.
