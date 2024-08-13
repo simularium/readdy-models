@@ -18,7 +18,14 @@ See [examples/README.md](examples/README.md) to run example actin, microtubules,
 
 **Stable Release:** `pip install simularium_readdy_models`<br>
 **Development Head:** `pip install git+https://github.com/simularium/simularium_readdy_models.git`<br>
-**Local Editable Install** `pip install -e .[dev]` (or `pip install -e .\[dev\]` on mac) from repo root directory
+
+### Development Install with `conda`:
+
+(`conda` is currently required to install `readdy`.)
+
+1. Create a virtual environment with conda-specific dependencies: `conda env create -f environment.yml`
+2. Activate the environment: `conda activate readdy_models`
+3. Install remaining dependencies: `just install`
 
 
 ## Documentation

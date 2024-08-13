@@ -1,6 +1,4 @@
-name: anaconda-client-env
-channels:
-  - conda-forge
+name: readdy_models
 dependencies:
-  - readdy==2.0.9
-  - numpy>=1.20
+  - python=3.10
+  - conda-forge::readdy

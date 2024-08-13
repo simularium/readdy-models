@@ -28,10 +28,10 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-  "numpy>=1.16",
-  "scipy>=1.5.2",
-  "pandas>=1.0",
-  "simulariumio",
+  "numpy",
+  "scipy",
+  "pandas",
+  "simulariumio>=1.11.0",
   "subcell_pipeline @ git+https://github.com/simularium/subcell-pipeline.git",
 ]
 
