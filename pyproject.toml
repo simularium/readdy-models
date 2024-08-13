@@ -32,7 +32,7 @@ dependencies = [
   "scipy>=1.5.2",
   "pandas>=1.0",
   "simulariumio",
-  "subcell_analysis @ git+https://github.com/simularium/subcell-analysis.git@viz-together",
+  "subcell_pipeline @ git+https://github.com/simularium/subcell-pipeline.git",
 ]
 
 [project.urls]

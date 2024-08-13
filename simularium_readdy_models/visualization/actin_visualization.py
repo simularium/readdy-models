@@ -14,18 +14,19 @@ from simulariumio import (
     UnitData,
     BinaryWriter,
 )
-from simulariumio.filters import MultiplyTimeFilter
 from simulariumio.readdy import ReaddyConverter, ReaddyData
 from simulariumio.plot_readers import ScatterPlotReader, HistogramPlotReader
-from subcell_analysis import SpatialAnnotator
-from subcell_analysis.compression_analysis import (
+from subcell_pipeline import SpatialAnnotator
+from subcell_pipeline.compression_analysis import (
     get_average_distance_from_end_to_end_axis,
     get_bending_energy_from_trace,
     get_third_component_variance,
     get_asymmetry_of_peak,
     get_contour_length_from_trace,
 )
-from subcell_analysis.readdy import ReaddyPostProcessor, ReaddyLoader, FrameData
+from subcell_pipeline.simulation.readdy.post_processor import ReaddyPostProcessor
+from subcell_pipeline.simulation.readdy.loader import ReaddyLoader
+from subcell_pipeline.simulation.readdy.data_structures import FrameData
 
 from ..actin import ActinAnalyzer, ActinStructure
 
@@ -425,7 +426,7 @@ class ActinVisualization:
         contour_length = []
         total_steps = len(axis_positions)
         control_pts = ReaddyPostProcessor.linear_fiber_control_points(
-            axis_positions, 10.0
+            axis_positions, 200
         )
         for time_ix in range(total_steps):
             perp_dist.append(
@@ -586,7 +587,7 @@ class ActinVisualization:
                 )
             control_points = post_processor.linear_fiber_control_points(
                 axis_positions=axis_positions,
-                segment_length=10.0,
+                n_points=200,
             )
             sphere_positions = []
             for time_ix in range(len(control_points)):
@@ -635,7 +636,6 @@ class ActinVisualization:
         output_name: str,
         total_steps: float,
         parameters: Dict[str, Any],
-        save_pickle: bool = False,
     ) -> TrajectoryData:
         """
         Do all visualization, annotation, and metric calculation on an actin trajectory
@@ -680,7 +680,6 @@ class ActinVisualization:
                     max_time_ix=-1,
                     time_inc=1,
                     timestep=time_step,
-                    save_pickle_file=save_pickle,
                 ).trajectory(),
                 box_size=parameters["box_size"],
                 periodic_boundary=periodic_boundary,

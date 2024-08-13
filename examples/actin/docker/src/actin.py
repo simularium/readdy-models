@@ -35,8 +35,6 @@ def parse_args():
     parser.add_argument(
         "replicate", help="which replicate?", nargs="?", default=""
     )
-    parser.add_argument('--save_pickle', action=argparse.BooleanOptionalAction)
-    parser.set_defaults(save_pickle=False)
     return parser.parse_args()
 
 
@@ -129,7 +127,6 @@ def main():
         actin_simulation.parameters["name"], 
         actin_simulation.parameters["total_steps"],
         actin_simulation.parameters,
-        args.save_pickle,
     )
 
 
