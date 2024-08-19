@@ -75,7 +75,7 @@ example = [
   "psutil",
   "awscli",
   "boto3",
-  "openpyxl>=3.0",
+  "openpyxl",
 ]
 
 # entry points

@@ -15,7 +15,6 @@ from simularium_readdy_models.actin import (
     ActinGenerator,
     ActinTestData,
 )
-from simularium_readdy_models.visualization import ActinVisualization
 from simularium_readdy_models import ReaddyUtil
 
 
@@ -123,11 +122,6 @@ def main():
     )
     print("Run time: %s seconds " % (time.time() - start_time))
     report_hardware_usage()
-    ActinVisualization.analyze_and_visualize_trajectory(
-        actin_simulation.parameters["name"], 
-        actin_simulation.parameters["total_steps"],
-        actin_simulation.parameters,
-    )
 
 
 if __name__ == "__main__":
