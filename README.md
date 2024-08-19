@@ -1,10 +1,3 @@
-## Simularium repositories
-This repository is part of the Simularium project ([simularium.allencell.org](https://simularium.allencell.org)), which includes repositories:
-- [simulariumIO](https://github.com/simularium/simulariumio) - Python package that converts simulation outputs to the format consumed by the Simularium viewer website
-- [octopus](https://github.com/simularium/octopus) - Python backend application that interfaces with biological simulation engines and serves simulation data to the front end website
-- [simularium-viewer](https://github.com/simularium/simularium-viewer) - NPM package to view Simularium trajectories in 3D
-- [simularium-website](https://github.com/simularium/simularium-website) - Front end website for the Simularium project, includes the Simularium viewer
-
 # Simularium ReaDDy Models
 Tools for building computational biology models and example models from the Simularium project. Includes coarse-grained monomer [ReaDDy](https://readdy.github.io/) models for actin, microtubules, and kinesin.
 
