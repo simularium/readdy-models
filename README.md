@@ -9,7 +9,6 @@ See [examples/README.md](examples/README.md) to run example actin, microtubules,
 
 ## Installation
 
-**Stable Release:** `pip install simularium_readdy_models`<br>
 **Development Head:** `pip install git+https://github.com/simularium/simularium_readdy_models.git`<br>
 
 ### Development Install with `conda`:
