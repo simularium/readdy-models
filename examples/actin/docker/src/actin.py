@@ -16,6 +16,7 @@ from simularium_readdy_models.actin import (
     ActinTestData,
 )
 from simularium_readdy_models import ReaddyUtil
+from simularium_readdy_models.visualization import ActinVisualization
 
 
 def parse_args():
@@ -47,7 +48,7 @@ def setup_parameters(args):
     parameters.set_index("name", inplace=True)
     parameters.transpose()
     run_name = list(parameters)[0]
-    parameters = parameters[run_name]
+    parameters = parameters[run_name].to_dict()
     parameters["box_size"] = ReaddyUtil.get_box_size(parameters["box_size"])
     if not os.path.exists("outputs/"):
         os.mkdir("outputs/")
@@ -122,6 +123,11 @@ def main():
     )
     print("Run time: %s seconds " % (time.time() - start_time))
     report_hardware_usage()
+    ActinVisualization.visualize_actin(
+        parameters["name"] + ".h5", 
+        parameters["box_size"], 
+        parameters["total_steps"], 
+    )
 
 
 if __name__ == "__main__":
